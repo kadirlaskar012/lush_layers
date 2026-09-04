@@ -7,14 +7,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Warm Bakery Light Palette */
-  --bg-main: #FAF7F2;          /* Warm Ivory / Cream */
+  /* Warm Bakery Light Marketplace Palette */
+  --bg-main: #FAF8F5;          /* Warm Ivory / Cream */
   --bg-surface: #FFFFFF;       /* Pure White Content Areas */
   --bg-card: #FFFFFF;          /* Card Background */
-  --bg-card-hover: #FDFCFA;    /* Subtle Warm Hover */
-  --bg-cream: #F4EFE6;         /* Cream Section Background */
-  --bg-blush: #FBF0ED;         /* Soft Blush Pastel */
-  --bg-sage: #EDF3ED;          /* Soft Pistachio/Sage */
+  --bg-card-hover: #FFFDF9;    /* Subtle Warm Hover */
+  --bg-cream: #F5EFE6;         /* Cream Section Background */
+  --bg-blush: #FCE7EB;         /* Soft Pastel Blush Pink */
+  --bg-blush-subtle: #FFF5F7;  /* Very Subtle Blush Background */
+  --bg-peach: #FDF2EC;         /* Light Peach / Nude */
+  --blush-accent: #E11D48;     /* Sophisticated Rose Accent */
   
   /* Champagne & Gold Accents (Used Sparingly & Elegantly) */
   --gold: #B88E3E;             /* Refined Champagne Gold */
@@ -29,25 +31,25 @@
   --whatsapp-soft: #E8F8EE;
   
   /* High-Readability Charcoal Typography */
-  --text-primary: #22201E;     /* Dark Charcoal */
-  --text-secondary: #574F4A;   /* Warm Neutral Charcoal */
-  --text-muted: #7E746E;       /* Accessible Muted Text */
-  --text-light: #FAF7F2;
+  --text-primary: #1F1D1B;     /* Dark Charcoal */
+  --text-secondary: #5A5652;   /* Warm Neutral Charcoal */
+  --text-muted: #807A74;       /* Accessible Muted Text */
+  --text-light: #FAF8F5;
   
   /* Borders & Dividers */
-  --border-subtle: #E8E2D8;    /* Soft Warm Border */
-  --border-light: #F0ECE4;
+  --border-subtle: #EFE8DE;    /* Soft Warm Border */
+  --border-light: #F4EFEA;
   --border-focus: #B88E3E;
   
   /* Glassmorphism Light */
-  --glass-bg: rgba(255, 255, 255, 0.94);
+  --glass-bg: rgba(255, 255, 255, 0.95);
   --glass-blur: blur(16px);
   
-  /* Refined, Subtle Shadows (No Heavy Dark Shadows) */
-  --shadow-xs: 0 1px 3px rgba(50, 40, 30, 0.04);
-  --shadow-sm: 0 2px 8px rgba(50, 40, 30, 0.06);
-  --shadow-md: 0 6px 20px rgba(50, 40, 30, 0.08);
-  --shadow-hover: 0 8px 24px rgba(184, 142, 62, 0.12), 0 2px 6px rgba(50, 40, 30, 0.04);
+  /* Refined, Subtle Shadows */
+  --shadow-xs: 0 1px 3px rgba(45, 35, 25, 0.04);
+  --shadow-sm: 0 2px 8px rgba(45, 35, 25, 0.06);
+  --shadow-md: 0 6px 20px rgba(45, 35, 25, 0.08);
+  --shadow-hover: 0 8px 24px rgba(184, 142, 62, 0.12), 0 2px 6px rgba(45, 35, 25, 0.04);
   
   /* Fonts */
   --font-heading: 'Playfair Display', Georgia, serif;
@@ -393,6 +395,189 @@ h1, h2, h3, h4, .font-heading {
   margin-top: auto;
   display: flex;
   gap: 0.4rem;
+}
+
+/* ==========================================================================
+   MARKETPLACE UX COMPONENTS (Inspired by modern cake-commerce portals)
+   ========================================================================== */
+
+/* Visual Category Story Strip (Circular / Squircle Chips with Photos) */
+.category-story-strip {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.35rem 0.25rem 0.65rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-story-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.category-story-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  flex-shrink: 0;
+  width: 68px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+@media (min-width: 640px) {
+  .category-story-chip {
+    width: 78px;
+    gap: 0.45rem;
+  }
+}
+
+.category-story-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  border: 2px solid var(--border-subtle);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@media (min-width: 640px) {
+  .category-story-avatar {
+    width: 66px;
+    height: 66px;
+    padding: 3px;
+  }
+}
+
+.category-story-chip:hover .category-story-avatar,
+.category-story-chip.active .category-story-avatar {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(184, 142, 62, 0.22);
+}
+
+.category-story-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.category-story-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  transition: color 0.2s ease;
+}
+
+.category-story-chip:hover .category-story-label,
+.category-story-chip.active .category-story-label {
+  color: var(--gold-dark);
+}
+
+/* Marketplace Browsing & Filter Toolbar */
+.marketplace-toolbar {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.marketplace-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.85rem;
+  flex: 1;
+  min-width: 180px;
+  max-width: 360px;
+}
+
+.marketplace-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.marketplace-filter-select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.marketplace-filter-select:focus {
+  border-color: var(--gold);
+}
+
+/* Rating Pill */
+.rating-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: #047857;
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.12rem 0.38rem;
+  border-radius: var(--radius-xs);
+  letter-spacing: 0.02em;
+}
+
+/* Compact Promotional Hero */
+.hero-compact-marketplace {
+  background: linear-gradient(135deg, #FFF9F7 0%, #FAF6F0 50%, #FDF2EE 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+@media (min-width: 768px) {
+  .hero-compact-marketplace {
+    grid-template-columns: 1.25fr 0.75fr;
+    padding: 2rem 2.25rem;
+    gap: 1.75rem;
+  }
 }
 
 /* Compact Horizontal Category Scroller */

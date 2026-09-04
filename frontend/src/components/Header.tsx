@@ -103,13 +103,13 @@ export default function Header() {
             style={{
               display: "none",
               position: "relative",
-              width: "220px",
+              width: "280px",
             }}
             className="desktop-search-form"
           >
             <input
               type="text"
-              placeholder="Search cakes..."
+              placeholder="Search cakes, flavours, designs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               id="header-search-input"
@@ -118,7 +118,7 @@ export default function Header() {
                 background: "var(--bg-main)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-full)",
-                padding: "0.35rem 2rem 0.35rem 0.85rem",
+                padding: "0.38rem 2.2rem 0.38rem 0.95rem",
                 color: "var(--text-primary)",
                 fontSize: "0.8rem",
                 outline: "none",
@@ -129,7 +129,7 @@ export default function Header() {
               aria-label="Submit search"
               style={{
                 position: "absolute",
-                right: "8px",
+                right: "10px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 background: "none",
@@ -140,7 +140,7 @@ export default function Header() {
                 display: "flex",
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
@@ -160,12 +160,34 @@ export default function Header() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
               </svg>
-              <span>WhatsApp Us</span>
+              <span>Order on WhatsApp</span>
             </a>
           </div>
 
-          {/* Mobile Right Controls: Search Toggle + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} className="mobile-controls">
+          {/* Mobile Right Controls: WhatsApp Icon + Search Toggle + Hamburger */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }} className="mobile-controls">
+            <a
+              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Order on WhatsApp"
+              style={{
+                background: "var(--whatsapp-soft)",
+                color: "var(--whatsapp)",
+                border: "1px solid rgba(37, 211, 102, 0.25)",
+                borderRadius: "var(--radius-sm)",
+                width: "34px",
+                height: "34px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textDecoration: "none",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
+              </svg>
+            </a>
             <button
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
               style={{

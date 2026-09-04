@@ -2,8 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PublicLayout from "../../../components/PublicLayout";
+import MarketplaceListing from "../../../components/MarketplaceListing";
 import MasonryGallery from "../../../components/MasonryGallery";
-import CategoryBar from "../../../components/CategoryBar";
 import { getPublishedCakes, getCategories } from "../../../lib/api";
 
 export const revalidate = 60;
@@ -33,7 +33,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  const cakes = await getPublishedCakes({ categoryId: category.id });
+  const allCakes = await getPublishedCakes();
 
   return (
     <PublicLayout>
@@ -65,23 +65,36 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 1.5rem" }}>
             <span className="cake-category-badge">Curated Collection</span>
             <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
-              {category.name}
+              {category.name} Cakes
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
               {category.description || "Artisanal hand-sculpted bespoke confections."}
             </p>
           </div>
 
-          {/* Category Bar Navigation */}
-          <div style={{ marginBottom: "1.75rem" }}>
-            <CategoryBar categories={categories} activeSlug={category.slug} />
-          </div>
-
-          {/* Responsive Cake Gallery (Desktop: 4, Tablet: 3, Mobile: STRICTLY 2) */}
-          <MasonryGallery
-            cakes={cakes}
-            emptyMessage={`No ${category.name} cakes published yet. Check other collections or enquire on WhatsApp.`}
+          {/* Marketplace Product Listing with 4/3/2 Responsive Grid */}
+          <MarketplaceListing
+            initialCakes={allCakes || []}
+            categories={categories || []}
+            initialCategorySlug={category.slug}
+            showCategoryStrip={true}
+            title={`${category.name} Collection`}
+            subtitle={`Explore all creations designed for ${category.name}`}
           />
+
+          {/* Editorial Discovery Gallery */}
+          <div style={{ marginTop: "3.5rem", paddingTop: "2.5rem", borderTop: "1px solid var(--border-subtle)" }}>
+            <div style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto 1.5rem" }}>
+              <span className="cake-category-badge">Visual Inspiration</span>
+              <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
+                Editorial Atelier Wall
+              </h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+                Artisan finishes, botanical motifs, and bespoke luxury cakes.
+              </p>
+            </div>
+            <MasonryGallery cakes={allCakes || []} />
+          </div>
         </div>
       </div>
     </PublicLayout>
