@@ -1,6 +1,8 @@
 import os
 import shutil
 import uuid
+import asyncio
+import datetime
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
@@ -260,6 +262,109 @@ async def delete_cake(cake_id: str, background_tasks: BackgroundTasks):
         return {"message": "Cake deleted successfully."}
     raise HTTPException(status_code=500, detail="Failed to delete cake.")
 
+async def _execute_ai_generation_for_cake(cake: Dict[str, Any], is_regenerate: bool = False) -> Dict[str, Any]:
+    cake_id = cake["id"]
+    ai_meta = cake.get("ai_metadata") or {}
+    
+    # Update temporary status to generating
+    ai_meta["ai_status"] = "generating"
+    db.update_cake(cake_id, {"ai_metadata": ai_meta})
+    
+    # 1. Locate or fetch image
+    image_input = None
+    local_preview_url = ai_meta.get("local_preview_url", "")
+    filename = Path(local_preview_url).name if local_preview_url else None
+    
+    if filename and (settings.PROCESSED_DIR / filename).exists():
+        image_input = settings.PROCESSED_DIR / filename
+    else:
+        # Search processed dir
+        matches = list(settings.PROCESSED_DIR.glob(f"cake_{cake_id[:8]}*.webp"))
+        if matches:
+            image_input = matches[0]
+        elif cake.get("image_url"):
+            img_url = cake["image_url"]
+            if img_url.startswith("/"):
+                img_url = f"http://127.0.0.1:{settings.PORT}{img_url}"
+            image_input = img_url
+
+    if not image_input:
+        ai_meta["ai_status"] = "failed"
+        ai_meta["ai_error"] = "Image source not found for AI analysis."
+        db.update_cake(cake_id, {"ai_metadata": ai_meta})
+        raise ValueError("Image source not available for AI analysis.")
+
+    # 2. Get active DB categories
+    categories = db.get_categories(active_only=True)
+    cat_names = [c["name"] for c in categories]
+
+    # 3. Run AI analysis in threadpool executor
+    loop = asyncio.get_event_loop()
+    ai_result = await loop.run_in_executor(
+        None,
+        lambda: ai_analyzer.analyze_cake_image(
+            image_input,
+            valid_categories=cat_names
+        )
+    )
+
+    # 4. Map category to DB category id or None if "Needs Review"
+    matched_category_id = None
+    sugg_cat = ai_result.get("category", "")
+    if sugg_cat and sugg_cat != "Needs Review":
+        for cat in categories:
+            if cat["name"].lower() == sugg_cat.lower() or cat["slug"].lower() in sugg_cat.lower():
+                matched_category_id = cat["id"]
+                break
+
+    # 5. Update cake record - STRICT: status MUST REMAIN pending
+    ai_meta.update({
+        "ai_status": "generated",
+        "suggested_name": ai_result.get("name"),
+        "suggested_flavour": ai_result.get("flavour"),
+        "suggested_category": sugg_cat,
+        "suggested_category_id": matched_category_id,
+        "suggested_description": ai_result.get("description"),
+        "suggested_sizes": ai_result.get("available_sizes", []),
+        "tags": ai_result.get("tags", []),
+        "confidence": ai_result.get("confidence_score", 0.95),
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "regenerated": is_regenerate,
+        "ai_error": None
+    })
+
+    updated = db.update_cake(cake_id, {
+        "name": ai_result.get("name", cake["name"]),
+        "flavour": ai_result.get("flavour", "Not specified"),
+        "category_id": matched_category_id,
+        "description": ai_result.get("description", cake.get("description", "")),
+        "available_sizes": ai_result.get("available_sizes", cake.get("available_sizes")),
+        "ai_metadata": ai_meta
+        # STRICT RULE: Status MUST REMAIN pending
+    })
+
+    return updated
+
+@app.post("/api/cakes/{cake_id}/ai-generate")
+async def generate_cake_ai(cake_id: str):
+    """
+    Analyzes cake image and generates metadata suggestions for a single pending cake.
+    Status remains strictly PENDING.
+    """
+    cake = db.get_cake_by_id(cake_id)
+    if not cake:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    
+    try:
+        updated = await _execute_ai_generation_for_cake(cake, is_regenerate=False)
+        return {"message": "AI metadata generated successfully.", "cake": updated}
+    except Exception as e:
+        ai_meta = cake.get("ai_metadata") or {}
+        ai_meta["ai_status"] = "failed"
+        ai_meta["ai_error"] = str(e)
+        db.update_cake(cake_id, {"ai_metadata": ai_meta})
+        raise HTTPException(status_code=500, detail=f"AI generation failed: {str(e)}")
+
 @app.post("/api/cakes/{cake_id}/regenerate-ai")
 async def regenerate_cake_ai(cake_id: str):
     """
@@ -269,41 +374,50 @@ async def regenerate_cake_ai(cake_id: str):
     if not cake:
         raise HTTPException(status_code=404, detail="Cake not found.")
     
-    # Locate local processed image file
-    ai_meta = cake.get("ai_metadata") or {}
-    local_preview_url = ai_meta.get("local_preview_url", "")
-    filename = Path(local_preview_url).name if local_preview_url else None
-    
-    image_path = settings.PROCESSED_DIR / filename if filename else None
-    if not image_path or not image_path.exists():
-        # Search processed dir for matching cake id
-        matches = list(settings.PROCESSED_DIR.glob(f"cake_{cake_id[:8]}*.webp"))
-        if matches:
-            image_path = matches[0]
+    try:
+        updated = await _execute_ai_generation_for_cake(cake, is_regenerate=True)
+        return {"message": "AI suggestions regenerated.", "cake": updated}
+    except Exception as e:
+        ai_meta = cake.get("ai_metadata") or {}
+        ai_meta["ai_status"] = "failed"
+        ai_meta["ai_error"] = str(e)
+        db.update_cake(cake_id, {"ai_metadata": ai_meta})
+        raise HTTPException(status_code=500, detail=f"AI regeneration failed: {str(e)}")
 
-    if not image_path or not image_path.exists():
-        raise HTTPException(status_code=400, detail="Master image file not available for AI analysis.")
+@app.post("/api/cakes/pending/ai-generate-all")
+async def generate_all_pending_ai():
+    """
+    Bulk generates AI metadata for all pending cakes where ai_status != 'generated'.
+    Processes each cake independently; individual failures do not block others.
+    """
+    pending_cakes = db.get_cakes(status="pending", limit=300)
+    to_generate = []
+    for c in pending_cakes:
+        ai_meta = c.get("ai_metadata") or {}
+        if ai_meta.get("ai_status") != "generated":
+            to_generate.append(c)
 
-    new_ai = ai_analyzer.analyze_cake_image(image_path)
-    
-    # Update cake record with fresh suggestions
-    ai_meta.update({
-        "suggested_name": new_ai.get("name"),
-        "suggested_flavour": new_ai.get("flavour"),
-        "suggested_category": new_ai.get("category"),
-        "suggested_description": new_ai.get("description"),
-        "tags": new_ai.get("tags", []),
-        "regenerated": True
-    })
+    results = []
+    succeeded = 0
+    failed = 0
 
-    updated = db.update_cake(cake_id, {
-        "name": new_ai.get("name", cake["name"]),
-        "flavour": new_ai.get("flavour", cake["flavour"]),
-        "description": new_ai.get("description", cake["description"]),
-        "ai_metadata": ai_meta
-    })
+    for cake in to_generate:
+        try:
+            updated = await _execute_ai_generation_for_cake(cake, is_regenerate=False)
+            results.append({"id": cake["id"], "name": updated["name"], "status": "generated"})
+            succeeded += 1
+        except Exception as e:
+            failed += 1
+            results.append({"id": cake["id"], "name": cake["name"], "status": "failed", "error": str(e)})
 
-    return {"message": "AI suggestions regenerated.", "ai_metadata": new_ai, "cake": updated}
+    return {
+        "message": f"Bulk AI generation completed. {succeeded} succeeded, {failed} failed.",
+        "total_pending": len(pending_cakes),
+        "queued": len(to_generate),
+        "succeeded": succeeded,
+        "failed": failed,
+        "results": results
+    }
 
 @app.post("/api/cakes/{cake_id}/reprocess")
 async def reprocess_cake_image(cake_id: str):

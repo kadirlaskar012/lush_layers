@@ -113,21 +113,11 @@ class BackgroundJobQueue:
             db.update_job(job_id, status="image_processed", progress=50)
             await asyncio.sleep(0.05)
 
-            # 3. AI Metadata Analysis
-            # State: AI_PROCESSING (Progress 70%)
-            db.update_job(job_id, status="ai_processing", progress=70)
+            # 3. Storage Upload (Cloudinary / Local Fallback)
+            # State: UPLOADING (Progress 80%)
+            db.update_job(job_id, status="uploading", progress=80)
             
             master_file_path = Path(proc_result["master_path"])
-            ai_data = await loop.run_in_executor(
-                None,
-                ai_analyzer.analyze_cake_image,
-                master_file_path
-            )
-
-            # 4. Storage Upload (Cloudinary / Local Fallback)
-            # State: UPLOADING (Progress 85%)
-            db.update_job(job_id, status="uploading", progress=85)
-            
             upload_res = await loop.run_in_executor(
                 None,
                 storage.upload_image,
@@ -135,36 +125,23 @@ class BackgroundJobQueue:
                 f"cake_{job_id[:8]}"
             )
 
-            # 5. Find or match category
-            categories = db.get_categories(active_only=True)
-            matched_category_id = None
-            suggested_cat_name = ai_data.get("category", "").lower()
-            
-            for cat in categories:
-                if cat["name"].lower() == suggested_cat_name or cat["slug"].lower() in suggested_cat_name:
-                    matched_category_id = cat["id"]
-                    break
-            if not matched_category_id and categories:
-                matched_category_id = categories[0]["id"]
+            # 4. Create Cake Record - STRICT: Status MUST be 'pending' with 'not_generated' AI state
+            clean_title = Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
+            if not clean_title or clean_title.lower().startswith("img"):
+                clean_title = f"Pending Confection #{job_id[:6].upper()}"
 
-            # 6. Create Cake Record - STRICT: Status MUST be 'pending'
             cake_record = {
-                "name": ai_data.get("name", f"Artisanal Cake {job_id[:6]}"),
-                "flavour": ai_data.get("flavour", "Vanilla Buttercream"),
-                "category_id": matched_category_id,
-                "description": ai_data.get("description", "A handcrafted luxury confection made with love."),
-                "available_sizes": ai_data.get("available_sizes", ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]),
+                "name": clean_title,
+                "flavour": "Not specified",
+                "category_id": None,
+                "description": "Awaiting AI sensory analysis and artisan review.",
+                "available_sizes": ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"],
                 "image_url": upload_res["image_url"],
                 "cloudinary_public_id": upload_res.get("cloudinary_public_id"),
                 "status": "pending", # MANDATORY
                 "ai_metadata": {
+                    "ai_status": "not_generated",
                     "original_file": job["file_name"],
-                    "suggested_name": ai_data.get("name"),
-                    "suggested_flavour": ai_data.get("flavour"),
-                    "suggested_category": ai_data.get("category"),
-                    "suggested_description": ai_data.get("description"),
-                    "tags": ai_data.get("tags", []),
-                    "confidence": ai_data.get("confidence_score", 0.95),
                     "local_preview_url": proc_result["relative_master_url"],
                     "local_thumb_url": proc_result["relative_thumb_url"]
                 }

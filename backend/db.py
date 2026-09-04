@@ -55,27 +55,30 @@ class Database:
             self.supabase = None
 
     def _sync_to_postgres(self, sql: str, params: tuple):
-        """Directly writes changes to Supabase PostgreSQL pooler in real-time."""
-        try:
-            import psycopg2
-            conn = psycopg2.connect(
-                host=settings.SUPABASE_HOST,
-                port=settings.SUPABASE_PORT,
-                user=settings.SUPABASE_USER,
-                password=settings.SUPABASE_PASSWORD,
-                dbname=settings.SUPABASE_DB,
-                connect_timeout=4
-            )
-            conn.autocommit = True
-            cur = conn.cursor()
-            cur.execute(sql, params)
-            conn.close()
-        except Exception as e:
-            # Silent fallback to local cache
-            pass
+        """Directly writes changes to Supabase PostgreSQL pooler in a non-blocking daemon thread."""
+        import threading
+        def _run():
+            try:
+                import psycopg2
+                conn = psycopg2.connect(
+                    host=settings.SUPABASE_HOST,
+                    port=settings.SUPABASE_PORT,
+                    user=settings.SUPABASE_USER,
+                    password=settings.SUPABASE_PASSWORD,
+                    dbname=settings.SUPABASE_DB,
+                    connect_timeout=3
+                )
+                conn.autocommit = True
+                cur = conn.cursor()
+                cur.execute(sql, params)
+                conn.close()
+            except Exception:
+                pass
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
 
     def _get_conn(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path))
+        conn = sqlite3.connect(str(self.db_path), timeout=15.0)
         conn.row_factory = sqlite3.Row
         return conn
 
