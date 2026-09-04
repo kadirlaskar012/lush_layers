@@ -37,48 +37,50 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
 
   return (
     <PublicLayout>
-      <div style={{ paddingTop: "3.5rem", paddingBottom: "6rem" }}>
+      <div style={{ paddingTop: "1.75rem", paddingBottom: "3.5rem" }}>
         <div className="container-lux">
-          {/* Header */}
-          <div style={{ textAlign: "center", maxWidth: "800px", margin: "0 auto 3rem" }}>
-            <span className="cake-category-badge">Complete Collection</span>
-            <h1 style={{ fontSize: "3rem", color: "var(--text-primary)", marginBottom: "1rem" }}>
+          {/* Header - Compact */}
+          <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 1.5rem" }}>
+            <span className="cake-category-badge">Boutique Catalog</span>
+            <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
               The Artisanal Catalog
             </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1.05rem" }}>
-              Browse our handcrafted celebration and signature cakes. Filter by category, search by flavour, or select any confection to enquire directly on WhatsApp.
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
+              Filter by occasion, browse seasonal flavour profiles, or tap any cake to place an immediate enquiry via WhatsApp.
             </p>
           </div>
 
-          {/* Search & Filters */}
+          {/* Search & Filters Container - Compact & Light */}
           <div
-            className="glass-card"
             style={{
-              padding: "1.5rem 2rem",
-              marginBottom: "3rem",
-              border: "1px solid var(--border-gold)",
+              background: "var(--bg-surface)",
+              borderRadius: "var(--radius-md)",
+              padding: "1.1rem",
+              marginBottom: "1.75rem",
+              border: "1px solid var(--border-subtle)",
+              boxShadow: "var(--shadow-xs)",
             }}
           >
             {/* Live Search Input */}
-            <form method="GET" action="/cakes" style={{ marginBottom: "1.5rem" }}>
-              <div style={{ display: "flex", gap: "1rem" }}>
+            <form method="GET" action="/cakes" style={{ marginBottom: "1rem" }}>
+              <div style={{ display: "flex", gap: "0.6rem" }}>
                 <input
                   type="text"
                   name="search"
                   defaultValue={searchFilter || ""}
-                  placeholder="Search by cake title or ingredients (e.g., 'Raspberry', 'Chocolate', 'Velvet')..."
+                  placeholder="Search by title or note (e.g., 'Raspberry', 'Chocolate', 'Pistachio')..."
                   className="form-input"
-                  style={{ flex: 1, padding: "0.85rem 1.25rem" }}
+                  style={{ flex: 1, padding: "0.55rem 0.9rem", fontSize: "0.86rem" }}
                   id="catalog-search-input"
                 />
-                <button type="submit" className="btn-gold" style={{ padding: "0.85rem 1.75rem" }}>
+                <button type="submit" className="btn-gold" style={{ padding: "0.55rem 1.1rem", fontSize: "0.82rem" }}>
                   Search
                 </button>
                 {(searchFilter || categoryFilter || flavourFilter) && (
                   <a
                     href="/cakes"
                     className="btn-outline-gold"
-                    style={{ padding: "0.85rem 1.25rem" }}
+                    style={{ padding: "0.55rem 0.85rem", fontSize: "0.82rem" }}
                   >
                     Clear
                   </a>
@@ -87,20 +89,17 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
             </form>
 
             {/* Category Filter Navigation */}
-            <div style={{ marginBottom: "1.25rem" }}>
-              <div style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "0.6rem" }}>
-                Filter by Category:
-              </div>
+            <div style={{ marginBottom: "0.85rem" }}>
               <CategoryBar categories={categories} activeSlug={categoryFilter} />
             </div>
 
             {/* Flavour Filter Navigation */}
             {uniqueFlavours.length > 0 && (
-              <div>
-                <div style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "0.6rem" }}>
-                  Filter by Flavour Note:
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", paddingTop: "0.5rem", borderTop: "1px solid var(--border-light)" }}>
+                <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", fontWeight: 600 }}>
+                  Flavours:
+                </span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                   {uniqueFlavours.map((flv) => {
                     const isSelected = flavourFilter === flv;
                     return (
@@ -109,13 +108,14 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
                         href={`/cakes?flavour=${encodeURIComponent(flv)}`}
                         style={{
                           textDecoration: "none",
-                          fontSize: "0.82rem",
-                          padding: "0.35rem 0.9rem",
+                          fontSize: "0.74rem",
+                          padding: "0.2rem 0.6rem",
                           borderRadius: "var(--radius-full)",
-                          background: isSelected ? "rgba(212, 175, 55, 0.25)" : "rgba(255, 255, 255, 0.04)",
+                          background: isSelected ? "var(--gold)" : "var(--bg-cream)",
                           border: isSelected ? "1px solid var(--gold)" : "1px solid var(--border-subtle)",
-                          color: isSelected ? "var(--gold-light)" : "var(--text-secondary)",
-                          transition: "all 0.2s",
+                          color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                          fontWeight: isSelected ? 600 : 500,
+                          transition: "all 0.15s",
                         }}
                       >
                         {flv}
@@ -129,22 +129,22 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
 
           {/* Active Filter Indicators */}
           {(searchFilter || flavourFilter) && (
-            <div style={{ marginBottom: "2rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>Active filters:</span>
+            <div style={{ marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Filtered by:</span>
               {searchFilter && (
-                <span className="cake-size-pill" style={{ color: "var(--gold-light)", borderColor: "var(--gold)" }}>
+                <span className="cake-size-pill" style={{ color: "var(--gold-dark)", borderColor: "var(--gold)" }}>
                   Search: "{searchFilter}"
                 </span>
               )}
               {flavourFilter && (
-                <span className="cake-size-pill" style={{ color: "var(--gold-light)", borderColor: "var(--gold)" }}>
+                <span className="cake-size-pill" style={{ color: "var(--gold-dark)", borderColor: "var(--gold)" }}>
                   Flavour: "{flavourFilter}"
                 </span>
               )}
             </div>
           )}
 
-          {/* Masonry Cake Gallery (NO PRICE) */}
+          {/* Responsive Cake Gallery (Desktop: 4, Tablet: 3, Mobile: STRICTLY 2) */}
           <MasonryGallery
             cakes={cakes}
             emptyMessage={

@@ -36,7 +36,7 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
       `Customer Name: ${customerName.trim()}`,
       `Phone: ${phone.trim()}`,
       "",
-      "Message:",
+      "Message / Date:",
       customMessage.trim() || "None",
     ];
 
@@ -48,31 +48,34 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
   return (
     <>
       <div
-        className="glass-card"
         style={{
-          padding: "2.5rem",
-          border: "1px solid var(--border-gold)",
-          marginTop: "2rem",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
+          padding: "1.25rem",
+          marginTop: "1.25rem",
+          boxShadow: "var(--shadow-xs)",
         }}
         id="order-enquiry-box"
       >
         <h3
           style={{
-            fontSize: "1.4rem",
-            color: "var(--gold-light)",
-            marginBottom: "1.25rem",
+            fontSize: "1.15rem",
+            color: "var(--text-primary)",
+            marginBottom: "0.85rem",
             display: "flex",
             alignItems: "center",
-            gap: "0.5rem",
+            gap: "0.4rem",
+            fontWeight: 600,
           }}
         >
-          <span>✨ Order / Enquire for Your Date</span>
+          <span>✨ Order / Enquire for Your Event</span>
         </h3>
 
         {/* Size Selector */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label className="form-label">Select Available Size / Tier:</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+        <div style={{ marginBottom: "1rem" }}>
+          <label className="form-label">Available Size / Portion Tier:</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
             {cake.available_sizes && cake.available_sizes.length > 0 ? (
               cake.available_sizes.map((size) => (
                 <button
@@ -80,99 +83,89 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
                   type="button"
                   onClick={() => setSelectedSize(size)}
                   style={{
-                    padding: "0.65rem 1.25rem",
+                    padding: "0.4rem 0.85rem",
                     borderRadius: "var(--radius-full)",
-                    fontSize: "0.9rem",
+                    fontSize: "0.8rem",
                     cursor: "pointer",
-                    transition: "all 0.2s",
+                    transition: "all 0.15s",
                     background:
                       selectedSize === size
-                        ? "rgba(212, 175, 55, 0.25)"
-                        : "rgba(255, 255, 255, 0.04)",
+                        ? "var(--gold)"
+                        : "var(--bg-main)",
                     border:
                       selectedSize === size
                         ? "1px solid var(--gold)"
                         : "1px solid var(--border-subtle)",
-                    color: selectedSize === size ? "var(--gold-light)" : "var(--text-secondary)",
-                    fontWeight: selectedSize === size ? 600 : 400,
+                    color: selectedSize === size ? "#FFFFFF" : "var(--text-secondary)",
+                    fontWeight: selectedSize === size ? 600 : 500,
                   }}
                 >
                   {size}
                 </button>
               ))
             ) : (
-              <span className="cake-size-pill">Custom Tier Available</span>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Custom portions on consultation</span>
             )}
           </div>
         </div>
 
-        {/* Quick Details Form */}
+        {/* Inline Quick WhatsApp Form */}
         <form onSubmit={handleDirectWhatsAppOrder}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "0.6rem" }}>
             <div>
-              <label className="form-label" htmlFor="detail-name">
-                Your Name *
-              </label>
+              <label className="form-label">Your Name *</label>
               <input
-                id="detail-name"
                 type="text"
+                required
                 placeholder="e.g. Eleanor Vance"
-                className="form-input"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                required
+                className="form-input"
+                style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
               />
             </div>
             <div>
-              <label className="form-label" htmlFor="detail-phone">
-                Phone Number *
-              </label>
+              <label className="form-label">Phone Number *</label>
               <input
-                id="detail-phone"
                 type="tel"
+                required
                 placeholder="e.g. +44 7911 123456"
-                className="form-input"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                required
+                className="form-input"
+                style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="detail-message">
-              Optional Inscription / Message / Event Date
-            </label>
+          <div style={{ marginBottom: "0.85rem" }}>
+            <label className="form-label">Event Date / Special Inscription (Optional)</label>
             <textarea
-              id="detail-message"
-              className="form-textarea"
               rows={2}
-              placeholder="e.g., 'Happy Anniversary James & Marie', delivery date next Friday, eggless preference..."
+              placeholder="e.g. 'Happy 30th Sophia', delivery next Friday, eggless preference..."
               value={customMessage}
               onChange={(e) => setCustomMessage(e.target.value)}
-            ></textarea>
+              className="form-textarea"
+              style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+            />
           </div>
 
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
-            <button
-              type="submit"
-              className="btn-whatsapp"
-              id="detail-order-btn"
-              style={{ flex: 1, padding: "1rem", fontSize: "1rem" }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
-              </svg>
-              Order on WhatsApp
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="btn-whatsapp"
+            style={{
+              width: "100%",
+              padding: "0.65rem 1rem",
+              fontSize: "0.88rem",
+              justifyContent: "center",
+            }}
+            id="detail-order-btn"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
+            </svg>
+            <span>Enquire & Order on WhatsApp</span>
+          </button>
         </form>
       </div>
 
@@ -180,6 +173,7 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
         cake={cake}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        initialSize={selectedSize}
       />
     </>
   );

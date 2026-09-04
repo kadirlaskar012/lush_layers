@@ -39,42 +39,77 @@ export default function ApprovedCakesPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+      {/* Header - Compact */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <span className="cake-category-badge">Approved Staging</span>
-          <h1 style={{ fontSize: "2.4rem", color: "var(--text-primary)" }}>
+          <h1 style={{ fontSize: "1.5rem", color: "var(--text-primary)", fontWeight: 700 }}>
             Approved Cakes Ready for Publishing ({cakes.length})
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-            These confections have passed human review and are ready to be published to the public catalog.
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+            These confections have passed human review and can be published live with one click.
           </p>
         </div>
-        <Link href="/admin/cakes/pending" className="btn-outline-gold">
+        <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
           View Pending Queue
         </Link>
       </div>
 
       {cakes.length === 0 && !loading ? (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px dashed var(--border-gold)" }}>
-          No approved cakes waiting to be published.
+        <div style={{ textAlign: "center", padding: "2.5rem 1.5rem", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px dashed var(--gold-border)" }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>
+            No approved cakes staged. Approved confections will appear here before being published live.
+          </p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "2rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
           {cakes.map((cake) => (
-            <div key={cake.id} className="glass-card" style={{ padding: "1.5rem" }}>
-              <div style={{ background: "#FFFFFF", borderRadius: "8px", height: "200px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+            <div
+              key={cake.id}
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "1rem",
+                boxShadow: "var(--shadow-xs)",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "1/1",
+                  background: "#FFFFFF",
+                  borderRadius: "var(--radius-xs)",
+                  padding: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "0.75rem",
+                  border: "1px solid var(--border-light)",
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={cake.image_url} alt="" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                <img
+                  src={cake.image_url}
+                  alt={cake.name}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
               </div>
-              <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>{cake.name}</h3>
-              <p style={{ fontSize: "0.85rem", color: "var(--gold-light)", fontStyle: "italic", marginBottom: "1rem" }}>{cake.flavour}</p>
+
+              <h4 style={{ fontSize: "0.95rem", color: "var(--text-primary)", fontWeight: 600, marginBottom: "0.2rem" }}>
+                {cake.name}
+              </h4>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.75rem" }}>
+                {cake.flavour}
+              </p>
+
               <button
                 onClick={() => handlePublish(cake.id)}
                 disabled={actionLoading === cake.id}
                 className="btn-gold"
-                style={{ width: "100%", padding: "0.75rem" }}
+                style={{ width: "100%", padding: "0.45rem", fontSize: "0.8rem", justifyContent: "center" }}
               >
-                Publish to Public Storefront 🚀
+                🚀 Publish Live to Storefront
               </button>
             </div>
           ))}

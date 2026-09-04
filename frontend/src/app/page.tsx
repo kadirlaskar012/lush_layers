@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicLayout from "../components/PublicLayout";
 import MasonryGallery from "../components/MasonryGallery";
 import CategoryBar from "../components/CategoryBar";
+import CakeCard from "../components/CakeCard";
 import { ReviewCard } from "../components/ReviewComponents";
 import { getPublishedCakes, getCategories, getApprovedReviews } from "../lib/api";
 
@@ -16,213 +17,238 @@ export default async function HomePage() {
   ]);
 
   const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const heroCake = cakes && cakes.length > 0 ? cakes[0] : null;
+  const featuredCakes = cakes ? cakes.slice(0, 8) : [];
 
   return (
     <PublicLayout>
-      {/* 1. LUXURY HERO SECTION */}
+      {/* 1. COMPACT HERO SECTION (Balanced 2-column layout that fits above fold) */}
       <section
         style={{
           position: "relative",
-          padding: "6rem 0 7rem",
-          overflow: "hidden",
+          padding: "2.25rem 0 2rem",
+          background: "linear-gradient(180deg, #FFFFFF 0%, var(--bg-main) 100%)",
           borderBottom: "1px solid var(--border-subtle)",
+          overflow: "hidden",
         }}
         id="hero-section"
       >
-        <div
-          style={{
-            position: "absolute",
-            top: "-20%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: "800px",
-            height: "500px",
-            background: "radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, rgba(14, 11, 10, 0) 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        <div className="container-lux" style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-            <span
-              style={{
-                fontFamily: "var(--font-editorial)",
-                fontSize: "1.1rem",
-                letterSpacing: "0.25em",
-                color: "var(--gold)",
-                textTransform: "uppercase",
-                fontStyle: "italic",
-              }}
-            >
-              Artisanal Haute Pâtisserie
-            </span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
-              lineHeight: 1.15,
-              marginBottom: "1.5rem",
-              maxWidth: "1000px",
-              marginLeft: "auto",
-              marginRight: "auto",
-            }}
-          >
-            Couture Confections, <br />
-            <span className="text-gold-gradient">Crafted with Pure Love</span>
-          </h1>
-
-          <p
-            style={{
-              fontSize: "1.1rem",
-              color: "var(--text-secondary)",
-              maxWidth: "680px",
-              margin: "0 auto 2.5rem",
-              lineHeight: "1.8",
-              fontWeight: 300,
-            }}
-          >
-            Where architectural elegance meets pure indulgence. Every bespoke tier, velvety cream, and gilded flourish is handcrafted to order for your unforgettable celebrations.
-          </p>
-
-          <div style={{ display: "flex", justifyContent: "center", gap: "1.25rem", flexWrap: "wrap" }}>
-            <Link href="/cakes" className="btn-gold" id="hero-browse-btn">
-              Explore Collection
-            </Link>
-            <a
-              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20ordering%20a%20bespoke%20cake.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-whatsapp"
-              id="hero-whatsapp-btn"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
-              </svg>
-              Order on WhatsApp
-            </a>
-          </div>
-
+        <div className="container-lux">
           <div
             style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "3rem",
-              marginTop: "4.5rem",
-              flexWrap: "wrap",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+              alignItems: "center",
+              gap: "2rem",
             }}
           >
+            {/* Left: Compact Copy & CTAs */}
             <div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.8rem", color: "var(--gold-light)" }}>
-                100%
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    letterSpacing: "0.15em",
+                    color: "var(--gold-dark)",
+                    textTransform: "uppercase",
+                    fontWeight: 700,
+                    background: "var(--gold-subtle)",
+                    padding: "0.2rem 0.6rem",
+                    borderRadius: "var(--radius-full)",
+                    border: "1px solid var(--gold-border)",
+                  }}
+                >
+                  ✨ Haute Pâtisserie Atelier
+                </span>
               </div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                Artisanal Handcrafted
+
+              <h1
+                style={{
+                  fontSize: "clamp(1.75rem, 3.8vw, 2.6rem)",
+                  lineHeight: 1.18,
+                  marginBottom: "0.85rem",
+                  color: "var(--text-primary)",
+                  fontWeight: 700,
+                }}
+              >
+                Couture Confections, <br />
+                <span className="text-gold-gradient">Crafted with Pure Love</span>
+              </h1>
+
+              <p
+                style={{
+                  fontSize: "0.92rem",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                  marginBottom: "1.25rem",
+                  maxWidth: "520px",
+                }}
+              >
+                Architectural tiers, velvety ganache, and hand-piped florals. Every bespoke creation is crafted fresh for your most cherished milestones.
+              </p>
+
+              {/* Compact CTA Row */}
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+                <Link href="/cakes" className="btn-gold" id="hero-browse-btn">
+                  Explore Catalog
+                </Link>
+                <a
+                  href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20ordering%20a%20bespoke%20cake.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-whatsapp"
+                  id="hero-whatsapp-btn"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
+                  </svg>
+                  <span>Order on WhatsApp</span>
+                </a>
+              </div>
+
+              {/* Compact Trust Features */}
+              <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span style={{ color: "var(--gold)" }}>✓</span>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>100% Artisanal</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span style={{ color: "var(--gold)" }}>✓</span>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>Direct WhatsApp Dialogue</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                  <span style={{ color: "var(--gold)" }}>✓</span>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>Studio White Photography</span>
+                </div>
               </div>
             </div>
-            <div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.8rem", color: "var(--gold-light)" }}>
-                Zero Online Friction
+
+            {/* Right: Compact Featured Hero Cake Visual */}
+            {heroCake && (
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <div
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-lg)",
+                    padding: "1rem",
+                    boxShadow: "var(--shadow-md)",
+                    maxWidth: "340px",
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "12px",
+                      right: "12px",
+                      background: "var(--gold-subtle)",
+                      border: "1px solid var(--gold-border)",
+                      color: "var(--gold-dark)",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "var(--radius-full)",
+                    }}
+                  >
+                    ✨ Master Creation
+                  </div>
+
+                  <Link href={`/cakes/${heroCake.slug}`} style={{ textDecoration: "none", display: "block" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1/1",
+                        background: "#FFFFFF",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "0.5rem",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={heroCake.image_url}
+                        alt={heroCake.name}
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      />
+                    </div>
+                  </Link>
+
+                  <div style={{ paddingTop: "0.75rem", textAlign: "center" }}>
+                    <span style={{ fontSize: "0.68rem", color: "var(--gold-dark)", textTransform: "uppercase", fontWeight: 600 }}>
+                      {heroCake.category_name || "Signature"}
+                    </span>
+                    <h3 style={{ fontSize: "1.05rem", color: "var(--text-primary)", margin: "0.2rem 0" }}>
+                      {heroCake.name}
+                    </h3>
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.6rem" }}>
+                      {heroCake.flavour}
+                    </p>
+                    <Link
+                      href={`/cakes/${heroCake.slug}`}
+                      className="btn-outline-gold"
+                      style={{ width: "100%", padding: "0.4rem 0.8rem", fontSize: "0.78rem" }}
+                    >
+                      View Confection Details
+                    </Link>
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                WhatsApp Direct Dialogue
-              </div>
-            </div>
-            <div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: "1.8rem", color: "var(--gold-light)" }}>
-                Clean Studio
-              </div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                Bespoke Sizing & Flavours
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* 2. CATEGORIES SHOWCASE */}
-      <section style={{ padding: "5rem 0" }} id="categories">
+      {/* 2. COMPACT CATEGORIES BAR */}
+      <section style={{ padding: "1.5rem 0", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-light)" }} id="categories">
         <div className="container-lux">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              <span className="cake-category-badge">Curated Portfolios</span>
-              <h2 style={{ fontSize: "2.2rem", color: "var(--text-primary)" }}>
-                Explore by Occasion & Taste
-              </h2>
-            </div>
-            <Link href="/cakes" style={{ color: "var(--gold-light)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500 }}>
-              View All Confections →
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Explore Collections
+            </span>
+            <Link href="/cakes" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.8rem", fontWeight: 600 }}>
+              View All ({cakes ? cakes.length : 0}) →
             </Link>
           </div>
+          <CategoryBar categories={categories} />
+        </div>
+      </section>
 
-          {/* Horizontal Category Bar */}
-          <div style={{ marginBottom: "2.5rem" }}>
-            <CategoryBar categories={categories} />
+      {/* 3. SIGNATURE CREATIONS GRID (Desktop: 4 cols, Tablet: 3 cols, Mobile: STRICTLY 2 COLS) */}
+      <section style={{ padding: "2.5rem 0 2rem" }} id="signature-creations">
+        <div className="container-lux">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div>
+              <span className="cake-category-badge">Boutique Portfolio</span>
+              <h2 style={{ fontSize: "1.5rem", color: "var(--text-primary)", lineHeight: 1.2 }}>
+                Our Signature Creations
+              </h2>
+            </div>
+            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", maxWidth: "420px" }}>
+              Studio white photography. Tap <strong>Order on WhatsApp</strong> to choose custom size and event date.
+            </p>
           </div>
 
-          {/* Category Cards Grid */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "1.5rem",
-            }}
-          >
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/category/${cat.slug}`}
-                className="glass-card"
-                style={{
-                  textDecoration: "none",
-                  padding: "2rem 1.5rem",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: "180px",
-                }}
-                id={`category-card-${cat.slug}`}
-              >
-                <div
-                  style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "50%",
-                    background: "rgba(212, 175, 55, 0.12)",
-                    border: "1px solid var(--border-gold)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.5rem",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  🎂
-                </div>
-                <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-                  {cat.name}
-                </h3>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
-                  {cat.description || "Artisanal boutique confections"}
-                </p>
-              </Link>
+          <div className="cake-grid-responsive">
+            {featuredCakes.map((cake) => (
+              <CakeCard key={cake.id} cake={cake} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* 3. MASONRY CAKE GALLERY */}
-      <section style={{ padding: "3rem 0 6rem" }} id="gallery">
+      {/* 4. COMPACT MASONRY GALLERY */}
+      <section style={{ padding: "2.5rem 0 3rem", background: "var(--bg-cream)", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)" }} id="gallery">
         <div className="container-lux">
-          <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 3.5rem" }}>
-            <span className="cake-category-badge">The Masterpiece Gallery</span>
-            <h2 style={{ fontSize: "2.5rem", color: "var(--text-primary)", marginBottom: "0.75rem" }}>
-              Our Signature Creations
+          <div style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto 1.75rem" }}>
+            <span className="cake-category-badge">The Inspiration Wall</span>
+            <h2 style={{ fontSize: "1.6rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+              Artisanal Haute Gallery
             </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-              Every cake is photographed on pure studio white to capture each sculpted petal, rich cocoa nuance, and golden accent. Click <strong>Order on WhatsApp</strong> on any cake to tailor your size and flavours.
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem" }}>
+              A tapestry of multi-tiered silhouettes, botanical petals, and rich dark Belgian ganache.
             </p>
           </div>
 
@@ -230,34 +256,27 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 4. CUSTOMER REVIEWS */}
-      <section
-        style={{
-          padding: "6rem 0",
-          background: "var(--bg-surface)",
-          borderTop: "1px solid var(--border-subtle)",
-          borderBottom: "1px solid var(--border-subtle)",
-        }}
-        id="reviews"
-      >
+      {/* 5. COMPACT GUEST REVIEWS */}
+      <section style={{ padding: "2.5rem 0", background: "var(--bg-surface)" }} id="reviews">
         <div className="container-lux">
-          <div style={{ textAlign: "center", maxWidth: "700px", margin: "0 auto 3.5rem" }}>
-            <span className="cake-category-badge">Guest Testimonials</span>
-            <h2 style={{ fontSize: "2.4rem", color: "var(--text-primary)", marginBottom: "0.75rem" }}>
-              Words of Delight
-            </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-              Real praise from patrons whose weddings, birthdays, and anniversaries were illuminated by our cakes.
-            </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <div>
+              <span className="cake-category-badge">Guest Praise</span>
+              <h2 style={{ fontSize: "1.5rem", color: "var(--text-primary)" }}>
+                Words of Delight
+              </h2>
+            </div>
+            <Link href="/reviews" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600 }}>
+              All Testimonials ({reviews?.length || 0}) →
+            </Link>
           </div>
 
           {reviews && reviews.length > 0 ? (
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                gap: "2rem",
-                marginBottom: "3rem",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: "1rem",
               }}
             >
               {reviews.slice(0, 3).map((review) => (
@@ -265,117 +284,71 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-muted)" }}>
-              No reviews yet. Be the first guest to share your celebration!
-            </div>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No reviews yet.</p>
           )}
-
-          <div style={{ textAlign: "center" }}>
-            <Link href="/reviews" className="btn-outline-gold">
-              Read All Testimonials & Share Yours →
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* 5. ABOUT LUSH LAYERS */}
-      <section style={{ padding: "7rem 0" }} id="about">
+      {/* 6. COMPACT ATELIER PHILOSOPHY & WHATSAPP CONSULTATION */}
+      <section style={{ padding: "2.5rem 0", background: "var(--bg-main)", borderTop: "1px solid var(--border-subtle)" }} id="about">
         <div className="container-lux">
           <div
             style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-lg)",
+              padding: "1.75rem",
+              boxShadow: "var(--shadow-xs)",
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "4rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               alignItems: "center",
+              gap: "2rem",
             }}
           >
             <div>
-              <span className="cake-category-badge">Philosophy & Atelier</span>
-              <h2 style={{ fontSize: "2.6rem", lineHeight: 1.2, marginBottom: "1.5rem" }}>
-                Bespoke Artistry, <br />
-                <span className="text-gold-gradient">Made with True Love</span>
-              </h2>
-              <p style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: "1.8", marginBottom: "1.25rem" }}>
-                At <strong>LUSH LAYERS</strong>, we believe that an extraordinary celebration deserves an extraordinary centerpiece. We reject mass-production and pre-baked tiers in favor of slow, deliberate craftsmanship.
+              <span className="cake-category-badge">Artisanal Manifesto</span>
+              <h3 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.6rem" }}>
+                Slow Craftsmanship. Pure Single-Origin Cocoa. Hand-Piped Petals.
+              </h3>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem", lineHeight: 1.6, marginBottom: "1rem" }}>
+                Every sponge is baked fresh from European churned butter and organic grains. We work closely with each patron over WhatsApp to tailor flavours, tiers, and personalized message cards.
               </p>
-              <p style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: "1.8", marginBottom: "2rem" }}>
-                Every sponge is baked fresh from organic grain and European churned butter; every ganache originates from single-origin Callebaut Belgian chocolate; every flower is piped petal-by-petal with delicate Swiss buttercream.
-              </p>
-
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <Link href="/about" className="btn-gold">
-                  Our Story & Origins
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <Link href="/about" className="btn-outline-gold" style={{ padding: "0.45rem 0.95rem", fontSize: "0.8rem" }}>
+                  Read Atelier Story
                 </Link>
-                <Link href="/contact" className="btn-outline-gold">
-                  Visit the Atelier
+                <Link href="/contact" className="btn-outline-gold" style={{ padding: "0.45rem 0.95rem", fontSize: "0.8rem" }}>
+                  Bespoke Brief
                 </Link>
               </div>
             </div>
 
             <div
-              className="glass-card"
               style={{
-                padding: "3rem",
-                border: "1px solid var(--border-gold)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.5rem",
+                background: "var(--bg-cream)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "1.25rem",
+                textAlign: "center",
               }}
             >
-              <div style={{ borderBottom: "1px solid var(--border-subtle)", paddingBottom: "1.25rem" }}>
-                <h4 style={{ color: "var(--gold-light)", fontSize: "1.15rem", marginBottom: "0.35rem" }}>
-                  Bespoke Consultations
-                </h4>
-                <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-                  Direct WhatsApp communication allows personalized flavour tastings, custom tiers, and dietary customizations.
-                </p>
-              </div>
-              <div style={{ borderBottom: "1px solid var(--border-subtle)", paddingBottom: "1.25rem" }}>
-                <h4 style={{ color: "var(--gold-light)", fontSize: "1.15rem", marginBottom: "0.35rem" }}>
-                  Single-Origin Cocoa
-                </h4>
-                <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-                  Imported Belgian Callebaut 70% and velvety white chocolate mousse layers crafted without artificial stabilizers.
-                </p>
-              </div>
-              <div>
-                <h4 style={{ color: "var(--gold-light)", fontSize: "1.15rem", marginBottom: "0.35rem" }}>
-                  Pristine Presentation
-                </h4>
-                <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-                  Studio-quality finishing delivered in climate-controlled transport to guarantee flawless arrival at your venue.
-                </p>
-              </div>
+              <h4 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                Have an Upcoming Celebration?
+              </h4>
+              <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1rem" }}>
+                Chat directly with our head baker. Share your guest count and date for immediate personal consultation.
+              </p>
+              <a
+                href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20consult%20about%20a%20cake%20for%20my%20event.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-whatsapp"
+                style={{ width: "100%", padding: "0.55rem 1rem", fontSize: "0.84rem" }}
+              >
+                Chat on WhatsApp Now
+              </a>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* 6. WHATSAPP ENQUIRY BANNER */}
-      <section
-        style={{
-          padding: "5rem 0",
-          background: "linear-gradient(135deg, #1C1614 0%, #120E0D 100%)",
-          borderTop: "1px solid var(--border-gold)",
-          textAlign: "center",
-        }}
-      >
-        <div className="container-lux">
-          <h2 style={{ fontSize: "2.2rem", color: "var(--text-primary)", marginBottom: "1rem" }}>
-            Ready to Celebrate in Unmatched Elegance?
-          </h2>
-          <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: "600px", margin: "0 auto 2rem" }}>
-            Reach out directly through WhatsApp. Our master baker will discuss your event, recommended portions, and bespoke design.
-          </p>
-          <a
-            href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20place%20an%20enquiry.`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-whatsapp"
-            style={{ padding: "1rem 2.5rem", fontSize: "1rem" }}
-          >
-            Chat with Our Master Baker on WhatsApp
-          </a>
         </div>
       </section>
     </PublicLayout>

@@ -15,7 +15,7 @@ export default function CakeCard({ cake }: CakeCardProps) {
   return (
     <>
       <div className="cake-card" id={`cake-card-${cake.slug}`}>
-        {/* Visual-First Studio Image */}
+        {/* Studio White Image Container */}
         <Link href={`/cakes/${cake.slug}`} style={{ textDecoration: "none" }}>
           <div className="cake-card-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -28,58 +28,52 @@ export default function CakeCard({ cake }: CakeCardProps) {
           </div>
         </Link>
 
-        {/* Cake Details */}
+        {/* Compact Details */}
         <div className="cake-card-body">
           {cake.category_name && (
             <span className="cake-category-badge">{cake.category_name}</span>
           )}
 
           <Link href={`/cakes/${cake.slug}`} style={{ textDecoration: "none" }}>
-            <h3 className="cake-title">{cake.name}</h3>
+            <h3 className="cake-title" title={cake.name}>{cake.name}</h3>
           </Link>
 
-          <div className="cake-flavour">
+          <div className="cake-flavour" title={cake.flavour}>
             <span>✨ {cake.flavour}</span>
           </div>
 
           {/* Available Sizes (NO PRICE) */}
           {cake.available_sizes && cake.available_sizes.length > 0 && (
             <div className="cake-sizes-wrap">
-              {cake.available_sizes.map((size, idx) => (
+              {cake.available_sizes.slice(0, 2).map((size, idx) => (
                 <span key={idx} className="cake-size-pill">
-                  {size}
+                  {size.replace(/ \([^)]*\)/, "")}
                 </span>
               ))}
+              {cake.available_sizes.length > 2 && (
+                <span className="cake-size-pill">+{cake.available_sizes.length - 2}</span>
+              )}
             </div>
           )}
 
-          {/* CTAs */}
-          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+          {/* Compact WhatsApp CTA */}
+          <div className="cake-card-footer">
             <button
               onClick={() => setIsModalOpen(true)}
               className="btn-whatsapp"
               style={{
-                flex: 1,
-                padding: "0.75rem 1rem",
-                fontSize: "0.85rem",
-                borderRadius: "var(--radius-full)",
+                width: "100%",
+                padding: "0.45rem 0.65rem",
+                fontSize: "0.78rem",
               }}
               id={`order-btn-${cake.slug}`}
+              aria-label={`Order ${cake.name} on WhatsApp`}
             >
-              Order on WhatsApp
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
+              </svg>
+              <span>Order on WhatsApp</span>
             </button>
-
-            <Link
-              href={`/cakes/${cake.slug}`}
-              className="btn-outline-gold"
-              style={{
-                padding: "0.75rem 1rem",
-                fontSize: "0.85rem",
-              }}
-              aria-label={`View details for ${cake.name}`}
-            >
-              Details
-            </Link>
           </div>
         </div>
       </div>

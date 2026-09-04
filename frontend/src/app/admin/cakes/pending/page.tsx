@@ -98,7 +98,7 @@ export default function PendingCakesPage() {
     try {
       await publishCake(cakeId);
       setCakes(cakes.filter((c) => c.id !== cakeId));
-      setFeedback({ id: cakeId, msg: "Cake successfully published to live website! ISR revalidation triggered.", type: "success" });
+      setFeedback({ id: cakeId, msg: "Cake published live! ISR revalidation triggered.", type: "success" });
     } catch (err: any) {
       setFeedback({ id: cakeId, msg: err.message, type: "error" });
     } finally {
@@ -134,33 +134,33 @@ export default function PendingCakesPage() {
 
   return (
     <div id="pending-cakes-view">
-      {/* Header */}
+      {/* Header - Compact */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "2rem",
+          marginBottom: "1.25rem",
           flexWrap: "wrap",
-          gap: "1rem",
+          gap: "0.75rem",
         }}
       >
         <div>
           <span className="cake-category-badge">Human Review Atelier</span>
-          <h1 style={{ fontSize: "2.4rem", color: "var(--text-primary)" }}>
-            Pending Cake Approval Queue ({cakes.length})
+          <h1 style={{ fontSize: "1.5rem", color: "var(--text-primary)", fontWeight: 700 }}>
+            Pending Approval Queue ({cakes.length})
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-            AI never automatically publishes a cake. Review processed images, edit AI suggestions, regenerate, and approve before publishing.
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+            AI never automatically publishes. Review processed studio cutouts, edit metadata, or approve in one click.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "1rem" }}>
-          <button onClick={loadData} className="btn-outline-gold" style={{ padding: "0.6rem 1.25rem" }}>
-            🔄 Refresh List
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <button onClick={loadData} className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+            🔄 Refresh
           </button>
-          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.6rem 1.25rem" }}>
-            + Upload More Images
+          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+            + Bulk Upload
           </Link>
         </div>
       </div>
@@ -168,13 +168,14 @@ export default function PendingCakesPage() {
       {feedback && (
         <div
           style={{
-            padding: "1rem 1.5rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "2rem",
-            background: feedback.type === "success" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-            border: feedback.type === "success" ? "1px solid #10B981" : "1px solid #EF4444",
-            color: feedback.type === "success" ? "#34D399" : "#F87171",
-            fontSize: "0.95rem",
+            padding: "0.6rem 0.95rem",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "1rem",
+            background: feedback.type === "success" ? "#D1FAE5" : "#FEE2E2",
+            border: feedback.type === "success" ? "1px solid #A7F3D0" : "1px solid #FECACA",
+            color: feedback.type === "success" ? "#065F46" : "#991B1B",
+            fontSize: "0.84rem",
+            fontWeight: 500,
           }}
         >
           {feedback.msg}
@@ -186,29 +187,29 @@ export default function PendingCakesPage() {
         <div
           style={{
             textAlign: "center",
-            padding: "5rem 2rem",
+            padding: "3rem 1.5rem",
             background: "var(--bg-surface)",
-            border: "1px dashed var(--border-gold)",
-            borderRadius: "var(--radius-lg)",
+            border: "1px dashed var(--gold-border)",
+            borderRadius: "var(--radius-md)",
             marginTop: "1rem",
           }}
           id="empty-pending-state"
         >
-          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✨</div>
-          <h3 style={{ fontSize: "1.6rem", color: "var(--gold-light)", marginBottom: "0.5rem" }}>
+          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>✨</div>
+          <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
             No pending cakes.
           </h3>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", marginBottom: "1.5rem" }}>
-            All uploaded creations have been reviewed and approved or no pending uploads currently exist.
+          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+            All ingested confections have been approved or rejected. Upload new cake photos to review.
           </p>
-          <Link href="/admin/upload" className="btn-gold">
-            Upload Cake Images Now
+          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.5rem 1.1rem", fontSize: "0.82rem" }}>
+            Upload 20+ Images
           </Link>
         </div>
       )}
 
-      {/* Pending Cakes List */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+      {/* Pending Cakes List - High Information Density */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         {cakes.map((cake) => {
           const isEditing = editingCakeId === cake.id;
           const isBusy = actionLoading === cake.id;
@@ -216,249 +217,215 @@ export default function PendingCakesPage() {
           return (
             <div
               key={cake.id}
-              className="glass-card"
               style={{
-                padding: "2rem",
-                border: "1px solid var(--border-gold)",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "1rem",
+                boxShadow: "var(--shadow-xs)",
               }}
-              id={`pending-cake-card-${cake.id}`}
+              id={`pending-card-${cake.id}`}
             >
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                  gap: "2.5rem",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  gap: "1.25rem",
+                  alignItems: "start",
                 }}
               >
-                {/* Left: Studio White Cutout Preview */}
-                <div>
+                {/* Left: Studio White Image Preview */}
+                <div style={{ maxWidth: "260px", width: "100%" }}>
                   <div
                     style={{
                       background: "#FFFFFF",
-                      borderRadius: "12px",
-                      padding: "1.5rem",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border-light)",
+                      padding: "0.75rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      minHeight: "320px",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-                      marginBottom: "1rem",
+                      aspectRatio: "1/1",
+                      marginBottom: "0.5rem",
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={cake.image_url}
                       alt={cake.name}
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "300px",
-                        objectFit: "contain",
-                      }}
+                      style={{ width: "100%", height: "100%", objectFit: "contain" }}
                     />
                   </div>
 
-                  {/* Status Badges */}
-                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                    <span
-                      style={{
-                        fontSize: "0.72rem",
-                        padding: "0.25rem 0.6rem",
-                        borderRadius: "9999px",
-                        background: "rgba(245, 158, 11, 0.2)",
-                        color: "#FBBF24",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Status: {cake.status}
+                  <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+                    <span className="badge-status badge-pending">Pending Approval</span>
+                    <span style={{ fontSize: "0.68rem", background: "var(--bg-cream)", padding: "0.15rem 0.45rem", borderRadius: "var(--radius-full)", color: "var(--text-secondary)" }}>
+                      Studio White
                     </span>
-                    <span
-                      style={{
-                        fontSize: "0.72rem",
-                        padding: "0.25rem 0.6rem",
-                        borderRadius: "9999px",
-                        background: "rgba(16, 185, 129, 0.15)",
-                        color: "#34D399",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Image: Studio White Ready
-                    </span>
-                    {cake.ai_metadata?.confidence && (
-                      <span
-                        style={{
-                          fontSize: "0.72rem",
-                          padding: "0.25rem 0.6rem",
-                          borderRadius: "9999px",
-                          background: "rgba(99, 102, 241, 0.15)",
-                          color: "#818CF8",
-                          fontWeight: 600,
-                        }}
-                      >
-                        AI Confidence: {Math.round(cake.ai_metadata.confidence * 100)}%
-                      </span>
-                    )}
                   </div>
 
                   <button
                     onClick={() => handleReprocess(cake.id)}
                     disabled={isBusy}
-                    className="btn-outline-gold"
-                    style={{ width: "100%", padding: "0.6rem", fontSize: "0.82rem" }}
+                    style={{
+                      width: "100%",
+                      padding: "0.35rem 0.6rem",
+                      fontSize: "0.72rem",
+                      background: "var(--bg-cream)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-xs)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
                   >
-                    🎨 Reprocess Image / Cutout
+                    🎨 Reprocess Cutout
                   </button>
                 </div>
 
-                {/* Right: Cake Metadata & AI Suggestions (Editable) */}
-                <div>
+                {/* Middle: Cake Metadata / Inline Editor */}
+                <div style={{ flex: 1 }}>
                   {isEditing ? (
-                    // EDIT MODE
-                    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                       <div>
-                        <label className="form-label">Cake Name *</label>
+                        <label className="form-label">Cake Title</label>
                         <input
                           type="text"
-                          className="form-input"
                           value={editForm.name || ""}
                           onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="form-label">Flavour *</label>
-                        <input
-                          type="text"
                           className="form-input"
-                          value={editForm.flavour || ""}
-                          onChange={(e) => setEditForm({ ...editForm, flavour: e.target.value })}
+                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
                         />
                       </div>
 
-                      <div>
-                        <label className="form-label">Category</label>
-                        <select
-                          className="form-select"
-                          value={editForm.category_id || ""}
-                          onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
-                        >
-                          <option value="">Select Category...</option>
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+                        <div>
+                          <label className="form-label">Flavour Note</label>
+                          <input
+                            type="text"
+                            value={editForm.flavour || ""}
+                            onChange={(e) => setEditForm({ ...editForm, flavour: e.target.value })}
+                            className="form-input"
+                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Category</label>
+                          <select
+                            value={editForm.category_id || ""}
+                            onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                            className="form-select"
+                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
+                          >
+                            <option value="">Select Category</option>
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
                       <div>
                         <label className="form-label">Description</label>
                         <textarea
-                          className="form-textarea"
-                          rows={3}
+                          rows={2}
                           value={editForm.description || ""}
                           onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="form-textarea"
+                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
                         />
                       </div>
 
-                      <div>
-                        <label className="form-label">Available Sizes (Comma separated)</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={(editForm.available_sizes || []).join(", ")}
-                          onChange={(e) =>
-                            setEditForm({
-                              ...editForm,
-                              available_sizes: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                            })
-                          }
-                        />
-                      </div>
-
-                      <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+                      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
                         <button
                           onClick={() => saveEdit(cake.id)}
                           disabled={isBusy}
                           className="btn-gold"
-                          style={{ padding: "0.75rem 1.5rem" }}
+                          style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
                         >
-                          Save Changes
+                          💾 Save Changes
                         </button>
                         <button
                           onClick={() => setEditingCakeId(null)}
                           className="btn-outline-gold"
-                          style={{ padding: "0.75rem 1.25rem" }}
+                          style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    // VIEW MODE (AI suggestions presented clearly)
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.35rem" }}>
                         <div>
-                          <span className="cake-category-badge">
+                          <span style={{ fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--gold-dark)", fontWeight: 700 }}>
                             {cake.category_name || "Uncategorized"}
                           </span>
-                          <h2 style={{ fontSize: "1.85rem", color: "var(--gold-light)", lineHeight: 1.2 }}>
+                          <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", margin: "0.15rem 0 0.35rem", fontWeight: 700 }}>
                             {cake.name}
-                          </h2>
+                          </h3>
                         </div>
                         <button
                           onClick={() => startEditing(cake)}
-                          className="btn-outline-gold"
-                          style={{ padding: "0.45rem 1rem", fontSize: "0.82rem" }}
-                          id={`edit-cake-btn-${cake.id}`}
+                          style={{
+                            background: "var(--bg-cream)",
+                            border: "1px solid var(--border-subtle)",
+                            borderRadius: "var(--radius-xs)",
+                            padding: "0.25rem 0.6rem",
+                            fontSize: "0.75rem",
+                            cursor: "pointer",
+                            color: "var(--text-primary)",
+                            fontWeight: 500,
+                          }}
                         >
-                          ✏️ Edit Details
+                          ✎ Edit
                         </button>
                       </div>
 
-                      <div style={{ marginBottom: "1.25rem", fontStyle: "italic", color: "var(--text-secondary)" }}>
-                        Flavour: <strong>{cake.flavour}</strong>
+                      <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.5rem" }}>
+                        ✨ {cake.flavour}
                       </div>
 
-                      <div style={{ marginBottom: "1.25rem" }}>
-                        <div style={{ fontSize: "0.78rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
-                          AI Suggested Description:
-                        </div>
-                        <p style={{ color: "var(--text-primary)", fontSize: "0.95rem", lineHeight: "1.7" }}>
-                          {cake.description}
-                        </p>
-                      </div>
-
-                      <div style={{ marginBottom: "1.5rem" }}>
-                        <div style={{ fontSize: "0.78rem", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.35rem" }}>
-                          Available Sizes:
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-                          {cake.available_sizes?.map((size, sIdx) => (
-                            <span key={sIdx} className="cake-size-pill">
-                              {size}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Action Buttons: Edit, Regenerate, Approve, Reject, Publish */}
                       <div
                         style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "0.75rem",
-                          borderTop: "1px solid var(--border-subtle)",
-                          paddingTop: "1.5rem",
+                          background: "var(--bg-main)",
+                          padding: "0.6rem 0.8rem",
+                          borderRadius: "var(--radius-xs)",
+                          border: "1px solid var(--border-light)",
+                          fontSize: "0.8rem",
+                          color: "var(--text-secondary)",
+                          lineHeight: 1.5,
+                          marginBottom: "0.6rem",
                         }}
                       >
+                        {cake.description || "No description provided."}
+                      </div>
+
+                      {/* Sizes badges */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem", marginBottom: "0.85rem" }}>
+                        {cake.available_sizes?.map((sz, idx) => (
+                          <span key={idx} className="cake-size-pill">
+                            {sz}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Quick Review Actions */}
+                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                         <button
                           onClick={() => handleRegenerateAI(cake.id)}
                           disabled={isBusy}
-                          className="btn-outline-gold"
-                          style={{ padding: "0.75rem 1.25rem", fontSize: "0.88rem" }}
-                          id={`regen-ai-btn-${cake.id}`}
+                          style={{
+                            background: "var(--bg-surface)",
+                            border: "1px solid var(--gold-border)",
+                            color: "var(--gold-dark)",
+                            padding: "0.4rem 0.75rem",
+                            borderRadius: "var(--radius-full)",
+                            fontSize: "0.78rem",
+                            cursor: "pointer",
+                            fontWeight: 500,
+                          }}
                         >
                           ✨ Regenerate AI
                         </button>
@@ -466,39 +433,42 @@ export default function PendingCakesPage() {
                         <button
                           onClick={() => handleApprove(cake.id)}
                           disabled={isBusy}
-                          className="btn-outline-gold"
                           style={{
-                            padding: "0.75rem 1.25rem",
-                            fontSize: "0.88rem",
-                            borderColor: "#10B981",
-                            color: "#34D399",
+                            background: "#ECFDF5",
+                            border: "1px solid #A7F3D0",
+                            color: "#065F46",
+                            padding: "0.4rem 0.85rem",
+                            borderRadius: "var(--radius-full)",
+                            fontSize: "0.78rem",
+                            cursor: "pointer",
+                            fontWeight: 600,
                           }}
-                          id={`approve-btn-${cake.id}`}
                         >
-                          ✓ Approve Cake
+                          ✓ Approve
                         </button>
 
                         <button
                           onClick={() => handlePublish(cake.id)}
                           disabled={isBusy}
                           className="btn-gold"
-                          style={{ padding: "0.75rem 1.5rem", fontSize: "0.88rem" }}
-                          id={`publish-btn-${cake.id}`}
+                          style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
                         >
-                          🚀 Approve & Publish Live
+                          🚀 Approve & Publish
                         </button>
 
                         <button
                           onClick={() => handleReject(cake.id)}
                           disabled={isBusy}
-                          className="btn-outline-gold"
                           style={{
-                            padding: "0.75rem 1rem",
-                            fontSize: "0.88rem",
-                            borderColor: "rgba(239, 68, 68, 0.4)",
-                            color: "#F87171",
+                            background: "#FEF2F2",
+                            border: "1px solid #FECACA",
+                            color: "#991B1B",
+                            padding: "0.4rem 0.75rem",
+                            borderRadius: "var(--radius-full)",
+                            fontSize: "0.78rem",
+                            cursor: "pointer",
+                            fontWeight: 500,
                           }}
-                          id={`reject-btn-${cake.id}`}
                         >
                           ✕ Reject
                         </button>

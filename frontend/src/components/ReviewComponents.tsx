@@ -7,45 +7,46 @@ import { submitCustomerReview } from "../lib/api";
 export function ReviewCard({ review }: { review: Review }) {
   return (
     <div
-      className="glass-card"
       style={{
-        padding: "2rem",
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-md)",
+        padding: "1.25rem",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        position: "relative",
+        boxShadow: "var(--shadow-xs)",
       }}
       id={`review-card-${review.id}`}
     >
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
           <div className="rating-stars" aria-label={`Rating: ${review.rating} out of 5 stars`}>
             {"★".repeat(review.rating)}
             {"☆".repeat(5 - review.rating)}
           </div>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+          <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
             {review.created_at ? new Date(review.created_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "Recent"}
           </span>
         </div>
         <p
           style={{
-            fontFamily: "var(--font-editorial)",
-            fontSize: "1.2rem",
+            fontSize: "0.88rem",
             lineHeight: "1.6",
             color: "var(--text-primary)",
             fontStyle: "italic",
-            marginBottom: "1.5rem",
+            marginBottom: "1rem",
           }}
         >
           "{review.review_text}"
         </p>
       </div>
 
-      <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1rem" }}>
-        <h4 style={{ fontSize: "1rem", color: "var(--gold-light)", fontWeight: 600 }}>
+      <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "0.65rem" }}>
+        <h4 style={{ fontSize: "0.88rem", color: "var(--text-primary)", fontWeight: 600, margin: 0 }}>
           {review.customer_name}
         </h4>
-        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+        <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
           {review.customer_location || "Verified Confection Guest"}
         </span>
       </div>
@@ -96,41 +97,37 @@ export function ReviewForm() {
 
   return (
     <div
-      className="glass-card"
       style={{
-        padding: "2.5rem",
-        border: "1px solid var(--border-gold)",
-        maxWidth: "680px",
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-md)",
+        padding: "1.5rem",
+        boxShadow: "var(--shadow-xs)",
+        maxWidth: "600px",
         margin: "0 auto",
       }}
-      id="leave-review-section"
+      id="review-submission-form-container"
     >
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <span className="cake-category-badge">Guest Experience</span>
-        <h3 style={{ fontSize: "1.85rem", color: "var(--gold-light)", marginBottom: "0.5rem" }}>
-          Share Your Celebration
+      <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+        <span className="cake-category-badge">Guest Impressions</span>
+        <h3 style={{ fontSize: "1.35rem", color: "var(--text-primary)", marginBottom: "0.3rem", fontWeight: 700 }}>
+          Share Your Celebration Experience
         </h3>
-        <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem" }}>
-          Every cake is baked with genuine love. We would be honored to hear how our creation elevated your special moment.
+        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+          Every memory matters. Your reflection will be reviewed by our atelier prior to publication.
         </p>
       </div>
 
       {message && (
         <div
           style={{
-            padding: "1rem 1.25rem",
-            borderRadius: "var(--radius-md)",
-            marginBottom: "1.5rem",
-            background:
-              message.type === "success"
-                ? "rgba(16, 185, 129, 0.15)"
-                : "rgba(239, 68, 68, 0.15)",
-            border:
-              message.type === "success"
-                ? "1px solid rgba(16, 185, 129, 0.4)"
-                : "1px solid rgba(239, 68, 68, 0.4)",
-            color: message.type === "success" ? "#34D399" : "#F87171",
-            fontSize: "0.92rem",
+            padding: "0.75rem 1rem",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "1rem",
+            fontSize: "0.84rem",
+            background: message.type === "success" ? "#D1FAE5" : "#FEE2E2",
+            color: message.type === "success" ? "#065F46" : "#991B1B",
+            border: `1px solid ${message.type === "success" ? "#A7F3D0" : "#FECACA"}`,
           }}
         >
           {message.text}
@@ -138,28 +135,49 @@ export function ReviewForm() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Star Rating Select */}
-        <div className="form-group" style={{ textAlign: "center", marginBottom: "1.75rem" }}>
-          <label className="form-label" style={{ marginBottom: "0.5rem" }}>
-            Your Rating
-          </label>
-          <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+          <div>
+            <label className="form-label">Your Name *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Lady Vivienne"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="form-input"
+              style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+            />
+          </div>
+          <div>
+            <label className="form-label">Occasion / City</label>
+            <input
+              type="text"
+              placeholder="e.g. Chelsea Wedding"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="form-input"
+              style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "0.75rem" }}>
+          <label className="form-label">Rating Experience</label>
+          <div style={{ display: "flex", gap: "0.4rem" }}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 type="button"
                 onClick={() => setRating(star)}
                 style={{
+                  fontSize: "1.4rem",
                   background: "none",
                   border: "none",
-                  fontSize: "2rem",
-                  color: star <= rating ? "var(--gold)" : "rgba(255,255,255,0.2)",
                   cursor: "pointer",
-                  transition: "transform 0.15s ease",
+                  color: star <= rating ? "var(--gold)" : "var(--border-subtle)",
+                  padding: "0 2px",
+                  transition: "transform 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.2)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                aria-label={`${star} Star`}
               >
                 ★
               </button>
@@ -167,63 +185,27 @@ export function ReviewForm() {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-          <div className="form-group">
-            <label className="form-label" htmlFor="review-name">
-              Your Name *
-            </label>
-            <input
-              id="review-name"
-              type="text"
-              className="form-input"
-              placeholder="e.g. Clara & Julian"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="review-location">
-              Occasion / Location
-            </label>
-            <input
-              id="review-location"
-              type="text"
-              className="form-input"
-              placeholder="e.g. Wedding at Claridge's"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label" htmlFor="review-text">
-            Your Review *
-          </label>
+        <div style={{ marginBottom: "1rem" }}>
+          <label className="form-label">Your Testimonial *</label>
           <textarea
-            id="review-text"
-            className="form-textarea"
-            rows={4}
-            placeholder="Tell us about the flavour, the bespoke design, and your guests' reactions..."
+            required
+            rows={3}
+            placeholder="Describe the confection, presentation, and guest reactions..."
             value={text}
             onChange={(e) => setText(e.target.value)}
-            required
-          ></textarea>
+            className="form-textarea"
+            style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+          />
         </div>
 
-        <div style={{ textAlign: "center", marginTop: "2rem" }}>
-          <button
-            type="submit"
-            className="btn-gold"
-            disabled={isSubmitting}
-            id="submit-review-btn"
-            style={{ width: "100%", maxWidth: "320px", padding: "1rem 2rem" }}
-          >
-            {isSubmitting ? "Submitting..." : "Submit Review for Approval"}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="btn-gold"
+          style={{ width: "100%", padding: "0.6rem 1rem", fontSize: "0.85rem", justifyContent: "center" }}
+        >
+          {isSubmitting ? "Submitting for Review..." : "Submit Testimonial"}
+        </button>
       </form>
     </div>
   );

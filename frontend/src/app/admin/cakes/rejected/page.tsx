@@ -45,37 +45,86 @@ export default function RejectedCakesPage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <span className="cake-category-badge">Rejected Archive</span>
-          <h1 style={{ fontSize: "2.4rem", color: "var(--text-primary)" }}>
+          <h1 style={{ fontSize: "1.5rem", color: "var(--text-primary)", fontWeight: 700 }}>
             Rejected Cakes Archive ({cakes.length})
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-            Cakes that were rejected during admin moderation. You can restore them to approved status or delete them.
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+            Confections archived during moderation. Restore to approved status or delete permanently.
           </p>
         </div>
       </div>
 
       {cakes.length === 0 && !loading ? (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px dashed var(--border-gold)" }}>
-          No rejected cakes in archive.
+        <div style={{ textAlign: "center", padding: "2.5rem 1.5rem", background: "var(--bg-surface)", borderRadius: "var(--radius-md)", border: "1px dashed var(--border-subtle)" }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>
+            No cakes in rejected archive.
+          </p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "2rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
           {cakes.map((cake) => (
-            <div key={cake.id} className="glass-card" style={{ padding: "1.5rem" }}>
-              <div style={{ background: "#FFFFFF", borderRadius: "8px", height: "180px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+            <div
+              key={cake.id}
+              style={{
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "1rem",
+                boxShadow: "var(--shadow-xs)",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "1/1",
+                  background: "#FFFFFF",
+                  borderRadius: "var(--radius-xs)",
+                  padding: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "0.75rem",
+                  border: "1px solid var(--border-light)",
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={cake.image_url} alt="" style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }} />
+                <img
+                  src={cake.image_url}
+                  alt={cake.name}
+                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
               </div>
-              <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.2rem" }}>{cake.name}</h3>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontStyle: "italic", marginBottom: "1rem" }}>{cake.flavour}</p>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button onClick={() => handleRestore(cake.id)} className="btn-outline-gold" style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Restore
+
+              <h4 style={{ fontSize: "0.95rem", color: "var(--text-primary)", fontWeight: 600, marginBottom: "0.2rem" }}>
+                {cake.name}
+              </h4>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.75rem" }}>
+                {cake.flavour}
+              </p>
+
+              <div style={{ display: "flex", gap: "0.4rem" }}>
+                <button
+                  onClick={() => handleRestore(cake.id)}
+                  className="btn-outline-gold"
+                  style={{ flex: 1, padding: "0.4rem", fontSize: "0.78rem", justifyContent: "center" }}
+                >
+                  Restore to Staging
                 </button>
-                <button onClick={() => handleDelete(cake.id)} style={{ background: "rgba(239,68,68,0.15)", border: "1px solid #EF4444", color: "#F87171", borderRadius: "var(--radius-full)", padding: "0.5rem 1rem", fontSize: "0.8rem", cursor: "pointer" }}>
+                <button
+                  onClick={() => handleDelete(cake.id)}
+                  style={{
+                    background: "#FEF2F2",
+                    border: "1px solid #FECACA",
+                    color: "#991B1B",
+                    borderRadius: "var(--radius-full)",
+                    padding: "0.4rem 0.75rem",
+                    fontSize: "0.78rem",
+                    cursor: "pointer",
+                  }}
+                >
                   Delete
                 </button>
               </div>

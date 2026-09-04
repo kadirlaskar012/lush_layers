@@ -37,17 +37,17 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <PublicLayout>
-      <div style={{ paddingTop: "3.5rem", paddingBottom: "6rem" }}>
+      <div style={{ paddingTop: "1.75rem", paddingBottom: "3.5rem" }}>
         <div className="container-lux">
           {/* Breadcrumbs */}
           <nav
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.85rem",
+              gap: "0.4rem",
+              fontSize: "0.8rem",
               color: "var(--text-muted)",
-              marginBottom: "2rem",
+              marginBottom: "1.25rem",
             }}
           >
             <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
@@ -58,29 +58,29 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               Categories
             </Link>
             <span>/</span>
-            <span style={{ color: "var(--gold-light)" }}>{category.name}</span>
+            <span style={{ color: "var(--gold-dark)", fontWeight: 600 }}>{category.name}</span>
           </nav>
 
-          {/* Category Header */}
-          <div style={{ textAlign: "center", maxWidth: "800px", margin: "0 auto 3rem" }}>
-            <span className="cake-category-badge">Bespoke Category</span>
-            <h1 style={{ fontSize: "3rem", color: "var(--text-primary)", marginBottom: "1rem" }}>
+          {/* Header - Compact */}
+          <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 1.5rem" }}>
+            <span className="cake-category-badge">Curated Collection</span>
+            <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
               {category.name}
             </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem", lineHeight: "1.8" }}>
-              {category.description || "Artisanal boutique creations baked to perfection."}
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
+              {category.description || "Artisanal hand-sculpted bespoke confections."}
             </p>
           </div>
 
-          {/* Horizontal Category Bar */}
-          <div style={{ marginBottom: "3rem" }}>
+          {/* Category Bar Navigation */}
+          <div style={{ marginBottom: "1.75rem" }}>
             <CategoryBar categories={categories} activeSlug={category.slug} />
           </div>
 
-          {/* Masonry Gallery of Published Cakes */}
+          {/* Responsive Cake Gallery (Desktop: 4, Tablet: 3, Mobile: STRICTLY 2) */}
           <MasonryGallery
             cakes={cakes}
-            emptyMessage={`No ${category.name} creations currently published. Please enquire via WhatsApp for custom designs.`}
+            emptyMessage={`No ${category.name} cakes published yet. Check other collections or enquire on WhatsApp.`}
           />
         </div>
       </div>

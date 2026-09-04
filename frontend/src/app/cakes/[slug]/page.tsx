@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PublicLayout from "../../../components/PublicLayout";
 import CakeDetailClient from "../../../components/CakeDetailClient";
-import MasonryGallery from "../../../components/MasonryGallery";
+import CakeCard from "../../../components/CakeCard";
 import { getCakeBySlug, getPublishedCakes } from "../../../lib/api";
 
 export const revalidate = 60;
@@ -38,21 +38,22 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
 
   // Related cakes in same category
   const allCakes = await getPublishedCakes({ categoryId: cake.category_id });
-  const relatedCakes = allCakes.filter((c) => c.id !== cake.id).slice(0, 3);
+  const relatedCakes = allCakes.filter((c) => c.id !== cake.id).slice(0, 4);
 
   return (
     <PublicLayout>
-      <div style={{ paddingTop: "2.5rem", paddingBottom: "6rem" }}>
+      <div style={{ paddingTop: "1.5rem", paddingBottom: "3.5rem" }}>
         <div className="container-lux">
-          {/* Breadcrumbs */}
+          {/* Compact Breadcrumbs */}
           <nav
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.85rem",
+              gap: "0.4rem",
+              fontSize: "0.8rem",
               color: "var(--text-muted)",
-              marginBottom: "2.5rem",
+              marginBottom: "1.25rem",
+              flexWrap: "wrap",
             }}
           >
             <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
@@ -74,15 +75,15 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                 <span>/</span>
               </>
             )}
-            <span style={{ color: "var(--gold-light)" }}>{cake.name}</span>
+            <span style={{ color: "var(--gold-dark)", fontWeight: 600 }}>{cake.name}</span>
           </nav>
 
-          {/* Main Showcase Grid */}
+          {/* Main 2-Column Showcase Grid */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-              gap: "4rem",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "2rem",
               alignItems: "start",
             }}
           >
@@ -90,15 +91,13 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
             <div
               style={{
                 background: "#FFFFFF",
-                borderRadius: "var(--radius-lg)",
-                padding: "3rem 2rem",
+                borderRadius: "var(--radius-md)",
+                padding: "1.5rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 25px 60px rgba(0,0,0,0.7)",
-                border: "1px solid var(--border-gold)",
-                position: "sticky",
-                top: "110px",
+                boxShadow: "var(--shadow-sm)",
+                border: "1px solid var(--border-subtle)",
               }}
               id="cake-photo-container"
             >
@@ -108,9 +107,8 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                 alt={cake.name}
                 style={{
                   width: "100%",
-                  maxHeight: "560px",
+                  maxHeight: "380px",
                   objectFit: "contain",
-                  filter: "drop-shadow(0 15px 30px rgba(0,0,0,0.15))",
                 }}
                 id="cake-detail-image"
               />
@@ -124,10 +122,11 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
 
               <h1
                 style={{
-                  fontSize: "clamp(2rem, 4vw, 3rem)",
+                  fontSize: "clamp(1.5rem, 3.2vw, 2.1rem)",
                   lineHeight: 1.2,
-                  marginBottom: "1rem",
+                  marginBottom: "0.4rem",
                   color: "var(--text-primary)",
+                  fontWeight: 700,
                 }}
                 id="cake-title-heading"
               >
@@ -136,86 +135,98 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
 
               <div
                 style={{
-                  fontSize: "1.15rem",
-                  color: "var(--gold-light)",
-                  fontFamily: "var(--font-editorial)",
+                  fontSize: "0.95rem",
+                  color: "var(--gold-dark)",
                   fontStyle: "italic",
-                  marginBottom: "1.75rem",
+                  marginBottom: "1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
                 }}
               >
-                Flavour Harmony: <strong>{cake.flavour}</strong>
+                <span>✨</span>
+                <span>{cake.flavour}</span>
               </div>
 
               {/* Editorial Description */}
               <div
                 style={{
-                  fontSize: "1.05rem",
-                  lineHeight: "1.8",
+                  fontSize: "0.9rem",
                   color: "var(--text-secondary)",
-                  marginBottom: "2rem",
-                  borderLeft: "3px solid var(--gold)",
-                  paddingLeft: "1.25rem",
+                  lineHeight: 1.65,
+                  marginBottom: "1.25rem",
+                  background: "var(--bg-surface)",
+                  padding: "0.85rem 1rem",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-light)",
                 }}
               >
-                <p>{cake.description}</p>
+                {cake.description || "An opulent bespoke centerpiece hand-sculpted for sovereign celebrations."}
               </div>
 
-              {/* Cake Highlights */}
+              {/* Craftsmanship Features Grid */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "1rem",
-                  marginBottom: "1.5rem",
+                  gap: "0.6rem",
+                  marginBottom: "0.5rem",
                 }}
               >
                 <div
                   style={{
-                    background: "rgba(255, 255, 255, 0.03)",
+                    background: "var(--bg-cream)",
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--border-subtle)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "1rem",
                   }}
                 >
-                  <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", display: "block", fontWeight: 600 }}>
                     Craftsmanship
-                  </div>
-                  <div style={{ fontSize: "0.95rem", color: "var(--text-primary)", fontWeight: 500, marginTop: "0.2rem" }}>
-                    Bespoke Handcrafted
-                  </div>
+                  </span>
+                  <strong style={{ fontSize: "0.82rem", color: "var(--text-primary)" }}>Bespoke Handcrafted</strong>
                 </div>
+
                 <div
                   style={{
-                    background: "rgba(255, 255, 255, 0.03)",
+                    background: "var(--bg-cream)",
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--border-subtle)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "1rem",
                   }}
                 >
-                  <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                  <span style={{ fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", display: "block", fontWeight: 600 }}>
                     Enquiries & Quotes
-                  </div>
-                  <div style={{ fontSize: "0.95rem", color: "var(--gold-light)", fontWeight: 500, marginTop: "0.2rem" }}>
-                    WhatsApp Discussion
-                  </div>
+                  </span>
+                  <strong style={{ fontSize: "0.82rem", color: "var(--whatsapp)" }}>WhatsApp Discussion</strong>
                 </div>
               </div>
 
-              {/* Interactive Client Component for Order & WhatsApp Enquiry */}
+              {/* Interactive WhatsApp Order Form (NO PRICE) */}
               <CakeDetailClient cake={cake} />
             </div>
           </div>
 
           {/* Related Creations */}
           {relatedCakes.length > 0 && (
-            <div style={{ marginTop: "7rem" }}>
-              <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-                <span className="cake-category-badge">Similar Inspirations</span>
-                <h3 style={{ fontSize: "2rem", color: "var(--text-primary)" }}>
-                  You May Also Admire
-                </h3>
+            <div style={{ marginTop: "3.5rem", paddingTop: "2rem", borderTop: "1px solid var(--border-subtle)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                <div>
+                  <span className="cake-category-badge">Similar Inspirations</span>
+                  <h2 style={{ fontSize: "1.35rem", color: "var(--text-primary)" }}>
+                    More in {cake.category_name || "This Collection"}
+                  </h2>
+                </div>
+                <Link href="/cakes" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.8rem", fontWeight: 600 }}>
+                  View All →
+                </Link>
               </div>
-              <MasonryGallery cakes={relatedCakes} />
+
+              <div className="cake-grid-responsive">
+                {relatedCakes.map((relCake) => (
+                  <CakeCard key={relCake.id} cake={relCake} />
+                ))}
+              </div>
             </div>
           )}
         </div>

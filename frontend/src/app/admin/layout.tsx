@@ -1,5 +1,5 @@
 import React from "react";
-import AdminSidebar from "../../components/AdminSidebar";
+import AdminLayoutWrapper from "../../components/AdminLayoutWrapper";
 
 export const metadata = {
   title: "Admin Studio & Workflow Atelier • LUSH LAYERS",
@@ -7,12 +7,5 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="admin-layout" id="admin-root-layout">
-      <AdminSidebar />
-      <main className="admin-content" id="admin-main-content">
-        {children}
-      </main>
-    </div>
-  );
+  return <AdminLayoutWrapper>{children}</AdminLayoutWrapper>;
 }

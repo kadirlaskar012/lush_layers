@@ -14,23 +14,34 @@ export default function CategoryBar({ categories, activeSlug }: CategoryBarProps
   const pathname = usePathname();
 
   return (
-    <div className="category-pill-bar" id="category-filter-bar">
+    <div className="category-scroll-container" id="category-filter-bar">
       <Link
         href="/cakes"
-        className={`category-nav-pill ${!activeSlug && pathname === "/cakes" ? "active" : ""}`}
+        className={`category-pill-item ${!activeSlug && pathname === "/cakes" ? "active" : ""}`}
       >
-        All Creations
+        <span>🍰</span>
+        <span>All Confections</span>
       </Link>
       {categories.map((cat) => {
         const isActive = activeSlug === cat.slug;
+        const iconMap: Record<string, string> = {
+          "signature-tiered": "👑",
+          "bespoke-birthday": "🎈",
+          "botanical-floral": "🌸",
+          "pure-belgian-chocolate": "🍫",
+          "modern-minimalist": "✨",
+        };
+        const icon = iconMap[cat.slug] || "🎂";
+
         return (
           <Link
             key={cat.id}
             href={`/category/${cat.slug}`}
-            className={`category-nav-pill ${isActive ? "active" : ""}`}
+            className={`category-pill-item ${isActive ? "active" : ""}`}
             id={`category-pill-${cat.slug}`}
           >
-            {cat.name}
+            <span>{icon}</span>
+            <span>{cat.name}</span>
           </Link>
         );
       })}

@@ -8,11 +8,11 @@ export default function Footer() {
   return (
     <footer
       style={{
-        background: "var(--bg-surface)",
-        borderTop: "1px solid var(--border-gold)",
-        paddingTop: "5rem",
-        paddingBottom: "3rem",
-        marginTop: "6rem",
+        background: "var(--bg-cream)",
+        borderTop: "1px solid var(--border-subtle)",
+        paddingTop: "2.5rem",
+        paddingBottom: "1.75rem",
+        marginTop: "2.5rem",
       }}
       id="site-footer"
     >
@@ -20,9 +20,9 @@ export default function Footer() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "3.5rem",
-            marginBottom: "4rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "2rem",
+            marginBottom: "2rem",
           }}
         >
           {/* Brand Col */}
@@ -30,12 +30,12 @@ export default function Footer() {
             <span
               style={{
                 fontFamily: "var(--font-heading)",
-                fontSize: "1.85rem",
-                letterSpacing: "0.15em",
-                color: "var(--gold-light)",
+                fontSize: "1.35rem",
+                letterSpacing: "0.12em",
+                color: "var(--text-primary)",
                 textTransform: "uppercase",
                 display: "block",
-                marginBottom: "0.35rem",
+                fontWeight: 700,
               }}
             >
               LUSH LAYERS
@@ -43,12 +43,12 @@ export default function Footer() {
             <span
               style={{
                 fontFamily: "var(--font-editorial)",
-                fontSize: "1rem",
-                letterSpacing: "0.2em",
+                fontSize: "0.85rem",
+                letterSpacing: "0.15em",
                 color: "var(--gold)",
                 fontStyle: "italic",
                 display: "block",
-                marginBottom: "1.25rem",
+                marginBottom: "0.75rem",
               }}
             >
               Made with Love
@@ -56,14 +56,14 @@ export default function Footer() {
             <p
               style={{
                 color: "var(--text-secondary)",
-                fontSize: "0.92rem",
-                lineHeight: "1.7",
-                marginBottom: "1.5rem",
+                fontSize: "0.82rem",
+                lineHeight: "1.6",
+                marginBottom: "1rem",
               }}
             >
-              Boutique artisanal cake studio devoted to bespoke culinary artistry, exceptional ingredients, and unforgettable milestone celebrations.
+              Boutique artisanal confectionery atelier devoted to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
             </p>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
               <span
                 style={{
                   width: "8px",
@@ -73,8 +73,8 @@ export default function Footer() {
                   display: "inline-block",
                 }}
               ></span>
-              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                Orders exclusively via WhatsApp
+              <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>
+                Orders & consultations via WhatsApp
               </span>
             </div>
           </div>
@@ -83,91 +83,95 @@ export default function Footer() {
           <div>
             <h4
               style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.15rem",
-                color: "var(--gold-light)",
-                marginBottom: "1.25rem",
-                letterSpacing: "0.05em",
+                fontSize: "0.95rem",
+                color: "var(--text-primary)",
+                marginBottom: "0.85rem",
+                fontWeight: 600,
               }}
             >
-              The Confections
+              Collections
             </h4>
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <li>
-                <Link href="/cakes" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem" }}>
-                  All Signature Cakes
+                <Link href="/cakes" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  All Signature Creations
                 </Link>
               </li>
               <li>
-                <Link href="/category/signature-tiered" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem" }}>
-                  Signature Tiered
+                <Link href="/category/signature-tiered" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  Signature Tiered Cakes
                 </Link>
               </li>
               <li>
-                <Link href="/category/bespoke-birthday" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem" }}>
-                  Bespoke Birthday
+                <Link href="/category/botanical-floral" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  Botanical & Sugar Floral
                 </Link>
               </li>
               <li>
-                <Link href="/category/pure-belgian-chocolate" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem" }}>
+                <Link href="/category/pure-belgian-chocolate" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
                   Pure Belgian Chocolate
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/botanical-floral" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem" }}>
-                  Botanical & Floral
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Boutique Atelier */}
+          {/* Atelier Experience */}
           <div>
             <h4
               style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.15rem",
-                color: "var(--gold-light)",
-                marginBottom: "1.25rem",
-                letterSpacing: "0.05em",
+                fontSize: "0.95rem",
+                color: "var(--text-primary)",
+                marginBottom: "0.85rem",
+                fontWeight: 600,
               }}
             >
-              Atelier & Hours
+              Atelier
             </h4>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.7", marginBottom: "0.75rem" }}>
-              <strong>Boutique Studio:</strong><br />
-              14 Kensington Crescent, Atelier 4B<br />
-              London & Metropolitan Delivery
-            </p>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.7" }}>
-              <strong>Consultation Hours:</strong><br />
-              Tuesday – Saturday: 9:00 AM – 7:00 PM<br />
-              Sunday: 10:00 AM – 4:00 PM
-            </p>
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <li>
+                <Link href="/about" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  Our Philosophy & Story
+                </Link>
+              </li>
+              <li>
+                <Link href="/reviews" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  Guest Testimonials
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }}>
+                  Bespoke Tasting Brief
+                </Link>
+              </li>
+              <li>
+                <Link href="/admin" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600 }}>
+                  Management Atelier
+                </Link>
+              </li>
+            </ul>
           </div>
 
-          {/* WhatsApp Direct Line */}
+          {/* WhatsApp Direct Order */}
           <div>
             <h4
               style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.15rem",
-                color: "var(--gold-light)",
-                marginBottom: "1.25rem",
-                letterSpacing: "0.05em",
+                fontSize: "0.95rem",
+                color: "var(--text-primary)",
+                marginBottom: "0.85rem",
+                fontWeight: 600,
               }}
             >
               Enquire Directly
             </h4>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", lineHeight: "1.7", marginBottom: "1.25rem" }}>
-              Have a bespoke vision, tiered wedding enquiry, or specific dietary requirement? Speak directly with our master decorator.
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", lineHeight: 1.5, marginBottom: "0.85rem" }}>
+              Direct dialogue with our master pâtissier for dates, sizes, and custom flavour pairings.
             </p>
             <a
-              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS`}
+              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20place%20an%20enquiry.`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-whatsapp"
-              style={{ width: "100%", textAlign: "center" }}
+              style={{ width: "100%", padding: "0.45rem 0.85rem", fontSize: "0.8rem", justifyContent: "center" }}
             >
               Chat on WhatsApp
             </a>
@@ -178,31 +182,26 @@ export default function Footer() {
         <div
           style={{
             borderTop: "1px solid var(--border-subtle)",
-            paddingTop: "2rem",
+            paddingTop: "1.25rem",
             display: "flex",
-            flexWrap: "wrap",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: "1rem",
-            fontSize: "0.82rem",
-            color: "var(--text-muted)",
+            flexWrap: "wrap",
+            gap: "0.75rem",
           }}
         >
-          <div>
-            © {currentYear} LUSH LAYERS. Handcrafted with passion and love. All rights reserved.
+          <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+            © {currentYear} LUSH LAYERS. Handcrafted with Love. Zero online payment friction.
           </div>
-          <div style={{ display: "flex", gap: "1.5rem" }}>
-            <Link href="/about" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
-              About Us
+          <div style={{ display: "flex", gap: "1rem", fontSize: "0.76rem" }}>
+            <Link href="/cakes" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
+              Artisanal Catalog
             </Link>
-            <Link href="/reviews" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
-              Reviews
+            <Link href="/about" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
+              Our Story
             </Link>
             <Link href="/contact" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
               Contact
-            </Link>
-            <Link href="/admin" style={{ color: "var(--gold)", textDecoration: "none" }}>
-              Staff Portal
             </Link>
           </div>
         </div>

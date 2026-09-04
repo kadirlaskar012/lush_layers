@@ -6,7 +6,12 @@ import { usePathname } from "next/navigation";
 import { getAdminStats } from "../lib/api";
 import { AdminStats } from "../lib/types";
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: AdminSidebarProps) {
   const pathname = usePathname();
   const [stats, setStats] = useState<AdminStats | null>(null);
 
@@ -41,89 +46,173 @@ export default function AdminSidebar() {
   ];
 
   return (
-    <aside className="admin-sidebar" id="admin-sidebar">
-      {/* Brand & Mode */}
-      <div style={{ marginBottom: "2.5rem" }}>
-        <Link href="/admin" style={{ textDecoration: "none" }}>
-          <span
-            style={{
-              fontFamily: "var(--font-heading)",
-              fontSize: "1.4rem",
-              letterSpacing: "0.12em",
-              color: "var(--gold-light)",
-              textTransform: "uppercase",
-              display: "block",
-            }}
-          >
-            LUSH LAYERS
-          </span>
-          <span
-            style={{
-              fontSize: "0.75rem",
-              letterSpacing: "0.2em",
-              color: "var(--text-muted)",
-              textTransform: "uppercase",
-            }}
-          >
-            Management Atelier
-          </span>
-        </Link>
-      </div>
+    <>
+      {/* Mobile Drawer Overlay */}
+      {isMobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(30, 25, 20, 0.4)",
+            zIndex: 998,
+          }}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav style={{ flex: 1 }}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`admin-nav-item ${isActive ? "active" : ""}`}
-              id={`admin-nav-${item.href.replace(/\//g, "-")}`}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-              {typeof item.count === "number" && item.count > 0 && (
-                <span
-                  className="count-pill"
-                  style={{
-                    background: item.highlight ? "rgba(245, 158, 11, 0.2)" : "rgba(255,255,255,0.08)",
-                    color: item.highlight ? "#FBBF24" : "var(--gold-light)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {item.count}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer link to public website */}
-      <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1.5rem", marginTop: "1rem" }}>
-        <Link
-          href="/"
-          target="_blank"
+      <aside
+        className={`admin-sidebar ${isMobileOpen ? "mobile-open" : ""}`}
+        id="admin-sidebar"
+        style={{
+          background: "var(--bg-surface)",
+          borderRight: "1px solid var(--border-subtle)",
+          display: "flex",
+          flexDirection: "column",
+          padding: "1rem",
+        }}
+      >
+        {/* Brand & Mobile Close Button */}
+        <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "0.5rem",
-            color: "var(--gold)",
-            textDecoration: "none",
-            fontSize: "0.85rem",
-            fontWeight: 500,
+            justifyContent: "space-between",
+            marginBottom: "1.25rem",
+            paddingBottom: "0.75rem",
+            borderBottom: "1px solid var(--border-light)",
           }}
         >
-          <span>View Public Storefront</span>
-          <span>↗</span>
-        </Link>
-        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.35rem", display: "block" }}>
-          LAN Address: 0.0.0.0:8000
-        </span>
-      </div>
-    </aside>
+          <Link href="/admin" style={{ textDecoration: "none" }} onClick={onCloseMobile}>
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontSize: "1.15rem",
+                letterSpacing: "0.12em",
+                color: "var(--text-primary)",
+                textTransform: "uppercase",
+                display: "block",
+                fontWeight: 700,
+                lineHeight: 1.1,
+              }}
+            >
+              LUSH LAYERS
+            </span>
+            <span
+              style={{
+                fontSize: "0.68rem",
+                letterSpacing: "0.15em",
+                color: "var(--gold-dark)",
+                textTransform: "uppercase",
+                fontWeight: 600,
+              }}
+            >
+              Management Atelier
+            </span>
+          </Link>
+
+          {/* Close button for mobile drawer */}
+          <button
+            onClick={onCloseMobile}
+            style={{
+              display: "none",
+              background: "none",
+              border: "none",
+              fontSize: "1.1rem",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+              padding: "4px",
+            }}
+            className="mobile-close-sidebar-btn"
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Navigation Links - Compact */}
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.15rem" }}>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onCloseMobile}
+                className={`admin-nav-item ${isActive ? "active" : ""}`}
+                id={`admin-nav-${item.href.replace(/\//g, "-")}`}
+                style={{
+                  padding: "0.45rem 0.75rem",
+                  fontSize: "0.82rem",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+                  <span style={{ fontSize: "0.95rem" }}>{item.icon}</span>
+                  <span style={{ fontWeight: isActive ? 600 : 500 }}>{item.label}</span>
+                </div>
+                {typeof item.count === "number" && item.count > 0 && (
+                  <span
+                    className="count-pill"
+                    style={{
+                      background: item.highlight ? "#FEF3C7" : "var(--bg-cream)",
+                      color: item.highlight ? "#92400E" : "var(--text-secondary)",
+                      border: item.highlight ? "1px solid #FCD34D" : "1px solid var(--border-light)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item.count}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Compact Footer */}
+        <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "0.85rem", marginTop: "0.75rem" }}>
+          <Link
+            href="/"
+            target="_blank"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              color: "var(--gold-dark)",
+              textDecoration: "none",
+              fontSize: "0.78rem",
+              fontWeight: 600,
+            }}
+          >
+            <span>Storefront</span>
+            <span>↗</span>
+          </Link>
+          <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.2rem", display: "block" }}>
+            LAN: 0.0.0.0:8000
+          </span>
+        </div>
+      </aside>
+
+      <style jsx global>{`
+        @media (max-width: 900px) {
+          .admin-sidebar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 260px !important;
+            z-index: 999 !important;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease-in-out;
+            box-shadow: var(--shadow-md);
+          }
+          .admin-sidebar.mobile-open {
+            transform: translateX(0) !important;
+          }
+          .mobile-close-sidebar-btn {
+            display: block !important;
+          }
+        }
+      `}</style>
+    </>
   );
 }

@@ -8,13 +8,11 @@ import {
   publishCake,
   rejectCake,
   deleteCake,
-  updateCakeDetails,
 } from "../../../lib/api";
 import { Cake } from "../../../lib/types";
 
 export default function AdminCakesManagementPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +79,7 @@ export default function AdminCakesManagementPage() {
   };
 
   const handleDelete = async (cakeId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this confection?")) return;
+    if (!confirm("Are you sure you want to delete this cake?")) return;
     setActionLoading(cakeId);
     try {
       await deleteCake(cakeId);
@@ -95,373 +93,394 @@ export default function AdminCakesManagementPage() {
 
   return (
     <div id="admin-cakes-management-view">
-      {/* Top Header */}
+      {/* Top Header - Compact */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "2rem",
+          marginBottom: "1.25rem",
           flexWrap: "wrap",
-          gap: "1rem",
+          gap: "0.75rem",
         }}
       >
         <div>
-          <span className="cake-category-badge">Catalog Master</span>
-          <h1 style={{ fontSize: "2.4rem", color: "var(--text-primary)" }}>
-            Cake Catalog Management
+          <span className="cake-category-badge">Catalog Atelier</span>
+          <h1 style={{ fontSize: "1.5rem", color: "var(--text-primary)", fontWeight: 700 }}>
+            Cake Catalog Management ({cakes.length})
           </h1>
         </div>
 
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-          {/* View Toggle: Grid / List */}
-          <div
-            style={{
-              display: "inline-flex",
-              background: "var(--bg-card)",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-subtle)",
-              padding: "2px",
-            }}
-          >
-            <button
-              onClick={() => setViewMode("grid")}
-              style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                background: viewMode === "grid" ? "rgba(212,175,55,0.2)" : "transparent",
-                color: viewMode === "grid" ? "var(--gold-light)" : "var(--text-muted)",
-                cursor: "pointer",
-                fontSize: "0.85rem",
-              }}
-              id="view-grid-btn"
-            >
-              Grid View
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                background: viewMode === "list" ? "rgba(212,175,55,0.2)" : "transparent",
-                color: viewMode === "list" ? "var(--gold-light)" : "var(--text-muted)",
-                cursor: "pointer",
-                fontSize: "0.85rem",
-              }}
-              id="view-list-btn"
-            >
-              List View
-            </button>
-          </div>
-
-          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.6rem 1.25rem" }}>
-            + Bulk Upload
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+            ⚡ Bulk Upload
+          </Link>
+          <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+            ⏳ Pending Queue
           </Link>
         </div>
       </div>
 
-      {/* Filter Tabs & Search Bar */}
+      {/* Filter and Search Bar - Compact */}
       <div
-        className="glass-card"
         style={{
-          padding: "1.25rem 1.75rem",
-          marginBottom: "2.5rem",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
+          padding: "0.85rem 1rem",
+          marginBottom: "1.25rem",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "1.25rem",
+          gap: "0.75rem",
+          boxShadow: "var(--shadow-xs)",
         }}
       >
-        {/* Status Filter Tabs */}
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          {["all", "pending", "approved", "published", "rejected"].map((st) => {
-            const isActive = statusFilter === st;
-            return (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                style={{
-                  padding: "0.5rem 1.1rem",
-                  borderRadius: "var(--radius-full)",
-                  fontSize: "0.85rem",
-                  textTransform: "capitalize",
-                  cursor: "pointer",
-                  background: isActive ? "rgba(212,175,55,0.2)" : "rgba(255,255,255,0.03)",
-                  border: isActive ? "1px solid var(--gold)" : "1px solid var(--border-subtle)",
-                  color: isActive ? "var(--gold-light)" : "var(--text-secondary)",
-                  fontWeight: isActive ? 600 : 400,
-                }}
-                id={`filter-tab-${st}`}
-              >
-                {st}
-              </button>
-            );
-          })}
+        {/* Status Pills */}
+        <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+          {["all", "pending", "approved", "published", "rejected"].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              style={{
+                background: statusFilter === st ? "var(--gold)" : "var(--bg-cream)",
+                border: statusFilter === st ? "1px solid var(--gold)" : "1px solid var(--border-subtle)",
+                color: statusFilter === st ? "#FFFFFF" : "var(--text-secondary)",
+                padding: "0.3rem 0.75rem",
+                borderRadius: "var(--radius-full)",
+                fontSize: "0.75rem",
+                fontWeight: statusFilter === st ? 600 : 500,
+                textTransform: "capitalize",
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+            >
+              {st}
+            </button>
+          ))}
         </div>
 
         {/* Search */}
-        <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.5rem" }}>
+        <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.4rem" }}>
           <input
             type="text"
-            placeholder="Search by title or flavour..."
+            placeholder="Search cake name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="form-input"
-            style={{ width: "260px", padding: "0.5rem 1rem" }}
+            style={{ width: "200px", padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
           />
-          <button type="submit" className="btn-outline-gold" style={{ padding: "0.5rem 1rem" }}>
-            Search
+          <button type="submit" className="btn-gold" style={{ padding: "0.35rem 0.75rem", fontSize: "0.78rem" }}>
+            Filter
           </button>
         </form>
       </div>
 
-      {/* Main Content: Grid View or List View */}
-      {cakes.length === 0 && !isLoading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "4rem 2rem",
-            background: "var(--bg-surface)",
-            border: "1px dashed var(--border-gold)",
-            borderRadius: "var(--radius-md)",
-          }}
-        >
-          No cakes found for this filter.
-        </div>
-      ) : viewMode === "grid" ? (
-        // GRID VIEW
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "2rem",
-          }}
-          id="admin-cakes-grid"
-        >
-          {cakes.map((cake) => (
+      {/* Desktop Table View */}
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)",
+          overflow: "hidden",
+          boxShadow: "var(--shadow-xs)",
+        }}
+        className="admin-desktop-table-wrap"
+      >
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.82rem" }}>
+          <thead>
+            <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem" }}>Photo</th>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem" }}>Cake Name</th>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem" }}>Category</th>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem" }}>Flavour</th>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem" }}>Status</th>
+              <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", fontSize: "0.68rem", textAlign: "right" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cakes.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
+                  No cakes found for this filter.
+                </td>
+              </tr>
+            ) : (
+              cakes.map((cake) => {
+                const isBusy = actionLoading === cake.id;
+                return (
+                  <tr key={cake.id} style={{ borderBottom: "1px solid var(--border-light)" }}>
+                    <td style={{ padding: "0.6rem 0.85rem" }}>
+                      <div
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "var(--radius-xs)",
+                          background: "#FFFFFF",
+                          border: "1px solid var(--border-subtle)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={cake.image_url}
+                          alt={cake.name}
+                          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ padding: "0.6rem 0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                      <Link href={`/cakes/${cake.slug}`} target="_blank" style={{ color: "inherit", textDecoration: "none" }}>
+                        {cake.name}
+                      </Link>
+                    </td>
+                    <td style={{ padding: "0.6rem 0.85rem", color: "var(--text-secondary)" }}>
+                      {cake.category_name || "—"}
+                    </td>
+                    <td style={{ padding: "0.6rem 0.85rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                      {cake.flavour}
+                    </td>
+                    <td style={{ padding: "0.6rem 0.85rem" }}>
+                      <span
+                        className={`badge-status ${
+                          cake.status === "published"
+                            ? "badge-published"
+                            : cake.status === "pending"
+                            ? "badge-pending"
+                            : cake.status === "approved"
+                            ? "badge-approved"
+                            : "badge-rejected"
+                        }`}
+                      >
+                        {cake.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: "0.6rem 0.85rem", textAlign: "right" }}>
+                      <div style={{ display: "flex", gap: "0.3rem", justifyContent: "flex-end" }}>
+                        {cake.status !== "published" && (
+                          <button
+                            onClick={() => handlePublish(cake.id)}
+                            disabled={isBusy}
+                            style={{
+                              background: "var(--gold-subtle)",
+                              border: "1px solid var(--gold-border)",
+                              color: "var(--gold-dark)",
+                              padding: "0.25rem 0.55rem",
+                              borderRadius: "var(--radius-xs)",
+                              fontSize: "0.72rem",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Publish
+                          </button>
+                        )}
+                        {cake.status === "pending" && (
+                          <button
+                            onClick={() => handleApprove(cake.id)}
+                            disabled={isBusy}
+                            style={{
+                              background: "#ECFDF5",
+                              border: "1px solid #A7F3D0",
+                              color: "#065F46",
+                              padding: "0.25rem 0.55rem",
+                              borderRadius: "var(--radius-xs)",
+                              fontSize: "0.72rem",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {cake.status !== "rejected" && (
+                          <button
+                            onClick={() => handleReject(cake.id)}
+                            disabled={isBusy}
+                            style={{
+                              background: "#FEF2F2",
+                              border: "1px solid #FECACA",
+                              color: "#991B1B",
+                              padding: "0.25rem 0.55rem",
+                              borderRadius: "var(--radius-xs)",
+                              fontSize: "0.72rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Reject
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(cake.id)}
+                          disabled={isBusy}
+                          style={{
+                            background: "var(--bg-cream)",
+                            border: "1px solid var(--border-subtle)",
+                            color: "var(--text-muted)",
+                            padding: "0.25rem 0.55rem",
+                            borderRadius: "var(--radius-xs)",
+                            fontSize: "0.72rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Compact Cards List (Visible on Small Screens) */}
+      <div className="admin-mobile-cards-list" style={{ display: "none", flexDirection: "column", gap: "0.75rem" }}>
+        {cakes.map((cake) => {
+          const isBusy = actionLoading === cake.id;
+          return (
             <div
               key={cake.id}
-              className="glass-card"
               style={{
-                borderRadius: "var(--radius-md)",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
+                background: "var(--bg-surface)",
                 border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "0.85rem",
+                boxShadow: "var(--shadow-xs)",
               }}
             >
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  height: "220px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "1rem",
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cake.image_url}
-                  alt={cake.name}
-                  style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain" }}
-                />
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "0.6rem" }}>
+                <div
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    borderRadius: "var(--radius-xs)",
+                    background: "#FFFFFF",
+                    border: "1px solid var(--border-subtle)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={cake.image_url}
+                    alt={cake.name}
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "var(--gold-dark)", fontWeight: 700 }}>
+                    {cake.category_name || "Uncategorized"}
+                  </span>
+                  <h4 style={{ fontSize: "0.92rem", color: "var(--text-primary)", margin: "0.1rem 0", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {cake.name}
+                  </h4>
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {cake.flavour}
+                  </p>
+                </div>
+                <span
+                  className={`badge-status ${
+                    cake.status === "published"
+                      ? "badge-published"
+                      : cake.status === "pending"
+                      ? "badge-pending"
+                      : cake.status === "approved"
+                      ? "badge-approved"
+                      : "badge-rejected"
+                  }`}
+                >
+                  {cake.status}
+                </span>
               </div>
 
-              <div style={{ padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.4rem" }}>
-                    <span className="cake-category-badge">{cake.category_name || "Bespoke"}</span>
-                    <span
-                      style={{
-                        fontSize: "0.7rem",
-                        padding: "0.2rem 0.5rem",
-                        borderRadius: "9999px",
-                        textTransform: "uppercase",
-                        fontWeight: 600,
-                        background:
-                          cake.status === "published"
-                            ? "rgba(212,175,55,0.2)"
-                            : cake.status === "approved"
-                            ? "rgba(16,185,129,0.15)"
-                            : cake.status === "pending"
-                            ? "rgba(245,158,11,0.15)"
-                            : "rgba(239,68,68,0.15)",
-                        color:
-                          cake.status === "published"
-                            ? "var(--gold-light)"
-                            : cake.status === "approved"
-                            ? "#34D399"
-                            : cake.status === "pending"
-                            ? "#FBBF24"
-                            : "#F87171",
-                      }}
-                    >
-                      {cake.status}
-                    </span>
-                  </div>
-
-                  <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-                    {cake.name}
-                  </h3>
-                  <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.75rem" }}>
-                    {cake.flavour}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "0.85rem", display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                  <Link
-                    href={`/cakes/${cake.slug}`}
-                    target="_blank"
-                    className="btn-outline-gold"
-                    style={{ padding: "0.4rem 0.75rem", fontSize: "0.75rem" }}
-                  >
-                    View ↗
-                  </Link>
-
-                  {cake.status !== "published" && (
-                    <button
-                      onClick={() => handlePublish(cake.id)}
-                      disabled={actionLoading === cake.id}
-                      className="btn-gold"
-                      style={{ padding: "0.4rem 0.75rem", fontSize: "0.75rem" }}
-                    >
-                      Publish
-                    </button>
-                  )}
-
-                  {cake.status === "pending" && (
-                    <button
-                      onClick={() => handleApprove(cake.id)}
-                      disabled={actionLoading === cake.id}
-                      className="btn-outline-gold"
-                      style={{ padding: "0.4rem 0.75rem", fontSize: "0.75rem", borderColor: "#10B981", color: "#34D399" }}
-                    >
-                      Approve
-                    </button>
-                  )}
-
-                  {cake.status !== "rejected" && (
-                    <button
-                      onClick={() => handleReject(cake.id)}
-                      disabled={actionLoading === cake.id}
-                      className="btn-outline-gold"
-                      style={{ padding: "0.4rem 0.75rem", fontSize: "0.75rem", borderColor: "#EF4444", color: "#F87171" }}
-                    >
-                      Reject
-                    </button>
-                  )}
-
+              {/* Mobile Actions */}
+              <div style={{ display: "flex", gap: "0.35rem", borderTop: "1px solid var(--border-light)", paddingTop: "0.5rem" }}>
+                {cake.status !== "published" && (
                   <button
-                    onClick={() => handleDelete(cake.id)}
-                    disabled={actionLoading === cake.id}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--text-muted)",
-                      fontSize: "0.75rem",
-                      cursor: "pointer",
-                      padding: "0.4rem",
-                    }}
-                    title="Delete cake"
+                    onClick={() => handlePublish(cake.id)}
+                    disabled={isBusy}
+                    className="btn-gold"
+                    style={{ flex: 1, padding: "0.3rem 0.5rem", fontSize: "0.72rem", justifyContent: "center" }}
                   >
-                    🗑️
+                    Publish Live
                   </button>
-                </div>
+                )}
+                {cake.status === "pending" && (
+                  <button
+                    onClick={() => handleApprove(cake.id)}
+                    disabled={isBusy}
+                    style={{
+                      flex: 1,
+                      background: "#ECFDF5",
+                      border: "1px solid #A7F3D0",
+                      color: "#065F46",
+                      padding: "0.3rem 0.5rem",
+                      borderRadius: "var(--radius-full)",
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Approve
+                  </button>
+                )}
+                {cake.status !== "rejected" && (
+                  <button
+                    onClick={() => handleReject(cake.id)}
+                    disabled={isBusy}
+                    style={{
+                      background: "#FEF2F2",
+                      border: "1px solid #FECACA",
+                      color: "#991B1B",
+                      padding: "0.3rem 0.55rem",
+                      borderRadius: "var(--radius-full)",
+                      fontSize: "0.72rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Reject
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(cake.id)}
+                  disabled={isBusy}
+                  style={{
+                    background: "var(--bg-cream)",
+                    border: "1px solid var(--border-subtle)",
+                    color: "var(--text-muted)",
+                    padding: "0.3rem 0.55rem",
+                    borderRadius: "var(--radius-full)",
+                    fontSize: "0.72rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        // LIST VIEW
-        <div className="glass-card" style={{ overflowX: "auto" }} id="admin-cakes-list">
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--border-gold)", color: "var(--text-muted)", fontSize: "0.8rem", textTransform: "uppercase" }}>
-                <th style={{ padding: "1rem" }}>Cake</th>
-                <th style={{ padding: "1rem" }}>Flavour</th>
-                <th style={{ padding: "1rem" }}>Category</th>
-                <th style={{ padding: "1rem" }}>Status</th>
-                <th style={{ padding: "1rem" }}>Created</th>
-                <th style={{ padding: "1rem", textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cakes.map((cake) => (
-                <tr key={cake.id} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                  <td style={{ padding: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div style={{ width: "42px", height: "42px", background: "#FFFFFF", borderRadius: "6px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={cake.image_url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
-                    </div>
-                    <div>
-                      <strong style={{ color: "var(--text-primary)", fontSize: "0.95rem" }}>{cake.name}</strong>
-                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{cake.slug}</div>
-                    </div>
-                  </td>
-                  <td style={{ padding: "1rem", fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-                    {cake.flavour}
-                  </td>
-                  <td style={{ padding: "1rem", fontSize: "0.85rem", color: "var(--gold-light)" }}>
-                    {cake.category_name || "-"}
-                  </td>
-                  <td style={{ padding: "1rem" }}>
-                    <span
-                      style={{
-                        fontSize: "0.72rem",
-                        padding: "0.2rem 0.55rem",
-                        borderRadius: "9999px",
-                        textTransform: "uppercase",
-                        fontWeight: 600,
-                        background:
-                          cake.status === "published"
-                            ? "rgba(212,175,55,0.2)"
-                            : cake.status === "approved"
-                            ? "rgba(16,185,129,0.15)"
-                            : cake.status === "pending"
-                            ? "rgba(245,158,11,0.15)"
-                            : "rgba(239,68,68,0.15)",
-                        color:
-                          cake.status === "published"
-                            ? "var(--gold-light)"
-                            : cake.status === "approved"
-                            ? "#34D399"
-                            : cake.status === "pending"
-                            ? "#FBBF24"
-                            : "#F87171",
-                      }}
-                    >
-                      {cake.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: "1rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                    {new Date(cake.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: "1rem", textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "0.5rem" }}>
-                      <Link href={`/cakes/${cake.slug}`} target="_blank" className="btn-outline-gold" style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}>
-                        View
-                      </Link>
-                      {cake.status !== "published" && (
-                        <button onClick={() => handlePublish(cake.id)} className="btn-gold" style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}>
-                          Publish
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(cake.id)} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer" }}>
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+          );
+        })}
+      </div>
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .admin-desktop-table-wrap {
+            display: none !important;
+          }
+          .admin-mobile-cards-list {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

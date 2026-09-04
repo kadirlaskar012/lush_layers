@@ -11,34 +11,34 @@ interface MasonryGalleryProps {
 
 export default function MasonryGallery({
   cakes,
-  emptyMessage = "No cakes available yet.",
+  emptyMessage = "No cakes available in this selection yet.",
 }: MasonryGalleryProps) {
   if (!cakes || cakes.length === 0) {
     return (
       <div
         style={{
           textAlign: "center",
-          padding: "4rem 2rem",
+          padding: "2.5rem 1.5rem",
           background: "var(--bg-surface)",
-          border: "1px dashed var(--border-gold)",
-          borderRadius: "var(--radius-lg)",
-          margin: "2rem 0",
+          border: "1px dashed var(--gold-border)",
+          borderRadius: "var(--radius-md)",
+          margin: "1.5rem 0",
         }}
         id="empty-gallery-state"
       >
-        <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "1rem" }}>🍰</span>
+        <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🍰</span>
         <h3
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "1.5rem",
-            color: "var(--gold-light)",
-            marginBottom: "0.5rem",
+            fontSize: "1.2rem",
+            color: "var(--text-primary)",
+            marginBottom: "0.35rem",
           }}
         >
           {emptyMessage}
         </h3>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
-          Our master bakers are preparing seasonal confections. Please check back soon or enquire via WhatsApp.
+        <p style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>
+          Our pastry atelier is currently crafting bespoke creations. Please check other collections or enquire directly on WhatsApp.
         </p>
       </div>
     );
