@@ -42,12 +42,13 @@ export default function Header() {
             <span
               style={{
                 fontFamily: "var(--font-heading)",
-                fontSize: "1.25rem",
-                letterSpacing: "0.12em",
+                fontSize: "clamp(1.05rem, 4vw, 1.25rem)",
+                letterSpacing: "0.1em",
                 fontWeight: 700,
                 color: "var(--text-primary)",
                 textTransform: "uppercase",
                 lineHeight: 1.05,
+                whiteSpace: "nowrap",
               }}
             >
               LUSH LAYERS

@@ -5,6 +5,7 @@ import PublicLayout from "../../../components/PublicLayout";
 import CakeDetailClient from "../../../components/CakeDetailClient";
 import CakeCard from "../../../components/CakeCard";
 import { getCakeBySlug, getPublishedCakes } from "../../../lib/api";
+import { getOptimizedImageUrl } from "../../../lib/imageHelper";
 
 export const revalidate = 60;
 
@@ -103,8 +104,12 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={cake.image_url}
+                src={getOptimizedImageUrl(cake.image_url, { width: 800 })}
                 alt={cake.name}
+                width={500}
+                height={380}
+                loading="eager"
+                decoding="async"
                 style={{
                   width: "100%",
                   maxHeight: "380px",

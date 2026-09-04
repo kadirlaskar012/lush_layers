@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Cake } from "../lib/types";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
+import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 interface CakeCardProps {
   cake: Cake;
@@ -24,10 +25,13 @@ export default function CakeCard({ cake }: CakeCardProps) {
           <div className="cake-card-image-wrap">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={cake.image_url}
+              src={getOptimizedImageUrl(cake.image_url, { width: 480 })}
               alt={cake.name}
               className="cake-card-img"
               loading="lazy"
+              decoding="async"
+              width={300}
+              height={300}
             />
             {/* Rating pill floating on image bottom-right */}
             <div

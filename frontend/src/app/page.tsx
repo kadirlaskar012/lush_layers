@@ -6,6 +6,7 @@ import FeaturedCarousel from "../components/FeaturedCarousel";
 import MasonryGallery from "../components/MasonryGallery";
 import { ReviewCard } from "../components/ReviewComponents";
 import { getPublishedCakes, getCategories, getApprovedReviews } from "../lib/api";
+import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 export const revalidate = 60; // ISR: 60 seconds revalidation
 
@@ -170,8 +171,12 @@ export default async function HomePage() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={heroCake.image_url}
+                        src={getOptimizedImageUrl(heroCake.image_url, { width: 640 })}
                         alt={heroCake.name}
+                        width={320}
+                        height={320}
+                        loading="eager"
+                        decoding="async"
                         style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       />
                     </div>
