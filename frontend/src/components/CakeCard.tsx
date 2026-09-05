@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Star, Sparkles } from "lucide-react";
 import { Cake } from "../lib/types";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
-import WhatsAppIcon from "./WhatsAppIcon";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 interface CakeCardProps {
@@ -88,27 +87,15 @@ export default function CakeCard({ cake }: CakeCardProps) {
             </div>
           )}
 
-          {/* Compact WhatsApp CTA */}
+          {/* Compact Order CTA - White Button with Crisp Outer Line */}
           <div className="cake-card-footer">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="btn-whatsapp icon-hover-pulse"
-              style={{
-                width: "100%",
-                padding: "0.38rem 0.55rem",
-                fontSize: "0.78rem",
-                height: "34px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "0.35rem",
-              }}
+              className="btn-order-now"
               id={`order-btn-${cake.slug}`}
-              aria-label={`Order ${cake.name} on WhatsApp`}
+              aria-label={`Order ${cake.name} Now`}
             >
-              <WhatsAppIcon size={14} />
-              <span className="desktop-only-inline">Order on WhatsApp</span>
-              <span className="mobile-only-inline">Order</span>
+              <span>Order Now</span>
             </button>
           </div>
         </div>

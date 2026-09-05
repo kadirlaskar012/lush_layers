@@ -5,6 +5,11 @@ import PublicLayout from "../components/PublicLayout";
 import MarketplaceListing from "../components/MarketplaceListing";
 import FeaturedCarousel from "../components/FeaturedCarousel";
 import MasonryGallery from "../components/MasonryGallery";
+import {
+  LuxuryMarqueeTape,
+  AtelierFeaturedPoster,
+  DualEditorialPosters,
+} from "../components/AnimatedPosters";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import { getPublishedCakes, getCategories } from "../lib/api";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
@@ -23,120 +28,77 @@ export default async function HomePage() {
 
   return (
     <PublicLayout>
-      {/* 1. COMPACT PROMOTIONAL HERO (Fits above fold with Category Story strip peek) */}
-      <section
-        style={{
-          position: "relative",
-          padding: "1.25rem 0 1.15rem",
-          background: "linear-gradient(180deg, #FFFFFF 0%, var(--bg-main) 100%)",
-          borderBottom: "1px solid var(--border-subtle)",
-          overflow: "hidden",
-        }}
-        id="hero-section"
-      >
+      {/* 1. ULTRA-COMPACT PROMOTIONAL HERO (Optimized for Mobile Viewport Glance) */}
+      <section className="hero-section-wrapper" id="hero-section">
         <div className="container-lux">
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              alignItems: "center",
-              gap: "1.25rem",
-            }}
-          >
+          <div className="hero-grid-layout">
             {/* Left: Compact Copy & Quick Actions */}
             <div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.5rem" }}>
-                <span
-                  style={{
-                    fontSize: "0.7rem",
-                    letterSpacing: "0.12em",
-                    color: "var(--gold-dark)",
-                    textTransform: "uppercase",
-                    fontWeight: 700,
-                    background: "var(--gold-subtle)",
-                    padding: "0.2rem 0.55rem",
-                    borderRadius: "var(--radius-full)",
-                    border: "1px solid var(--gold-border)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                  }}
-                >
+              <div style={{ display: "inline-flex", alignItems: "center", marginBottom: "0.25rem" }}>
+                <span className="hero-atelier-badge">
                   <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
                   <span>Haute Pâtisserie Atelier</span>
                 </span>
               </div>
 
-              <h1
-                style={{
-                  fontSize: "clamp(1.5rem, 3vw, 2.15rem)",
-                  lineHeight: 1.15,
-                  marginBottom: "0.5rem",
-                  color: "var(--text-primary)",
-                  fontWeight: 700,
-                }}
-              >
-                Couture Confections, <br />
+              <h1 className="hero-headline">
+                Couture Confections, <br style={{ display: "none" }} className="desktop-only-inline" />
                 <span className="text-gold-gradient">Made with Love</span>
               </h1>
 
-              <p
-                style={{
-                  fontSize: "0.85rem",
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.5,
-                  marginBottom: "0.95rem",
-                  maxWidth: "480px",
-                }}
-              >
+              <p className="hero-description">
                 Architectural tiers, velvety ganache, and hand-piped florals. Every bespoke creation is crafted fresh for your most cherished milestones.
               </p>
 
-              {/* Compact CTA Row */}
-              <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                <Link href="/cakes" className="btn-gold" id="hero-browse-btn" style={{ padding: "0.48rem 1.15rem", fontSize: "0.82rem" }}>
+              {/* Compact CTA Row - Features White Button with Outer Line */}
+              <div className="hero-cta-row">
+                <Link
+                  href="/cakes"
+                  className="btn-gold"
+                  id="hero-browse-btn"
+                  style={{ padding: "0.45rem 1.1rem", fontSize: "0.82rem", height: "34px" }}
+                >
                   Explore All Cakes
                 </Link>
                 <a
-                  href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20ordering%20a%20bespoke%20cake.`}
+                  href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20order%20a%20bespoke%20cake.`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-whatsapp icon-hover-pulse"
-                  id="hero-whatsapp-btn"
-                  style={{ padding: "0.48rem 1.05rem", fontSize: "0.82rem" }}
+                  className="btn-order-now"
+                  id="hero-order-now-btn"
+                  style={{ width: "auto", padding: "0.45rem 1.15rem", height: "34px", fontSize: "0.82rem" }}
                 >
-                  <WhatsAppIcon size={15} />
-                  <span>Order on WhatsApp</span>
+                  <span>Order Now</span>
                 </a>
               </div>
 
               {/* Compact Trust Badges */}
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>100% Artisanal</span>
+              <div className="hero-trust-badges">
+                <div className="hero-trust-item">
+                  <Check size={12} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                  <span>100% Artisanal</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>Direct WhatsApp Ordering</span>
+                <div className="hero-trust-item">
+                  <Check size={12} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                  <span>Direct Dialogue with Tina</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>Studio White Clarity</span>
+                <div className="hero-trust-item">
+                  <Check size={12} style={{ color: "var(--gold)", flexShrink: 0 }} />
+                  <span>Studio White Clarity</span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Featured Hero Creation Preview */}
+            {/* Right: Featured Hero Creation Preview (Desktop/Tablet Only to keep mobile sleek & compact) */}
             {heroCake && (
-              <div style={{ display: "flex", justifyContent: "center" }}>
+              <div className="hero-preview-col">
                 <div
                   style={{
-                    background: "#FFFFFF",
+                    background: "var(--glass-card-bg)",
                     border: "1px solid var(--border-subtle)",
                     borderRadius: "var(--radius-md)",
                     padding: "0.65rem",
-                    boxShadow: "var(--shadow-sm)",
+                    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 1), var(--shadow-sm)",
                     maxWidth: "270px",
                     width: "100%",
                     position: "relative",
@@ -157,6 +119,7 @@ export default async function HomePage() {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "0.25rem",
+                      zIndex: 3,
                     }}
                   >
                     <Sparkles size={10} style={{ color: "var(--gold-dark)" }} />
@@ -173,6 +136,7 @@ export default async function HomePage() {
                         alignItems: "center",
                         justifyContent: "center",
                         padding: "0.4rem",
+                        borderRadius: "var(--radius-sm)",
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -188,11 +152,11 @@ export default async function HomePage() {
                     </div>
                   </Link>
 
-                  <div style={{ paddingTop: "0.6rem", textAlign: "center" }}>
+                  <div style={{ paddingTop: "0.55rem", textAlign: "center" }}>
                     <span style={{ fontSize: "0.66rem", color: "var(--gold-dark)", textTransform: "uppercase", fontWeight: 600 }}>
                       {heroCake.category_name || "Signature"}
                     </span>
-                    <h3 style={{ fontSize: "1rem", color: "var(--text-primary)", margin: "0.15rem 0 0.35rem" }}>
+                    <h3 style={{ fontSize: "0.96rem", color: "var(--text-primary)", margin: "0.15rem 0 0.3rem" }}>
                       {heroCake.name}
                     </h3>
                     <p style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.5rem" }}>
@@ -200,10 +164,10 @@ export default async function HomePage() {
                     </p>
                     <Link
                       href={`/cakes/${heroCake.slug}`}
-                      className="btn-outline-gold"
-                      style={{ width: "100%", padding: "0.35rem 0.75rem", fontSize: "0.76rem" }}
+                      className="btn-order-now"
+                      style={{ height: "32px", fontSize: "0.76rem" }}
                     >
-                      View Confection Details
+                      <span>Order Now</span>
                     </Link>
                   </div>
                 </div>
@@ -213,30 +177,57 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. COMPACT HORIZONTAL FEATURED CAKES (Mobile touch-friendly swipeable strip) */}
+      {/* 2. INFINITE 120HZ LUXURY MARQUEE TAPE */}
+      <LuxuryMarqueeTape />
+
+      {/* 3. COMPACT HORIZONTAL FEATURED CAKES (Mobile touch-friendly swipeable strip) */}
       <FeaturedCarousel
         cakes={featuredCakes}
         title="Trending & Chef's Spotlight"
         subtitle="Handcrafted tiers and seasonal favourites celebrating life's sweetest milestones"
       />
 
-      {/* 3. MAIN CAKE MARKETPLACE BROWSING (Category Story Strip + Toolbar + Responsive Grid) */}
-      <section style={{ padding: "2.25rem 0 3rem", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-subtle)" }} id="marketplace">
+      {/* 4. ANIMATED ATELIER EDITORIAL POSTER BANNER */}
+      <section style={{ padding: "0.5rem 0", background: "var(--bg-main)" }}>
+        <div className="container-lux">
+          <AtelierFeaturedPoster whatsappNumber={bakeryWhatsApp} />
+        </div>
+      </section>
+
+      {/* 5. MAIN CAKE MARKETPLACE BROWSING (Category Story Strip + Toolbar + Responsive Grid) */}
+      <section style={{ padding: "2rem 0 2.5rem", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-subtle)" }} id="marketplace">
         <div className="container-lux">
           <MarketplaceListing
             initialCakes={cakes || []}
             categories={categories || []}
             showCategoryStrip={true}
             title="Browse All Creations"
-            subtitle="Explore by occasion, profile, or search directly. Tap Order on WhatsApp to reserve."
+            subtitle="Explore by occasion, profile, or search directly. Tap Order Now to customize."
           />
         </div>
       </section>
 
-      {/* 4. EDITORIAL MASONRY DISCOVERY SECTION */}
-      <section style={{ padding: "2.75rem 0 3.25rem", background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }} id="inspiration-wall">
+      {/* 6. DUAL EDITORIAL SHOWCASE POSTERS */}
+      <section style={{ padding: "1.25rem 0 0.5rem", background: "var(--bg-cream)" }}>
         <div className="container-lux">
-          <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 1.75rem" }}>
+          <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 0.75rem" }}>
+            <span className="cake-category-badge">Seasonal Atelier Postcards</span>
+            <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+              Curated Celebration Themes
+            </h2>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+              Signature motifs and flavour compositions available for private reservation.
+            </p>
+          </div>
+
+          <DualEditorialPosters />
+        </div>
+      </section>
+
+      {/* 7. EDITORIAL MASONRY DISCOVERY SECTION */}
+      <section style={{ padding: "2.25rem 0 2.75rem", background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }} id="inspiration-wall">
+        <div className="container-lux">
+          <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 1.5rem" }}>
             <span className="cake-category-badge">Editorial Discovery</span>
             <h2 style={{ fontSize: "1.6rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
               The Haute Inspiration Wall

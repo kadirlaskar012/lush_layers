@@ -382,6 +382,352 @@ button:hover .icon-hover-pulse {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 4px 12px rgba(184, 142, 62, 0.15);
 }
 
+/* Order Now White Button with Crisp Outer Line */
+.btn-order-now {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  border: 1.5px solid rgba(197, 152, 58, 0.45);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  padding: 0.42rem 0.95rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition-transform-120hz), border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(45, 35, 25, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+  white-space: nowrap;
+  width: 100%;
+  height: 34px;
+  will-change: transform;
+}
+
+.btn-order-now:hover {
+  background: #FFFDF9;
+  border-color: var(--gold);
+  color: var(--gold-dark);
+  transform: translateY(-1.5px) translate3d(0, 0, 0);
+  box-shadow: 0 4px 14px rgba(197, 152, 58, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.btn-order-now:active {
+  transform: translateY(0.5px) translate3d(0, 0, 0);
+  background: #F8F5EE;
+}
+
+/* ==========================================================================
+   COMPACT HERO SECTION RESPONSIVE SYSTEM (Mobile Ultra-Compact)
+   ========================================================================== */
+.hero-section-wrapper {
+  position: relative;
+  padding: 0.85rem 0 0.65rem;
+  background: linear-gradient(180deg, #FFFFFF 0%, var(--bg-main) 100%);
+  border-bottom: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .hero-section-wrapper {
+    padding: 1.6rem 0 1.35rem;
+  }
+}
+
+.hero-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+@media (min-width: 768px) {
+  .hero-grid-layout {
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 1.5rem;
+  }
+}
+
+.hero-atelier-badge {
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+  font-weight: 700;
+  background: var(--gold-subtle);
+  padding: 0.16rem 0.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--gold-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.hero-headline {
+  font-size: 1.4rem;
+  line-height: 1.15;
+  margin: 0.3rem 0 0.3rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .hero-headline {
+    font-size: 1.85rem;
+    margin: 0.45rem 0 0.45rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-headline {
+    font-size: 2.2rem;
+  }
+}
+
+.hero-description {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 0.65rem;
+  max-width: 480px;
+}
+
+@media (min-width: 640px) {
+  .hero-description {
+    font-size: 0.85rem;
+    margin-bottom: 0.9rem;
+  }
+}
+
+.hero-cta-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+@media (min-width: 640px) {
+  .hero-cta-row {
+    margin-bottom: 0.85rem;
+  }
+}
+
+.hero-trust-badges {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .hero-trust-badges {
+    gap: 1rem;
+  }
+}
+
+.hero-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Hide bulky standalone hero card preview on mobile (<768px) to keep hero compact */
+.hero-preview-col {
+  display: none;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .hero-preview-col {
+    display: flex;
+  }
+}
+
+/* ==========================================================================
+   ANIMATED LUXURY POSTERS & MARQUEE SYSTEM
+   ========================================================================== */
+
+/* 1. Atelier Editorial Animated Poster */
+.animated-poster-container {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: linear-gradient(135deg, #FFFDF8 0%, #FAF5EB 50%, #FBF1DF 100%);
+  border: 1px solid rgba(197, 152, 58, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 8px 28px -6px rgba(184, 142, 62, 0.12);
+  padding: 1.5rem 1.25rem;
+  margin: 1.5rem 0;
+  transition: transform 0.3s var(--ease-120hz), box-shadow 0.3s var(--ease-120hz);
+}
+
+@media (min-width: 768px) {
+  .animated-poster-container {
+    padding: 2.25rem 2.5rem;
+    margin: 2.5rem 0;
+  }
+}
+
+/* Ambient Slow Animated Gradient Beam behind the poster */
+.animated-poster-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 40%, rgba(212, 175, 103, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 80% 60%, rgba(225, 29, 72, 0.05) 0%, transparent 45%);
+  animation: posterAuraShift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes posterAuraShift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-25px, 18px) rotate(3deg); }
+  100% { transform: translate(18px, -18px) rotate(-3deg); }
+}
+
+/* Periodic Specular Light Sheen sweep across the poster */
+.poster-shimmer-sweep {
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.35) 55%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  animation: posterLightSweep 6.5s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes posterLightSweep {
+  0% { left: -120%; }
+  35% { left: 160%; }
+  100% { left: 160%; }
+}
+
+/* Floating Luxury Badges */
+.poster-floating-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(197, 152, 58, 0.4);
+  color: var(--gold-dark);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(184, 142, 62, 0.12);
+  animation: posterFloat 3.5s ease-in-out infinite;
+}
+
+@keyframes posterFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* 2. Infinite 120Hz Luxury Marquee Tape */
+.luxury-marquee-wrap {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #FBF8F2 0%, #FFFDF9 50%, #FBF8F2 100%);
+  border-top: 1px solid rgba(197, 152, 58, 0.25);
+  border-bottom: 1px solid rgba(197, 152, 58, 0.25);
+  padding: 0.65rem 0;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.luxury-marquee-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5rem;
+  animation: marquee120Hz 28s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.luxury-marquee-wrap:hover .luxury-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee120Hz {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.marquee-spark {
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+
+/* 3. Dual Editorial Showcase Posters */
+.dual-posters-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 1.75rem 0;
+}
+
+@media (min-width: 768px) {
+  .dual-posters-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.editorial-poster-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid rgba(197, 152, 58, 0.3);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 220px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), var(--shadow-sm);
+  transition: transform 0.3s var(--ease-120hz), box-shadow 0.3s var(--ease-120hz), border-color 0.25s ease;
+  will-change: transform;
+}
+
+.editorial-poster-card:hover {
+  transform: translateY(-3px) translate3d(0, 0, 0);
+  border-color: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 12px 30px -4px rgba(197, 152, 58, 0.2);
+}
+
 /* ==========================================================================
    CAKE GRID SYSTEM - MANDATORY RESPONSIVE SPECIFICATION:
    Desktop: 4 columns

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Cake } from "../lib/types";
 import { createEnquiry } from "../lib/api";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
-import WhatsAppIcon from "./WhatsAppIcon";
+import { getOptimizedImageUrl } from "../lib/imageHelper";
 import { Sparkles } from "lucide-react";
 
 export default function CakeDetailClient({ cake }: { cake: Cake }) {
@@ -169,18 +169,18 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
 
           <button
             type="submit"
-            className="btn-whatsapp icon-hover-lift"
+            className="btn-order-now icon-hover-lift"
             style={{
               width: "100%",
               padding: "0.65rem 1rem",
-              fontSize: "0.88rem",
+              fontSize: "0.92rem",
               justifyContent: "center",
               gap: "0.45rem",
+              height: "44px",
             }}
             id="detail-order-btn"
           >
-            <WhatsAppIcon size={18} />
-            <span>Enquire & Order on WhatsApp</span>
+            <span>Order Now</span>
           </button>
         </form>
       </div>
