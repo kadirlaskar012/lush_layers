@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default function ContactPage() {
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   return (
     <PublicLayout>
@@ -50,8 +50,17 @@ export default function ContactPage() {
             >
               <div>
                 <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "1rem" }}>
-                  Studio & Atelier
+                  Studio Atelier & Founder
                 </h3>
+
+                <div style={{ marginBottom: "1.25rem" }}>
+                  <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "0.2rem", fontWeight: 600 }}>
+                    Founder & Chef Pâtissier:
+                  </div>
+                  <p style={{ color: "var(--text-primary)", fontSize: "0.9rem", fontWeight: 700 }}>
+                    Tina Baidya
+                  </p>
+                </div>
 
                 <div style={{ marginBottom: "1.25rem" }}>
                   <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "0.2rem", fontWeight: 600 }}>
@@ -76,24 +85,24 @@ export default function ContactPage() {
 
                 <div>
                   <div style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "0.2rem", fontWeight: 600 }}>
-                    Direct WhatsApp:
+                    Direct WhatsApp & Call:
                   </div>
-                  <p style={{ color: "var(--whatsapp)", fontSize: "0.88rem", fontWeight: 600 }}>
-                    {bakeryWhatsApp}
+                  <p style={{ color: "var(--whatsapp)", fontSize: "0.95rem", fontWeight: 700 }}>
+                    +91 8768388868
                   </p>
                 </div>
               </div>
 
               <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border-light)", paddingTop: "1rem" }}>
                 <a
-                  href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20plan%20a%20tasting%20appointment.`}
+                  href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20plan%20a%20tasting%20consultation.`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-whatsapp icon-hover-lift"
                   style={{ width: "100%", justifyContent: "center", padding: "0.55rem 1rem", fontSize: "0.82rem", gap: "0.4rem" }}
                 >
                   <WhatsAppIcon size={16} />
-                  <span>Schedule WhatsApp Consultation</span>
+                  <span>Connect with Tina on WhatsApp</span>
                 </a>
               </div>
             </div>

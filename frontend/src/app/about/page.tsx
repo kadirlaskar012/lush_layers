@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default function AboutPage() {
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   return (
     <PublicLayout>
@@ -21,10 +21,10 @@ export default function AboutPage() {
             <span className="cake-category-badge">The Atelier Story</span>
             <h1 style={{ fontSize: "2rem", lineHeight: 1.2, marginBottom: "0.5rem", color: "var(--text-primary)" }}>
               Handcrafted with Passion, <br />
-              <span className="text-gold-gradient">Made with Eternal Love</span>
+              <span className="text-gold-gradient">Curated by Tina Baidya</span>
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", lineHeight: "1.6" }}>
-              Founded on the belief that life's most cherished milestones deserve edible centerpieces of timeless beauty, exceptional ingredients, and architectural finesse.
+              Founded by master cake artisan <strong>Tina Baidya</strong>, LUSH LAYERS was born from a singular artistic vision: to transform life&apos;s most cherished celebrations into edible masterworks of architectural grace, pure Belgian cocoa, and hand-piped botanicals.
             </p>
           </div>
 
@@ -149,28 +149,31 @@ export default function AboutPage() {
             }}
           >
             <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
-              Discuss Your Celebration with Our Master Pâtissier
+              Consult Directly with Founder & Chef Tina Baidya
             </h3>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem", maxWidth: "550px", margin: "0 auto 0.75rem" }}>
-              We design every tier around your aesthetic, guest count, and palette desires. Direct conversation via WhatsApp guarantees personal attention.
+              We design every tier around your celebration aesthetic, guest count, and flavour preferences. Direct dialogue with Tina ensures seamless bespoke artistry.
             </p>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "1.25rem", background: "var(--bg-cream)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid var(--border-subtle)" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem", background: "var(--bg-cream)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid var(--border-subtle)" }}>
               <MapPin size={14} color="var(--gold-dark)" />
               <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 600 }}>Atelier Location: PD Road, Kolkata-41, India</span>
+            </div>
+            <div style={{ fontSize: "0.82rem", color: "var(--whatsapp)", fontWeight: 600, marginBottom: "1.25rem" }}>
+              Direct Line & WhatsApp: +91 8768388868
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
               <Link href="/cakes" className="btn-gold" style={{ padding: "0.5rem 1.2rem", fontSize: "0.84rem" }}>
                 Browse Catalog
               </Link>
               <a
-                href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake.`}
+                href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-whatsapp icon-hover-lift"
                 style={{ padding: "0.5rem 1.2rem", fontSize: "0.84rem", gap: "0.4rem" }}
               >
                 <WhatsAppIcon size={16} />
-                <span>Chat on WhatsApp</span>
+                <span>Chat with Tina on WhatsApp</span>
               </a>
             </div>
           </div>

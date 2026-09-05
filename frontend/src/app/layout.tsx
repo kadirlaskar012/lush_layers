@@ -2,20 +2,22 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LUSH LAYERS • Luxury Artisanal Cakes • Made with Love",
+  title: "LUSH LAYERS • Haute Pâtisserie Atelier • By Tina Baidya",
   description:
-    "Exquisite bespoke celebration and wedding cakes crafted with passion. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp.",
+    "Exquisite bespoke celebration and wedding cakes crafted with passion by Tina Baidya. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp at +91 8768388868.",
   keywords: [
+    "Lush Layers",
+    "Tina Baidya",
     "luxury cakes",
     "bespoke wedding cakes",
     "artisanal birthday cakes",
     "custom cakes WhatsApp",
     "Belgian chocolate cakes",
-    "LUSH LAYERS",
+    "haute patisserie",
   ],
   openGraph: {
-    title: "LUSH LAYERS • Luxury Artisanal Cakes",
-    description: "Bespoke handcrafted cakes made with love. Order directly on WhatsApp.",
+    title: "LUSH LAYERS • Luxury Artisanal Cakes • By Tina Baidya",
+    description: "Bespoke handcrafted cakes made with love by Tina Baidya. Order directly on WhatsApp: +91 8768388868.",
     siteName: "LUSH LAYERS",
     type: "website",
   },

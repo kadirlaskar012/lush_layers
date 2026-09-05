@@ -18,7 +18,7 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
   const [customMessage, setCustomMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   const handleDirectWhatsAppOrder = async (e: React.FormEvent) => {
     e.preventDefault();

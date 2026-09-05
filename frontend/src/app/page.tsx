@@ -17,7 +17,7 @@ export default async function HomePage() {
     getCategories(),
   ]);
 
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
   const heroCake = cakes && cakes.length > 0 ? cakes[0] : null;
   const featuredCakes = cakes ? cakes.slice(0, 8) : [];
 
@@ -293,20 +293,24 @@ export default async function HomePage() {
                 textAlign: "center",
               }}
             >
-              <h4 style={{ fontSize: "1.05rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+              <h4 style={{ fontSize: "1.08rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
                 Have an Upcoming Celebration?
               </h4>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "1rem" }}>
-                Chat directly with our head baker. Share your guest count and date for immediate personal consultation.
+              <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.85rem", lineHeight: 1.5 }}>
+                Chat directly with Founder & Chef Pâtissier <strong>Tina Baidya</strong>. Share your date, aesthetic, and guest count for bespoke atelier creations.
               </p>
+              <div style={{ fontSize: "0.78rem", color: "var(--gold-dark)", fontWeight: 600, marginBottom: "0.75rem" }}>
+                Direct WhatsApp: +91 8768388868
+              </div>
               <a
-                href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20consult%20about%20a%20cake%20for%20my%20event.`}
+                href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake%20for%20my%20event.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-whatsapp"
-                style={{ width: "100%", padding: "0.55rem 1rem", fontSize: "0.84rem" }}
+                className="btn-whatsapp icon-hover-lift"
+                style={{ width: "100%", padding: "0.55rem 1rem", fontSize: "0.84rem", justifyContent: "center", gap: "0.4rem" }}
               >
-                Chat on WhatsApp Now
+                <WhatsAppIcon size={16} />
+                <span>Chat with Tina on WhatsApp</span>
               </a>
             </div>
           </div>

@@ -5,7 +5,7 @@ import WhatsAppIcon from "./WhatsAppIcon";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   return (
     <footer
@@ -50,22 +50,22 @@ export default function Footer() {
                 color: "var(--gold)",
                 fontStyle: "italic",
                 display: "block",
-                marginBottom: "0.75rem",
+                marginBottom: "0.5rem",
               }}
             >
-              Made with Love
+              Made with Love • By Tina Baidya
             </span>
             <p
               style={{
                 color: "var(--text-secondary)",
                 fontSize: "0.82rem",
                 lineHeight: "1.6",
-                marginBottom: "1rem",
+                marginBottom: "0.85rem",
               }}
             >
-              Boutique artisanal confectionery atelier devoted to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
+              Boutique artisanal confectionery atelier founded by cake artist Tina Baidya. Dedicated to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.85rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.75rem" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
                 <MapPin size={14} color="var(--gold-dark)" />
                 <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500 }}>
@@ -73,17 +73,9 @@ export default function Footer() {
                 </span>
               </div>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                <span
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    background: "#25D366",
-                    borderRadius: "50%",
-                    display: "inline-block",
-                  }}
-                ></span>
-                <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-                  Orders & consultations via WhatsApp
+                <WhatsAppIcon size={14} />
+                <span style={{ fontSize: "0.78rem", color: "var(--whatsapp)", fontWeight: 600 }}>
+                  Direct: +91 8768388868
                 </span>
               </div>
             </div>

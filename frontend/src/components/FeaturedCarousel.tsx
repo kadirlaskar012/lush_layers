@@ -183,6 +183,8 @@ export default function FeaturedCarousel({
             WebkitOverflowScrolling: "touch",
             scrollPadding: "0 0.5rem",
             alignItems: "stretch",
+            willChange: "scroll-position",
+            transform: "translate3d(0, 0, 0)",
           }}
           className="featured-carousel-track"
           id="featured-carousel-track"

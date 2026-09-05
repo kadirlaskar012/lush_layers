@@ -27,7 +27,7 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
 
   if (!isOpen) return null;
 
-  const bakeryWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
+  const bakeryWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
