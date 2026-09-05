@@ -541,9 +541,51 @@ async def reprocess_cake_image(cake_id: str):
 # ==========================================
 # CATEGORIES & REVIEWS
 # ==========================================
+class CategoryCreateRequest(BaseModel):
+    name: str
+    slug: Optional[str] = None
+    description: Optional[str] = ""
+    image_url: Optional[str] = "/categories/default.webp"
+    icon: Optional[str] = "Cake"
+    color: Optional[str] = "#FAF6F0"
+    accent: Optional[str] = "#B88E3E"
+    active: Optional[bool] = True
+    sort_order: Optional[int] = 0
+
+class CategoryUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    description: Optional[str] = None
+    image_url: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    accent: Optional[str] = None
+    active: Optional[bool] = None
+    sort_order: Optional[int] = None
+
 @app.get("/api/categories")
-async def get_categories():
-    return db.get_categories(active_only=True)
+async def get_categories(all: bool = False):
+    return db.get_categories(active_only=not all)
+
+@app.post("/api/categories")
+async def create_category(payload: CategoryCreateRequest):
+    if not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Category name cannot be empty")
+    try:
+        created = db.create_category(payload.dict())
+        return {"message": "Category created successfully", "category": created}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.patch("/api/categories/{cat_id}")
+async def update_category(cat_id: str, payload: CategoryUpdateRequest):
+    updates = payload.dict(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields provided to update")
+    updated = db.update_category(cat_id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return {"message": "Category icon and details updated successfully", "category": updated}
 
 class ReviewCreateRequest(BaseModel):
     customer_name: str

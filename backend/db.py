@@ -86,7 +86,6 @@ class Database:
         conn = self._get_conn()
         cursor = conn.cursor()
 
-        # Categories
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS categories (
                 id TEXT PRIMARY KEY,
@@ -94,12 +93,25 @@ class Database:
                 slug TEXT NOT NULL UNIQUE,
                 description TEXT,
                 image_url TEXT,
+                icon TEXT DEFAULT 'Cake',
+                color TEXT DEFAULT '#FAF6F0',
+                accent TEXT DEFAULT '#B88E3E',
                 active INTEGER DEFAULT 1 NOT NULL,
                 sort_order INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
+
+        for col_name, col_type in [
+            ("icon", "TEXT DEFAULT 'Cake'"),
+            ("color", "TEXT DEFAULT '#FAF6F0'"),
+            ("accent", "TEXT DEFAULT '#B88E3E'")
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE categories ADD COLUMN {col_name} {col_type}")
+            except Exception:
+                pass
 
         # Cakes (Zero price column, mandatory image_url)
         cursor.execute("""
@@ -251,6 +263,13 @@ class Database:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, sample_reviews)
 
+        # Backfill default icons if needed
+        cursor.execute("UPDATE categories SET icon = 'Crown', color = '#F9F9F9', accent = '#C89B3C' WHERE slug = 'signature-tiered' AND (icon IS NULL OR icon = 'Cake')")
+        cursor.execute("UPDATE categories SET icon = 'PartyPopper', color = '#FFF5F7', accent = '#E11D48' WHERE slug = 'bespoke-birthday' AND (icon IS NULL OR icon = 'Cake')")
+        cursor.execute("UPDATE categories SET icon = 'Flower2', color = '#FFF0F3', accent = '#DB2777' WHERE slug = 'botanical-floral' AND (icon IS NULL OR icon = 'Cake')")
+        cursor.execute("UPDATE categories SET icon = 'Cookie', color = '#F6F1EA', accent = '#6B4423' WHERE slug = 'pure-belgian-chocolate' AND (icon IS NULL OR icon = 'Cake')")
+        cursor.execute("UPDATE categories SET icon = 'Shapes', color = '#F4F6F8', accent = '#475569' WHERE slug = 'modern-minimalist' AND (icon IS NULL OR icon = 'Cake')")
+
         conn.commit()
         conn.close()
 
@@ -272,6 +291,83 @@ class Database:
         cursor.execute("SELECT * FROM categories WHERE slug = ?", (slug,))
         row = cursor.fetchone()
         conn.close()
+        return dict(row) if row else None
+
+    def get_category_by_id(self, cat_id: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def create_category(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cat_id = data.get("id") or str(uuid.uuid4())
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        name = data["name"]
+        slug = data.get("slug") or re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
+        description = data.get("description", "")
+        image_url = data.get("image_url", "/categories/default.webp")
+        icon = data.get("icon", "Cake")
+        color = data.get("color", "#FAF6F0")
+        accent = data.get("accent", "#B88E3E")
+        active = 1 if data.get("active", True) else 0
+        sort_order = int(data.get("sort_order", 0))
+        
+        cursor.execute("""
+            INSERT INTO categories (id, name, slug, description, image_url, icon, color, accent, active, sort_order, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (cat_id, name, slug, description, image_url, icon, color, accent, active, sort_order, now, now))
+        conn.commit()
+        
+        cursor.execute("SELECT * FROM categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row)
+
+    def update_category(self, cat_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        allowed_keys = {"name", "slug", "description", "image_url", "icon", "color", "accent", "active", "sort_order"}
+        set_clauses = []
+        values = []
+        for k, v in updates.items():
+            if k in allowed_keys and v is not None:
+                if k == "active":
+                    v = 1 if v else 0
+                set_clauses.append(f"{k} = ?")
+                values.append(v)
+                
+        if not set_clauses:
+            conn.close()
+            return self.get_category_by_id(cat_id)
+            
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        set_clauses.append("updated_at = ?")
+        values.append(now)
+        values.append(cat_id)
+        
+        sql = f"UPDATE categories SET {', '.join(set_clauses)} WHERE id = ?"
+        cursor.execute(sql, tuple(values))
+        conn.commit()
+        
+        cursor.execute("SELECT * FROM categories WHERE id = ?", (cat_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        # Async sync to Postgres if connected
+        try:
+            pg_set = [f"{k} = %s" for k in updates if k in allowed_keys and updates[k] is not None]
+            pg_set.append("updated_at = %s")
+            pg_sql = f"UPDATE categories SET {', '.join(pg_set)} WHERE id = %s"
+            self._sync_to_postgres(pg_sql, tuple(values))
+        except Exception:
+            pass
+            
         return dict(row) if row else None
 
     # --- CAKES ---
