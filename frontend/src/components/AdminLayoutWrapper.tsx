@@ -12,7 +12,6 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       {/* Mobile Top Bar */}
       <div
         style={{
-          display: "none",
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0.6rem 1rem",
@@ -63,17 +62,6 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
       <main className="admin-content" id="admin-main-content">
         {children}
       </main>
-
-      <style jsx global>{`
-        @media (max-width: 900px) {
-          .admin-layout {
-            flex-direction: column;
-          }
-          .admin-mobile-header {
-            display: flex !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

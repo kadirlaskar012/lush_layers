@@ -2,9 +2,8 @@
    LUSH LAYERS - LIGHT LUXURY BAKERY DESIGN SYSTEM
    Theme: Light • Warm Ivory • Elegant Gold • Fresh • Premium • Compact
    STRICT RULE: ZERO PRICE DISPLAY ANYWHERE
+   Fonts loaded natively via Next.js next/font/google
    ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* Warm Bakery Light Marketplace Palette - Enhanced Luxury Tone */
@@ -780,8 +779,6 @@ button:hover .icon-hover-pulse {
   display: flex;
   flex-direction: column;
   height: 100%;
-  content-visibility: auto;
-  contain-intrinsic-size: 280px;
   will-change: transform;
 }
 
@@ -1239,30 +1236,36 @@ button:hover .icon-hover-pulse {
   max-width: 100%;
 }
 
-@media (max-width: 640px) {
-  .marketplace-toolbar {
-    padding: 0.55rem 0.65rem;
-  }
-  .marketplace-search-wrap {
-    min-width: 100%;
-    max-width: 100%;
-  }
-  .marketplace-filter-select {
-    flex: 1 1 calc(50% - 0.35rem);
-    min-width: 120px;
-    font-size: 0.72rem;
-  }
-}
-
 .marketplace-filter-select:focus {
   border-color: var(--gold);
+}
+
+/* Marketplace Filters Responsive Visibility (Pure CSS) */
+.mobile-filter-trigger-wrap {
+  display: block;
+}
+
+.desktop-filters-row {
+  display: none !important;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .mobile-filter-trigger-wrap {
+    display: none !important;
+  }
+  .desktop-filters-row {
+    display: flex !important;
+  }
 }
 
 @media (max-width: 640px) {
   .marketplace-toolbar {
     flex-direction: column;
     align-items: stretch;
-    padding: 0.75rem;
+    padding: 0.65rem 0.75rem;
   }
   .marketplace-search-wrap {
     max-width: 100%;
@@ -1270,10 +1273,10 @@ button:hover .icon-hover-pulse {
     width: 100%;
   }
   .marketplace-filter-select {
-    flex: 1 1 calc(50% - 0.3rem);
+    flex: 1 1 calc(50% - 0.35rem);
     min-width: 120px;
     font-size: 0.78rem;
-    padding: 0.45rem 0.65rem;
+    padding: 0.42rem 0.65rem;
   }
 }
 
@@ -1757,6 +1760,114 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (max-width: 640px) {
   button, .btn-gold, .btn-outline-gold, .btn-whatsapp {
     min-height: 40px;
+  }
+}
+
+/* ==========================================================================
+   HEADER RESPONSIVE STYLES (Pure CSS - Instant Paint, Zero Hydration Flash)
+   ========================================================================== */
+.desktop-nav {
+  display: none !important;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.desktop-search-form {
+  display: none !important;
+  position: relative;
+  width: 280px;
+}
+
+.desktop-actions {
+  display: none !important;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-controls {
+  display: flex !important;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+@media (min-width: 900px) {
+  .desktop-nav {
+    display: flex !important;
+  }
+  .desktop-search-form {
+    display: block !important;
+  }
+  .desktop-actions {
+    display: flex !important;
+  }
+  .mobile-controls {
+    display: none !important;
+  }
+}
+
+.header-nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 500;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.header-nav-link:hover {
+  color: var(--gold);
+}
+
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: var(--bg-main);
+  border: 1px solid var(--border-light);
+}
+
+.mobile-nav-link:hover {
+  background: var(--bg-cream);
+  color: var(--gold-dark);
+}
+
+/* ==========================================================================
+   ADMIN LAYOUT RESPONSIVE STYLES (Pure CSS)
+   ========================================================================== */
+.admin-mobile-header {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+  .admin-mobile-header {
+    display: flex !important;
+  }
+}
+
+/* ==========================================================================
+   PREFERS REDUCED MOTION (WCAG Accessibility & Power Saving)
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .luxury-marquee-track {
+    animation: none !important;
+  }
+  .poster-shimmer-sweep {
+    display: none !important;
   }
 }
 

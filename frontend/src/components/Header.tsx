@@ -80,11 +80,6 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav
-            style={{
-              display: "none",
-              alignItems: "center",
-              gap: "1.25rem",
-            }}
             className="desktop-nav"
             id="desktop-navigation"
           >
@@ -117,11 +112,6 @@ export default function Header() {
           {/* Desktop Search */}
           <form
             onSubmit={handleSearchSubmit}
-            style={{
-              display: "none",
-              position: "relative",
-              width: "280px",
-            }}
             className="desktop-search-form"
           >
             <input
@@ -165,7 +155,7 @@ export default function Header() {
           </form>
 
           {/* Desktop Right Actions */}
-          <div style={{ display: "none", alignItems: "center", gap: "0.75rem" }} className="desktop-actions">
+          <div className="desktop-actions">
             <a
               href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
               target="_blank"
@@ -180,7 +170,7 @@ export default function Header() {
           </div>
 
           {/* Mobile Right Controls: WhatsApp Icon + Search Toggle + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }} className="mobile-controls">
+          <div className="mobile-controls">
             <a
               href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
               target="_blank"
@@ -375,52 +365,6 @@ export default function Header() {
           </div>
         </div>
       )}
-
-      {/* Media Query Styles for Header */}
-      <style jsx global>{`
-        @media (min-width: 900px) {
-          .desktop-nav {
-            display: flex !important;
-          }
-          .desktop-search-form {
-            display: block !important;
-          }
-          .desktop-actions {
-            display: flex !important;
-          }
-          .mobile-controls {
-            display: none !important;
-          }
-        }
-        .header-nav-link {
-          color: var(--text-secondary);
-          text-decoration: none;
-          font-size: 0.84rem;
-          font-weight: 500;
-          transition: color 0.15s;
-          white-space: nowrap;
-        }
-        .header-nav-link:hover {
-          color: var(--gold);
-        }
-        .mobile-nav-link {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          padding: 0.75rem 1rem;
-          border-radius: var(--radius-sm);
-          color: var(--text-primary);
-          text-decoration: none;
-          font-size: 0.95rem;
-          font-weight: 500;
-          background: var(--bg-main);
-          border: 1px solid var(--border-light);
-        }
-        .mobile-nav-link:hover {
-          background: var(--bg-cream);
-          color: var(--gold-dark);
-        }
-      `}</style>
     </header>
   );
 }

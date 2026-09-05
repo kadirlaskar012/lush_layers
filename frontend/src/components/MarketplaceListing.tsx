@@ -248,7 +248,7 @@ export default function MarketplaceListing({
         </div>
 
         {/* Desktop / Tablet Filters (Dropdowns) */}
-        <div className="desktop-filters-row" style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" }}>
+        <div className="desktop-filters-row">
           {/* Category dropdown */}
           <select
             value={selectedCategorySlug}
@@ -470,23 +470,6 @@ export default function MarketplaceListing({
           </button>
         </div>
       )}
-
-      <style jsx>{`
-        .mobile-filter-trigger-wrap {
-          display: block;
-        }
-        .desktop-filters-row {
-          display: none !important;
-        }
-        @media (min-width: 640px) {
-          .mobile-filter-trigger-wrap {
-            display: none !important;
-          }
-          .desktop-filters-row {
-            display: flex !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
