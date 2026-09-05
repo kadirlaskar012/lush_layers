@@ -229,21 +229,23 @@ export default async function HomePage() {
       </section>
 
       {/* 7. EDITORIAL MASONRY DISCOVERY SECTION */}
-      <section style={{ padding: "2.25rem 0 2.75rem", background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }} id="inspiration-wall">
-        <div className="container-lux">
-          <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 1.5rem" }}>
-            <span className="cake-category-badge">Editorial Discovery</span>
-            <h2 style={{ fontSize: "1.6rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-              The Haute Inspiration Wall
-            </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem" }}>
-              An editorial gallery of bespoke tiered masterworks, botanical sugarcraft, and velvety ganaches.
-            </p>
-          </div>
+      {cakes && cakes.length > 0 && (
+        <section style={{ padding: "2.25rem 0 2.75rem", background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }} id="inspiration-wall">
+          <div className="container-lux">
+            <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 1.5rem" }}>
+              <span className="cake-category-badge">Editorial Discovery</span>
+              <h2 style={{ fontSize: "1.6rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                The Haute Inspiration Wall
+              </h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem" }}>
+                An editorial gallery of bespoke tiered masterworks, botanical sugarcraft, and velvety ganaches.
+              </p>
+            </div>
 
-          <MasonryGallery cakes={cakes || []} />
-        </div>
-      </section>
+            <MasonryGallery cakes={cakes || []} />
+          </div>
+        </section>
+      )}
 
       {/* 6. ATELIER PHILOSOPHY & WHATSAPP CONSULTATION */}
       <section style={{ padding: "2.5rem 0", background: "var(--bg-main)", borderTop: "1px solid var(--border-subtle)" }} id="about">

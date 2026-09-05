@@ -183,55 +183,7 @@ class Database:
             )
         """)
 
-        # Seed sample enquiries if empty
-        cursor.execute("SELECT COUNT(*) FROM enquiries")
-        if cursor.fetchone()[0] == 0:
-            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            default_enquiries = [
-                (
-                    "enq-001",
-                    "Priya Sengupta",
-                    "+91 98301 23456",
-                    "Rosewater Strawberry Champagne Tier",
-                    "Raspberry Coulis Layered with White Chocolate Mousse",
-                    "1.0 kg (Medium)",
-                    "Happy 25th Anniversary Ma & Baba! Delivery to Salt Lake by 4 PM.",
-                    "New",
-                    now_iso,
-                    now_iso,
-                ),
-                (
-                    "enq-002",
-                    "Arjun Mukherjee",
-                    "+91 98312 98765",
-                    "Silken Dark Gianduja Confection",
-                    "Belgian Truffle Mousse with Espresso Infusion",
-                    "2.0 kg (Celebration)",
-                    "Eggless preference. Inscription: 'Happy 30th Birthday Rhea!'",
-                    "Contacted",
-                    now_iso,
-                    now_iso,
-                ),
-                (
-                    "enq-003",
-                    "Sunita Roy",
-                    "+91 97480 55432",
-                    "Royal Imperial Callebaut Cascade",
-                    "70% Single-Origin Belgian Cocoa with Wild Raspberry Infusion",
-                    "1.5 kg (Tiered)",
-                    "Golden anniversary celebration banquet at Tollygunge Club.",
-                    "Confirmed",
-                    now_iso,
-                    now_iso,
-                ),
-            ]
-            cursor.executemany("""
-                INSERT INTO enquiries (
-                    id, customer_name, phone, cake_name, flavour, selected_size,
-                    custom_message, status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, default_enquiries)
-            conn.commit()
+
 
         # Seed categories if empty
         cursor.execute("SELECT COUNT(*) FROM categories")

@@ -98,50 +98,7 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* LAN Access Notice Banner - Compact */}
-      {systemInfo && (
-        <div
-          style={{
-            background: "var(--bg-cream)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-sm)",
-            padding: "0.55rem 0.85rem",
-            marginBottom: "1.15rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "0.5rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span
-              style={{
-                width: "7px",
-                height: "7px",
-                borderRadius: "50%",
-                background: "#10B981",
-              }}
-            ></span>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>
-              <strong>LAN Backend Active:</strong>{" "}
-              <code style={{ background: "var(--bg-surface)", padding: "0.12rem 0.35rem", borderRadius: "3px", border: "1px solid var(--border-light)" }}>
-                {systemInfo.lan_url}
-              </code>
-            </span>
-          </div>
-          <a
-            href={`${systemInfo.lan_url}/portal`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
-            className="icon-hover-slide"
-          >
-            <span>Open LAN Bulk Portal</span>
-            <ArrowUpRight size={13} />
-          </a>
-        </div>
-      )}
+
 
       {/* SECTION 1: CAKE STATISTICS (4 Compact Cards) */}
       <div style={{ marginBottom: "1.25rem" }}>

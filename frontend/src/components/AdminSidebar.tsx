@@ -216,9 +216,6 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
             <span>Storefront</span>
             <ArrowUpRight size={14} />
           </Link>
-          <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.2rem", display: "block" }}>
-            LAN: 0.0.0.0:8000
-          </span>
         </div>
       </aside>
 

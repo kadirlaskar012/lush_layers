@@ -16,11 +16,17 @@ export async function POST(request: NextRequest) {
     } else {
       revalidatePath("/");
       revalidatePath("/cakes");
+      revalidatePath("/reviews");
+    }
+
+    if (tag) {
+      revalidateTag(tag);
     }
 
     return NextResponse.json({
       revalidated: true,
       path: path || "all",
+      tag: tag || null,
       now: Date.now(),
     });
   } catch (err: any) {
