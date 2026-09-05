@@ -127,7 +127,7 @@ export default function Footer() {
                 fontWeight: 600,
               }}
             >
-              Atelier
+              About Us
             </h4>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <li>
@@ -147,7 +147,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/admin" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600 }}>
-                  Management Atelier
+                  Admin Panel
                 </Link>
               </li>
             </ul>

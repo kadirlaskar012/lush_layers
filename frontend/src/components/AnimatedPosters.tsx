@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Sparkles, Crown, Award, ArrowRight } from "lucide-react";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
@@ -17,7 +17,7 @@ export function LuxuryMarqueeTape() {
     "Slow-Baked Artisanal European Butter",
     "Bespoke Confection Artistry by Tina Baidya",
     "Zero Artificial Essence or Shortenings",
-    "Direct Atelier Line: +91 8768388868",
+    "Direct Studio Line: +91 8768388868",
   ];
 
   return (
@@ -35,13 +35,20 @@ export function LuxuryMarqueeTape() {
 }
 
 export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: AnimatedPostersProps) {
+  // Start at 0, suppress hydration mismatch using isMounted pattern
   const [activePosterIdx, setActivePosterIdx] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only run client-side interactions after mount to avoid SSR flash
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const posters = [
     {
       id: "poster-1",
-      badge: "2026 Haute Atelier Showcase",
+      badge: "2026 Signature Showcase",
       title: "The Royal Belgian Couverture & Vanilla Symphony",
       tagline: "Slow-Melted 70% Callebaut Ganache • 24K Edible Gold Leaf • Madagascar Bourbon Vanilla",
       description:
@@ -77,13 +84,14 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
     },
   ];
 
-  // Auto-cycle through poster highlights every 6 seconds
+  // Auto-cycle ONLY after client mount to prevent hydration flash
   useEffect(() => {
+    if (!isMounted) return;
     const timer = setInterval(() => {
       setActivePosterIdx((prev) => (prev + 1) % posters.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [posters.length]);
+  }, [isMounted, posters.length]);
 
   const current = posters[activePosterIdx];
   const IconComponent = current.icon;
@@ -111,12 +119,12 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
               <span>{current.badge}</span>
             </div>
 
-            {/* Poster Tab Selectors */}
+            {/* Poster Tab Selectors - Only interactive after mount */}
             <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
               {posters.map((p, idx) => (
                 <button
                   key={p.id}
-                  onClick={() => setActivePosterIdx(idx)}
+                  onClick={() => isMounted && setActivePosterIdx(idx)}
                   aria-label={`View poster ${idx + 1}`}
                   style={{
                     width: idx === activePosterIdx ? "26px" : "8px",
@@ -195,7 +203,7 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
                 {current.description}
               </p>
 
-              {/* Action Buttons: White button with outer line for Order Now */}
+              {/* Action Buttons */}
               <div
                 style={{
                   display: "flex",
@@ -235,7 +243,7 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
           cake={{
             id: current.id,
             name: current.title,
-            slug: "bespoke-atelier-creation",
+            slug: "bespoke-creation",
             description: current.description,
             flavour: current.tagline,
             image_url: "",

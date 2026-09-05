@@ -18,7 +18,7 @@ export default function AboutPage() {
         <div className="container-lux">
           {/* Header - Compact */}
           <div style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 2rem" }}>
-            <span className="cake-category-badge">The Atelier Story</span>
+            <span className="cake-category-badge">Our Story & Philosophy</span>
             <h1 style={{ fontSize: "2rem", lineHeight: 1.2, marginBottom: "0.5rem", color: "var(--text-primary)" }}>
               Handcrafted with Passion, <br />
               <span className="text-gold-gradient">Curated by Tina Baidya</span>

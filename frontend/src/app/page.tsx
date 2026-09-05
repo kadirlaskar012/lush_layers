@@ -37,7 +37,7 @@ export default async function HomePage() {
               <div style={{ display: "inline-flex", alignItems: "center", marginBottom: "0.25rem" }}>
                 <span className="hero-atelier-badge">
                   <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
-                  <span>Haute Pâtisserie Atelier</span>
+                  <span>Boutique Cake Studio • Kolkata</span>
                 </span>
               </div>
 
@@ -211,7 +211,7 @@ export default async function HomePage() {
       <section style={{ padding: "1.25rem 0 0.5rem", background: "var(--bg-cream)" }}>
         <div className="container-lux">
           <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 0.75rem" }}>
-            <span className="cake-category-badge">Seasonal Atelier Postcards</span>
+            <span className="cake-category-badge">Seasonal Creations</span>
             <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
               Curated Celebration Themes
             </h2>
@@ -267,10 +267,10 @@ export default async function HomePage() {
               </p>
               <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                 <Link href="/about" className="btn-outline-gold" style={{ padding: "0.45rem 0.95rem", fontSize: "0.8rem" }}>
-                  Read Atelier Story
+                  Our Story
                 </Link>
                 <Link href="/contact" className="btn-outline-gold" style={{ padding: "0.45rem 0.95rem", fontSize: "0.8rem" }}>
-                  Bespoke Brief
+                  Custom Order Brief
                 </Link>
               </div>
             </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LUSH LAYERS • Haute Pâtisserie Atelier • By Tina Baidya",
+  title: "LUSH LAYERS • Boutique Cake Studio • By Tina Baidya",
   description:
     "Exquisite bespoke celebration and wedding cakes crafted with passion by Tina Baidya. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp at +91 8768388868.",
   keywords: [

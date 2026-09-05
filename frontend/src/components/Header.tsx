@@ -349,7 +349,7 @@ export default function Header() {
             className="mobile-nav-link"
           >
             <MapPin size={18} style={{ color: "var(--gold-dark)" }} />
-            <span>Contact & Atelier</span>
+            <span>Contact Us</span>
           </Link>
           <Link
             href="/admin"
@@ -358,7 +358,7 @@ export default function Header() {
             style={{ color: "var(--gold-dark)", fontWeight: 600 }}
           >
             <ShieldCheck size={18} style={{ color: "var(--gold-dark)" }} />
-            <span>Management Atelier</span>
+            <span>Admin Panel</span>
           </Link>
 
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border-subtle)" }}>
