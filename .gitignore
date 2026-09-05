@@ -63,6 +63,9 @@ yarn-error.log*
 Thumbs.db
 desktop.ini
 
+# Live preview screenshots
+live_preview_*.png
+
 # IDE & Editor files
 .vscode/
 .idea/
