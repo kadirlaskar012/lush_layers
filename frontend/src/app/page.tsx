@@ -1,9 +1,11 @@
 import React from "react";
 import Link from "next/link";
+import { Sparkles, Check } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
 import MarketplaceListing from "../components/MarketplaceListing";
 import FeaturedCarousel from "../components/FeaturedCarousel";
 import MasonryGallery from "../components/MasonryGallery";
+import WhatsAppIcon from "../components/WhatsAppIcon";
 import { getPublishedCakes, getCategories } from "../lib/api";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
@@ -55,9 +57,13 @@ export default async function HomePage() {
                     padding: "0.2rem 0.55rem",
                     borderRadius: "var(--radius-full)",
                     border: "1px solid var(--gold-border)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
                   }}
                 >
-                  ✨ Haute Pâtisserie Atelier
+                  <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
+                  <span>Haute Pâtisserie Atelier</span>
                 </span>
               </div>
 
@@ -95,13 +101,11 @@ export default async function HomePage() {
                   href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20ordering%20a%20bespoke%20cake.`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-whatsapp"
+                  className="btn-whatsapp icon-hover-pulse"
                   id="hero-whatsapp-btn"
                   style={{ padding: "0.48rem 1.05rem", fontSize: "0.82rem" }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
-                  </svg>
+                  <WhatsAppIcon size={15} />
                   <span>Order on WhatsApp</span>
                 </a>
               </div>
@@ -109,15 +113,15 @@ export default async function HomePage() {
               {/* Compact Trust Badges */}
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <span style={{ color: "var(--gold)", fontSize: "0.75rem" }}>✓</span>
+                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
                   <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>100% Artisanal</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <span style={{ color: "var(--gold)", fontSize: "0.75rem" }}>✓</span>
+                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
                   <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>Direct WhatsApp Ordering</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <span style={{ color: "var(--gold)", fontSize: "0.75rem" }}>✓</span>
+                  <Check size={13} style={{ color: "var(--gold)", flexShrink: 0 }} />
                   <span style={{ fontSize: "0.76rem", color: "var(--text-secondary)", fontWeight: 500 }}>Studio White Clarity</span>
                 </div>
               </div>
@@ -150,9 +154,13 @@ export default async function HomePage() {
                       fontWeight: 700,
                       padding: "0.18rem 0.5rem",
                       borderRadius: "var(--radius-full)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
                     }}
                   >
-                    ✨ Chef's Masterwork
+                    <Sparkles size={10} style={{ color: "var(--gold-dark)" }} />
+                    <span>Chef's Masterwork</span>
                   </div>
 
                   <Link href={`/cakes/${heroCake.slug}`} style={{ textDecoration: "none", display: "block" }}>

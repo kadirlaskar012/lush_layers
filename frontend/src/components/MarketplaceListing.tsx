@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { Search, SlidersHorizontal, X, Sparkles, Cake as CakeIcon, RotateCcw } from "lucide-react";
 import { Cake, Category } from "../lib/types";
 import CakeCard from "./CakeCard";
 import CategoryBar from "./CategoryBar";
@@ -30,6 +31,7 @@ export default function MarketplaceListing({
   const [selectedCategorySlug, setSelectedCategorySlug] = useState(initialCategorySlug);
   const [selectedFlavour, setSelectedFlavour] = useState(initialFlavour);
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "az">("popular");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Extract unique flavours from cakes for the flavour filter dropdown
   const uniqueFlavours = useMemo(() => {
@@ -99,7 +101,8 @@ export default function MarketplaceListing({
     setSortBy("popular");
   };
 
-  const hasActiveFilters = Boolean(searchQuery || selectedCategorySlug || selectedFlavour);
+  const activeFilterCount = (selectedCategorySlug ? 1 : 0) + (selectedFlavour ? 1 : 0) + (sortBy !== "popular" ? 1 : 0);
+  const hasActiveFilters = Boolean(searchQuery || selectedCategorySlug || selectedFlavour || sortBy !== "popular");
 
   return (
     <div className="marketplace-listing-wrapper" id="marketplace-catalog">
@@ -125,7 +128,7 @@ export default function MarketplaceListing({
               }}
             >
               <span>Celebrate with the Perfect Cake</span>
-              <span style={{ fontSize: "1.2rem" }}>🎉</span>
+              <Sparkles size={16} style={{ color: "var(--gold)" }} />
             </h2>
             <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
               Swipe to explore collections
@@ -170,13 +173,10 @@ export default function MarketplaceListing({
 
         {/* Center: Search input */}
         <div className="marketplace-search-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--gold-dark)" }}>
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
+          <Search size={14} style={{ color: "var(--gold-dark)", flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Search by name, chocolate, floral..."
+            placeholder="Search by name, flavour, design..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="marketplace-search-input"
@@ -191,17 +191,51 @@ export default function MarketplaceListing({
                 color: "var(--text-muted)",
                 cursor: "pointer",
                 padding: 0,
-                fontSize: "0.8rem",
+                display: "flex",
+                alignItems: "center",
               }}
               aria-label="Clear search"
             >
-              ✕
+              <X size={13} />
             </button>
           )}
         </div>
 
-        {/* Right: Category, Flavour & Sort dropdowns */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" }}>
+        {/* Mobile Filter Button */}
+        <div className="mobile-filter-trigger-wrap">
+          <button
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="btn-outline-gold"
+            id="mobile-filter-trigger-btn"
+            style={{
+              padding: "0.38rem 0.75rem",
+              fontSize: "0.78rem",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.35rem",
+            }}
+          >
+            <SlidersHorizontal size={13} />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span
+                style={{
+                  background: "var(--gold)",
+                  color: "#FFFFFF",
+                  fontSize: "0.65rem",
+                  borderRadius: "var(--radius-full)",
+                  padding: "0.05rem 0.35rem",
+                  fontWeight: 700,
+                }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Desktop / Tablet Filters (Dropdowns) */}
+        <div className="desktop-filters-row" style={{ display: "flex", alignItems: "center", gap: "0.45rem", flexWrap: "wrap" }}>
           {/* Category dropdown */}
           <select
             value={selectedCategorySlug}
@@ -261,13 +295,134 @@ export default function MarketplaceListing({
                 fontWeight: 600,
                 cursor: "pointer",
                 padding: "0.3rem 0.4rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
               }}
             >
-              Clear
+              <RotateCcw size={11} />
+              <span>Reset</span>
             </button>
           )}
         </div>
       </div>
+
+      {/* Mobile Filter Bottom Sheet / Modal */}
+      {isMobileFilterOpen && (
+        <div className="filter-drawer-overlay" onClick={() => setIsMobileFilterOpen(false)}>
+          <div className="filter-bottom-sheet" id="mobile-filter-drawer" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border-light)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <SlidersHorizontal size={16} style={{ color: "var(--gold-dark)" }} />
+                <h3 style={{ fontSize: "1.05rem", color: "var(--text-primary)", fontWeight: 700, margin: 0 }}>
+                  Filter & Sort Confections
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsMobileFilterOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: "4px" }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Category selection */}
+            <div style={{ marginBottom: "1rem" }}>
+              <label className="form-label">Category</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategorySlug("")}
+                  style={{
+                    padding: "0.32rem 0.65rem",
+                    borderRadius: "var(--radius-full)",
+                    fontSize: "0.75rem",
+                    background: selectedCategorySlug === "" ? "var(--gold)" : "var(--bg-main)",
+                    color: selectedCategorySlug === "" ? "#FFFFFF" : "var(--text-secondary)",
+                    border: selectedCategorySlug === "" ? "1px solid var(--gold)" : "1px solid var(--border-subtle)",
+                    cursor: "pointer",
+                  }}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategorySlug(cat.slug)}
+                    style={{
+                      padding: "0.32rem 0.65rem",
+                      borderRadius: "var(--radius-full)",
+                      fontSize: "0.75rem",
+                      background: selectedCategorySlug === cat.slug ? "var(--gold)" : "var(--bg-main)",
+                      color: selectedCategorySlug === cat.slug ? "#FFFFFF" : "var(--text-secondary)",
+                      border: selectedCategorySlug === cat.slug ? "1px solid var(--gold)" : "1px solid var(--border-subtle)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Flavour selection */}
+            {uniqueFlavours.length > 0 && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label className="form-label">Flavour Profile</label>
+                <select
+                  value={selectedFlavour}
+                  onChange={(e) => setSelectedFlavour(e.target.value)}
+                  className="form-select"
+                  style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
+                >
+                  <option value="">All Flavours</option>
+                  {uniqueFlavours.map((flv) => (
+                    <option key={flv} value={flv}>
+                      {flv}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Sort selection */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label className="form-label">Sort Order</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="form-select"
+                style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
+              >
+                <option value="popular">Popularity & Rating</option>
+                <option value="newest">Newest Creations First</option>
+                <option value="az">Alphabetical (A - Z)</option>
+              </select>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: "0.6rem" }}>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn-outline-gold"
+                style={{ flex: 1, padding: "0.55rem", fontSize: "0.82rem", justifyContent: "center" }}
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsMobileFilterOpen(false)}
+                className="btn-gold"
+                style={{ flex: 2, padding: "0.55rem", fontSize: "0.82rem", justifyContent: "center" }}
+              >
+                Apply Filters ({filteredCakes.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Product Grid: Strictly 4 Desktop / 3 Tablet / 2 Mobile */}
       {filteredCakes.length > 0 ? (
@@ -288,7 +443,9 @@ export default function MarketplaceListing({
             marginTop: "1rem",
           }}
         >
-          <div style={{ fontSize: "2.2rem", marginBottom: "0.5rem" }}>🎂</div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.6rem" }}>
+            <CakeIcon size={38} style={{ color: "var(--gold)" }} />
+          </div>
           <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.35rem" }}>
             No creations match your filter criteria
           </h3>
@@ -300,6 +457,23 @@ export default function MarketplaceListing({
           </button>
         </div>
       )}
+
+      <style jsx>{`
+        .mobile-filter-trigger-wrap {
+          display: block;
+        }
+        .desktop-filters-row {
+          display: none !important;
+        }
+        @media (min-width: 640px) {
+          .mobile-filter-trigger-wrap {
+            display: none !important;
+          }
+          .desktop-filters-row {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

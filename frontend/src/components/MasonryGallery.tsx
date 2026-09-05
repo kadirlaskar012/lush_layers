@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import { Cake } from "../lib/types";
+import { Cake as CakeType } from "../lib/types";
 import CakeCard from "./CakeCard";
+import { Cake } from "lucide-react";
 
 interface MasonryGalleryProps {
-  cakes: Cake[];
+  cakes: CakeType[];
   emptyMessage?: string;
 }
 
@@ -26,7 +27,22 @@ export default function MasonryGallery({
         }}
         id="empty-gallery-state"
       >
-        <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🍰</span>
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: "var(--bg-cream)",
+            border: "1px solid var(--border-subtle)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "0.6rem",
+            color: "var(--gold-dark)",
+          }}
+        >
+          <Cake size={24} strokeWidth={1.75} />
+        </div>
         <h3
           style={{
             fontFamily: "var(--font-heading)",

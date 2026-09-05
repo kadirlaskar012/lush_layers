@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAdminCakes, publishCake, unpublishCake, rejectCake } from "../../../../lib/api";
 import { Cake } from "../../../../lib/types";
+import { RotateCw, ArrowUpRight, CheckCircle2, Sparkles, Undo2, Send, ArchiveX } from "lucide-react";
 
 export default function ApprovedCakesPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -110,11 +111,13 @@ export default function ApprovedCakesPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button onClick={loadApproved} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            🔄 Refresh
+          <button onClick={loadApproved} className="btn-outline-gold icon-hover-rotate" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem" }}>
+            <RotateCw size={13} />
+            <span>Refresh</span>
           </button>
-          <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            Pending Queue ↗
+          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-slide" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.3rem" }}>
+            <span>Pending Queue</span>
+            <ArrowUpRight size={13} />
           </Link>
         </div>
       </div>
@@ -130,9 +133,13 @@ export default function ApprovedCakesPage() {
             fontSize: "0.82rem",
             marginBottom: "1rem",
             fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
           }}
         >
-          ✓ {feedback}
+          <CheckCircle2 size={15} />
+          <span>{feedback}</span>
         </div>
       )}
 
@@ -216,7 +223,22 @@ export default function ApprovedCakesPage() {
             border: "1px dashed var(--gold-border)",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.4rem" }}>✨</div>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "var(--bg-cream)",
+              border: "1px solid var(--border-subtle)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "0.6rem",
+              color: "var(--gold-dark)",
+            }}
+          >
+            <Sparkles size={24} />
+          </div>
           <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
             No approved cakes matching filter
           </h3>
@@ -362,10 +384,11 @@ export default function ApprovedCakesPage() {
                       <Link
                         href={`/cakes/${cake.slug}`}
                         target="_blank"
-                        className="btn-outline-gold"
-                        style={{ flex: 1, padding: "0.35rem", fontSize: "0.74rem", justifyContent: "center" }}
+                        className="btn-outline-gold icon-hover-slide"
+                        style={{ flex: 1, padding: "0.35rem", fontSize: "0.74rem", justifyContent: "center", gap: "0.25rem" }}
                       >
-                        View Live ↗
+                        <span>View Live</span>
+                        <ArrowUpRight size={13} />
                       </Link>
                       <button
                         onClick={() => handleUnpublish(cake.id, cake.name)}
@@ -378,20 +401,26 @@ export default function ApprovedCakesPage() {
                           padding: "0.35rem 0.65rem",
                           fontSize: "0.74rem",
                           cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.25rem",
                         }}
+                        className="icon-hover-rotate"
                         title="Revert to staged approval"
                       >
-                        ↩ Unpublish
+                        <Undo2 size={12} />
+                        <span>Unpublish</span>
                       </button>
                     </>
                   ) : (
                     <button
                       onClick={() => handlePublish(cake.id, cake.name)}
                       disabled={isBusy}
-                      className="btn-gold"
-                      style={{ flex: 1, padding: "0.38rem", fontSize: "0.76rem", justifyContent: "center" }}
+                      className="btn-gold icon-hover-lift"
+                      style={{ flex: 1, padding: "0.38rem", fontSize: "0.76rem", justifyContent: "center", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                     >
-                      🚀 Publish Live
+                      <Send size={12} />
+                      <span>Publish Live</span>
                     </button>
                   )}
 
@@ -406,10 +435,15 @@ export default function ApprovedCakesPage() {
                       padding: "0.35rem 0.55rem",
                       fontSize: "0.74rem",
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
                     }}
+                    className="icon-hover-lift"
                     title="Reject and archive"
                   >
-                    Archive
+                    <ArchiveX size={12} />
+                    <span>Archive</span>
                   </button>
                 </div>
               </div>

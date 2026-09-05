@@ -5,6 +5,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getAdminStats } from "../lib/api";
 import { AdminStats } from "../lib/types";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Cake,
+  Clock,
+  Sparkles,
+  ArchiveX,
+  Star,
+  Tag,
+  Zap,
+  X,
+  ArrowUpRight,
+} from "lucide-react";
 
 interface AdminSidebarProps {
   isMobileOpen?: boolean;
@@ -27,37 +40,37 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
   const approvedTotalCount = stats?.total_approved ?? ((stats?.approved || 0) + (stats?.published || 0));
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "📊" },
+    { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={16} strokeWidth={1.8} /> },
     {
       href: "/admin/orders",
       label: "Orders / Enquiries",
-      icon: "📋",
+      icon: <ClipboardList size={16} strokeWidth={1.8} />,
       count: newEnquiriesCount,
       highlight: true,
     },
-    { href: "/admin/cakes", label: "All Cakes", icon: "🎂" },
+    { href: "/admin/cakes", label: "All Cakes", icon: <Cake size={16} strokeWidth={1.8} /> },
     {
       href: "/admin/cakes/pending",
       label: "Pending Approval",
-      icon: "⏳",
+      icon: <Clock size={16} strokeWidth={1.8} />,
       count: stats?.pending,
       highlight: true,
     },
     {
       href: "/admin/cakes/approved",
       label: "Approved & Published",
-      icon: "✨",
+      icon: <Sparkles size={16} strokeWidth={1.8} />,
       count: approvedTotalCount,
     },
-    { href: "/admin/cakes/rejected", label: "Rejected / Archive", icon: "🚫", count: stats?.rejected },
+    { href: "/admin/cakes/rejected", label: "Rejected / Archive", icon: <ArchiveX size={16} strokeWidth={1.8} />, count: stats?.rejected },
     {
       href: "/admin/reviews",
       label: "Reviews",
-      icon: "⭐",
+      icon: <Star size={16} strokeWidth={1.8} />,
       count: stats?.pending_reviews,
     },
-    { href: "/admin/categories", label: "Categories", icon: "🏷️" },
-    { href: "/admin/upload", label: "Bulk Upload", icon: "⚡" },
+    { href: "/admin/categories", label: "Categories", icon: <Tag size={16} strokeWidth={1.8} /> },
+    { href: "/admin/upload", label: "Bulk Upload", icon: <Zap size={16} strokeWidth={1.8} /> },
   ];
 
   return (
@@ -133,15 +146,14 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
               display: "none",
               background: "none",
               border: "none",
-              fontSize: "1.1rem",
               cursor: "pointer",
               color: "var(--text-secondary)",
               padding: "4px",
             }}
-            className="mobile-close-sidebar-btn"
+            className="mobile-close-sidebar-btn icon-hover-rotate"
             aria-label="Close sidebar"
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 
@@ -162,7 +174,9 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
-                  <span style={{ fontSize: "0.95rem" }}>{item.icon}</span>
+                  <span style={{ display: "inline-flex", alignItems: "center" }} className="icon-hover-pulse">
+                    {item.icon}
+                  </span>
                   <span style={{ fontWeight: isActive ? 600 : 500 }}>{item.label}</span>
                 </div>
                 {typeof item.count === "number" && item.count > 0 && (
@@ -197,9 +211,10 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
               fontSize: "0.78rem",
               fontWeight: 600,
             }}
+            className="icon-hover-slide"
           >
             <span>Storefront</span>
-            <span>↗</span>
+            <ArrowUpRight size={14} />
           </Link>
           <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.2rem", display: "block" }}>
             LAN: 0.0.0.0:8000

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { getAdminReviews, approveReview, rejectReview, deleteReview } from "../../../lib/api";
 import { Review } from "../../../lib/types";
+import { Star } from "lucide-react";
 
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -106,8 +107,17 @@ export default function AdminReviewsPage() {
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <div className="rating-stars" style={{ fontSize: "0.85rem" }}>
-                    {"★".repeat(rev.rating)}
+                  <div className="rating-stars" style={{ display: "inline-flex", gap: "2px", alignItems: "center" }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        size={13}
+                        style={{
+                          fill: s <= rev.rating ? "var(--gold)" : "transparent",
+                          color: s <= rev.rating ? "var(--gold)" : "var(--border-subtle)",
+                        }}
+                      />
+                    ))}
                   </div>
                   <span
                     className={`badge-status ${

@@ -14,6 +14,20 @@ import {
   reprocessCakeImage,
 } from "../../../../lib/api";
 import { Cake, Category } from "../../../../lib/types";
+import {
+  Sparkles,
+  RotateCw,
+  Clock,
+  Check,
+  CheckCircle2,
+  Info,
+  X,
+  Zap,
+  Pencil,
+  Send,
+  ArchiveX,
+  ArrowUpRight,
+} from "lucide-react";
 
 export default function PendingCakesPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -280,24 +294,26 @@ export default function PendingCakesPage() {
           <button
             onClick={handleGenerateAllWithAI}
             disabled={bulkState.isRunning || ungeneratedCount === 0}
-            className="btn-gold"
+            className="btn-gold icon-hover-lift"
             style={{
               padding: "0.42rem 0.85rem",
               fontSize: "0.78rem",
               display: "inline-flex",
               alignItems: "center",
-              gap: "0.35rem",
+              gap: "0.4rem",
               opacity: ungeneratedCount === 0 ? 0.6 : 1,
               cursor: ungeneratedCount === 0 ? "not-allowed" : "pointer",
             }}
           >
-            ✨ Generate All with AI {ungeneratedCount > 0 ? `(${ungeneratedCount})` : ""}
+            <Sparkles size={14} />
+            <span>Generate All with AI {ungeneratedCount > 0 ? `(${ungeneratedCount})` : ""}</span>
           </button>
-          <button onClick={loadData} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            🔄 Refresh
+          <button onClick={loadData} className="btn-outline-gold icon-hover-rotate" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem" }}>
+            <RotateCw size={13} />
+            <span>Refresh</span>
           </button>
-          <Link href="/admin/upload" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            + Bulk Upload
+          <Link href="/admin/upload" className="btn-outline-gold icon-hover-slide" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem" }}>
+            <span>+ Bulk Upload</span>
           </Link>
         </div>
       </div>
@@ -313,10 +329,13 @@ export default function PendingCakesPage() {
             fontSize: "0.82rem",
             marginBottom: "1rem",
             fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
           }}
         >
-          {feedback.type === "success" ? "✓ " : feedback.type === "info" ? "ℹ " : "✕ "}
-          {feedback.msg}
+          {feedback.type === "success" ? <CheckCircle2 size={15} /> : feedback.type === "info" ? <Info size={15} /> : <X size={15} />}
+          <span>{feedback.msg}</span>
         </div>
       )}
 
@@ -331,8 +350,11 @@ export default function PendingCakesPage() {
             marginBottom: "1rem",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginBottom: "0.35rem" }}>
-            <span>⚡ Processing AI analysis ({bulkState.current} / {bulkState.total})...</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.82rem", marginBottom: "0.35rem" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <Zap size={14} color="var(--gold-dark)" />
+              <span>Processing AI analysis ({bulkState.current} / {bulkState.total})...</span>
+            </span>
             <button
               onClick={() => { stopBulkRef.current = true; }}
               style={{ background: "none", border: "none", color: "#EF4444", fontSize: "0.76rem", cursor: "pointer", fontWeight: 600 }}
@@ -365,7 +387,22 @@ export default function PendingCakesPage() {
             marginTop: "1rem",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.4rem" }}>✨</div>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "var(--bg-cream)",
+              border: "1px solid var(--border-subtle)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "0.6rem",
+              color: "var(--gold-dark)",
+            }}
+          >
+            <Clock size={24} />
+          </div>
           <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
             No pending cakes in queue
           </h3>
@@ -418,9 +455,13 @@ export default function PendingCakesPage() {
                       background: "#FEF3C7",
                       color: "#92400E",
                       border: "1px solid #FCD34D",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
                     }}
                   >
-                    ⏳ PENDING APPROVAL
+                    <Clock size={11} />
+                    <span>PENDING APPROVAL</span>
                   </span>
 
                   <span
@@ -447,9 +488,24 @@ export default function PendingCakesPage() {
                           : aiStatus === "generating"
                           ? "1px solid #BFDBFE"
                           : "1px solid var(--border-subtle)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
                     }}
                   >
-                    {aiStatus === "generated" ? "✓ AI Generated" : aiStatus === "generating" ? "⚡ AI Analyzing..." : "Awaiting AI"}
+                    {aiStatus === "generated" ? (
+                      <>
+                        <Check size={11} />
+                        <span>AI Generated</span>
+                      </>
+                    ) : aiStatus === "generating" ? (
+                      <>
+                        <Zap size={11} />
+                        <span>AI Analyzing...</span>
+                      </>
+                    ) : (
+                      "Awaiting AI"
+                    )}
                   </span>
                 </div>
 
@@ -486,10 +542,10 @@ export default function PendingCakesPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: "0.8rem",
+                          color: "var(--gold-dark)",
                         }}
                       >
-                        ⏳
+                        <Clock size={16} className="icon-hover-rotate" />
                       </div>
                     )}
                   </div>
@@ -510,9 +566,14 @@ export default function PendingCakesPage() {
                           cursor: "pointer",
                           fontWeight: 600,
                           padding: 0,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.25rem",
                         }}
+                        className="icon-hover-slide"
                       >
-                        ✏️ Edit
+                        <Pencil size={12} />
+                        <span>Edit</span>
                       </button>
                     </div>
 
@@ -593,17 +654,28 @@ export default function PendingCakesPage() {
                 <button
                   onClick={() => handleAIGenerate(cake.id, aiStatus === "generated")}
                   disabled={isBusy}
-                  className="btn-outline-gold"
+                  className="btn-outline-gold icon-hover-lift"
                   style={{ padding: "0.32rem 0.6rem", fontSize: "0.74rem" }}
                   title="Generate or refresh AI metadata suggestions"
                 >
-                  {aiStatus === "generated" ? "🔄 Regenerate AI" : "✨ AI Generate"}
+                  {aiStatus === "generated" ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      <RotateCw size={12} />
+                      <span>Regenerate AI</span>
+                    </span>
+                  ) : (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      <Sparkles size={12} />
+                      <span>AI Generate</span>
+                    </span>
+                  )}
                 </button>
 
                 {/* Approve (Stage) */}
                 <button
                   onClick={() => handleApprove(cake.id, cake.name)}
                   disabled={isBusy}
+                  className="icon-hover-lift"
                   style={{
                     background: "#D1FAE5",
                     border: "1px solid #A7F3D0",
@@ -613,27 +685,33 @@ export default function PendingCakesPage() {
                     fontSize: "0.74rem",
                     fontWeight: 600,
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
                   }}
                   title="Approve and move to staged ready for live release"
                 >
-                  ✓ Approve
+                  <Check size={12} />
+                  <span>Approve</span>
                 </button>
 
                 {/* Approve & Publish */}
                 <button
                   onClick={() => handleApproveAndPublish(cake.id, cake.name)}
                   disabled={isBusy}
-                  className="btn-gold"
-                  style={{ padding: "0.32rem 0.65rem", fontSize: "0.74rem" }}
+                  className="btn-gold icon-hover-lift"
+                  style={{ padding: "0.32rem 0.65rem", fontSize: "0.74rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                   title="Approve and instantly publish live to storefront"
                 >
-                  🚀 Approve & Publish
+                  <Send size={12} />
+                  <span>Approve & Publish</span>
                 </button>
 
                 {/* Reject */}
                 <button
                   onClick={() => handleReject(cake.id, cake.name)}
                   disabled={isBusy}
+                  className="icon-hover-lift"
                   style={{
                     background: "#FEF2F2",
                     border: "1px solid #FECACA",
@@ -642,10 +720,14 @@ export default function PendingCakesPage() {
                     padding: "0.32rem 0.55rem",
                     fontSize: "0.74rem",
                     cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
                   }}
                   title="Reject and move to archive"
                 >
-                  ✕ Reject
+                  <ArchiveX size={12} />
+                  <span>Reject</span>
                 </button>
               </div>
             </div>
@@ -689,9 +771,11 @@ export default function PendingCakesPage() {
               </h3>
               <button
                 onClick={cancelEdit}
-                style={{ background: "none", border: "none", fontSize: "1.1rem", cursor: "pointer", color: "var(--text-secondary)" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", padding: "4px" }}
+                className="icon-hover-rotate"
+                aria-label="Close modal"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -770,9 +854,11 @@ export default function PendingCakesPage() {
                           available_sizes: prev.available_sizes?.filter((_, idx) => idx !== i),
                         }))
                       }
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444", fontSize: "0.75rem", padding: 0 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444", padding: 0, display: "inline-flex", alignItems: "center" }}
+                      className="icon-hover-rotate"
+                      aria-label="Remove size"
                     >
-                      ✕
+                      <X size={11} />
                     </button>
                   </span>
                 ))}

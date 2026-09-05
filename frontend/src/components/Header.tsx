@@ -3,6 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  Search,
+  Menu,
+  X,
+  Cake,
+  Tag,
+  BookOpen,
+  Star,
+  MapPin,
+  ShieldCheck,
+} from "lucide-react";
+import WhatsAppIcon from "./WhatsAppIcon";
 
 export default function Header() {
   const router = useRouter();
@@ -92,9 +104,13 @@ export default function Header() {
                 color: "var(--text-secondary)",
                 textDecoration: "none",
                 fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.3rem",
               }}
             >
-              Admin
+              <ShieldCheck size={13} style={{ color: "var(--gold-dark)" }} />
+              <span>Admin</span>
             </Link>
           </nav>
 
@@ -128,6 +144,7 @@ export default function Header() {
             <button
               type="submit"
               aria-label="Submit search"
+              className="icon-hover-pulse"
               style={{
                 position: "absolute",
                 right: "10px",
@@ -135,16 +152,15 @@ export default function Header() {
                 transform: "translateY(-50%)",
                 background: "none",
                 border: "none",
-                color: "var(--gold)",
+                color: "var(--gold-dark)",
                 cursor: "pointer",
                 padding: 0,
                 display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
+              <Search size={15} />
             </button>
           </form>
 
@@ -154,13 +170,11 @@ export default function Header() {
               href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-whatsapp"
+              className="btn-whatsapp icon-hover-pulse"
               id="header-whatsapp-btn"
               style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
-              </svg>
+              <WhatsAppIcon size={14} />
               <span>Order on WhatsApp</span>
             </a>
           </div>
@@ -172,6 +186,7 @@ export default function Header() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Order on WhatsApp"
+              className="whatsapp-pulse-badge icon-hover-pulse"
               style={{
                 background: "var(--whatsapp-soft)",
                 color: "var(--whatsapp)",
@@ -185,12 +200,11 @@ export default function Header() {
                 textDecoration: "none",
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
-              </svg>
+              <WhatsAppIcon size={17} />
             </a>
             <button
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
+              className="icon-hover-rotate"
               style={{
                 background: "none",
                 border: "none",
@@ -199,13 +213,11 @@ export default function Header() {
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
               }}
               aria-label="Toggle mobile search"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
+              <Search size={18} />
             </button>
 
             <button
@@ -221,22 +233,12 @@ export default function Header() {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
+                transition: "background 0.2s ease",
               }}
               id="mobile-menu-toggle-btn"
               aria-label="Toggle navigation menu"
             >
-              {isMobileMenuOpen ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="3" y1="12" x2="21" y2="12"></line>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-              )}
+              {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
@@ -281,10 +283,7 @@ export default function Header() {
                   cursor: "pointer",
                 }}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
+                <Search size={15} />
               </button>
             </div>
           </form>
@@ -317,35 +316,40 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
-            🎂 All Cakes
+            <Cake size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>All Cakes</span>
           </Link>
           <Link
             href="/#categories"
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
-            🏷️ Categories
+            <Tag size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Categories</span>
           </Link>
           <Link
             href="/about"
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
-            📜 Our Story
+            <BookOpen size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Our Story</span>
           </Link>
           <Link
             href="/reviews"
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
-            ⭐ Guest Reviews
+            <Star size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Guest Reviews</span>
           </Link>
           <Link
             href="/contact"
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
-            📍 Contact & Atelier
+            <MapPin size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Contact & Atelier</span>
           </Link>
           <Link
             href="/admin"
@@ -353,7 +357,8 @@ export default function Header() {
             className="mobile-nav-link"
             style={{ color: "var(--gold-dark)", fontWeight: 600 }}
           >
-            ⚙️ Admin Panel
+            <ShieldCheck size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Management Atelier</span>
           </Link>
 
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border-subtle)" }}>
@@ -362,9 +367,10 @@ export default function Header() {
               target="_blank"
               rel="noopener noreferrer"
               className="btn-whatsapp"
-              style={{ width: "100%", justifyContent: "center", padding: "0.65rem 1rem" }}
+              style={{ width: "100%", justifyContent: "center", padding: "0.65rem 1rem", gap: "0.45rem" }}
             >
-              Order on WhatsApp
+              <WhatsAppIcon size={16} />
+              <span>Order on WhatsApp</span>
             </a>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import AdminSidebar from "./AdminSidebar";
+import { Menu } from "lucide-react";
 
 export default function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -33,14 +34,14 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "0.4rem",
+            gap: "0.45rem",
             fontSize: "0.82rem",
             fontWeight: 600,
             color: "var(--text-primary)",
           }}
           aria-label="Open navigation menu"
         >
-          <span>☰</span>
+          <Menu size={16} />
           <span>Admin Menu</span>
         </button>
 

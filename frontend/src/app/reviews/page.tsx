@@ -2,6 +2,7 @@ import React from "react";
 import PublicLayout from "../../components/PublicLayout";
 import { ReviewCard, ReviewForm } from "../../components/ReviewComponents";
 import { getApprovedReviews } from "../../lib/api";
+import { Star } from "lucide-react";
 
 export const revalidate = 60;
 
@@ -54,7 +55,22 @@ export default async function ReviewsPage() {
                   margin: "0 auto",
                 }}
               >
-                <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⭐</div>
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: "var(--bg-cream)",
+                    border: "1px solid var(--border-subtle)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "0.6rem",
+                    color: "var(--gold)",
+                  }}
+                >
+                  <Star size={24} style={{ fill: "var(--gold)" }} />
+                </div>
                 <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
                   No published reviews yet.
                 </h3>

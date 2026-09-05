@@ -10,6 +10,7 @@ import {
   deleteCake,
 } from "../../../lib/api";
 import { Cake } from "../../../lib/types";
+import { Zap, Clock } from "lucide-react";
 
 export default function AdminCakesManagementPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -112,11 +113,13 @@ export default function AdminCakesManagementPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
-            ⚡ Bulk Upload
+          <Link href="/admin/upload" className="btn-gold icon-hover-lift" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+            <Zap size={14} />
+            <span>Bulk Upload</span>
           </Link>
-          <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
-            ⏳ Pending Queue
+          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-slide" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+            <Clock size={14} />
+            <span>Pending Queue</span>
           </Link>
         </div>
       </div>

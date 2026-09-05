@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEnquiries, updateEnquiryStatus, deleteEnquiry } from "../../../lib/api";
 import { Enquiry } from "../../../lib/types";
+import { RotateCw, CheckCircle2, ClipboardList, Cake, Trash2, ArrowUpRight } from "lucide-react";
+import WhatsAppIcon from "../../../components/WhatsAppIcon";
 
 export default function AdminOrdersPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
@@ -112,11 +114,13 @@ export default function AdminOrdersPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button onClick={loadEnquiries} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            🔄 Refresh
+          <button onClick={loadEnquiries} className="btn-outline-gold icon-hover-rotate" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem" }}>
+            <RotateCw size={13} />
+            <span>Refresh</span>
           </button>
-          <Link href="/admin" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            Dashboard ↗
+          <Link href="/admin" className="btn-outline-gold icon-hover-slide" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.3rem" }}>
+            <span>Dashboard</span>
+            <ArrowUpRight size={13} />
           </Link>
         </div>
       </div>
@@ -132,9 +136,13 @@ export default function AdminOrdersPage() {
             fontSize: "0.82rem",
             marginBottom: "1rem",
             fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
           }}
         >
-          ✓ {feedback}
+          <CheckCircle2 size={15} />
+          <span>{feedback}</span>
         </div>
       )}
 
@@ -202,7 +210,22 @@ export default function AdminOrdersPage() {
             marginTop: "1rem",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📋</div>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "var(--bg-cream)",
+              border: "1px solid var(--border-subtle)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "0.6rem",
+              color: "var(--gold-dark)",
+            }}
+          >
+            <ClipboardList size={24} />
+          </div>
           <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
             No orders or enquiries found
           </h3>
@@ -281,10 +304,11 @@ export default function AdminOrdersPage() {
                               fontWeight: 600,
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "0.3rem",
+                              gap: "0.35rem",
                             }}
+                            className="icon-hover-pulse"
                           >
-                            <span>💬</span>
+                            <WhatsAppIcon size={14} />
                             <span>{enq.phone}</span>
                           </a>
                         ) : (
@@ -294,7 +318,10 @@ export default function AdminOrdersPage() {
 
                       {/* Cake & Flavour */}
                       <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <div style={{ fontWeight: 600, color: "var(--gold-dark)" }}>🎂 {enq.cake_name}</div>
+                        <div style={{ fontWeight: 600, color: "var(--gold-dark)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                          <Cake size={13} color="var(--gold-dark)" />
+                          <span>{enq.cake_name}</span>
+                        </div>
                         <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
                           {enq.flavour}
                         </div>
@@ -369,13 +396,16 @@ export default function AdminOrdersPage() {
                             background: "none",
                             border: "none",
                             color: "#EF4444",
-                            fontSize: "0.76rem",
                             cursor: "pointer",
-                            padding: "0.2rem 0.4rem",
+                            padding: "0.25rem 0.45rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
+                          className="icon-hover-lift"
                           title="Delete enquiry"
                         >
-                          🗑️
+                          <Trash2 size={15} />
                         </button>
                       </td>
                     </tr>

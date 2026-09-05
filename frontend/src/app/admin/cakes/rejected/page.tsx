@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAdminCakes, restoreCake, deleteCake } from "../../../../lib/api";
 import { Cake } from "../../../../lib/types";
+import { RotateCw, ArrowUpRight, CheckCircle2, ArchiveX, Undo2, Trash2, X } from "lucide-react";
 
 export default function RejectedCakesPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -83,11 +84,13 @@ export default function RejectedCakesPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button onClick={loadRejected} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            🔄 Refresh
+          <button onClick={loadRejected} className="btn-outline-gold icon-hover-rotate" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem" }}>
+            <RotateCw size={13} />
+            <span>Refresh</span>
           </button>
-          <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            Pending Queue ↗
+          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-slide" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.3rem" }}>
+            <span>Pending Queue</span>
+            <ArrowUpRight size={13} />
           </Link>
         </div>
       </div>
@@ -103,9 +106,13 @@ export default function RejectedCakesPage() {
             fontSize: "0.82rem",
             marginBottom: "1rem",
             fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
           }}
         >
-          ✓ {feedback}
+          <CheckCircle2 size={15} />
+          <span>{feedback}</span>
         </div>
       )}
 
@@ -120,7 +127,22 @@ export default function RejectedCakesPage() {
             border: "1px dashed var(--border-subtle)",
           }}
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.4rem" }}>✨</div>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "var(--bg-cream)",
+              border: "1px solid var(--border-subtle)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: "0.6rem",
+              color: "#991B1B",
+            }}
+          >
+            <ArchiveX size={24} />
+          </div>
           <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
             No cakes in rejected archive
           </h3>
@@ -259,15 +281,17 @@ export default function RejectedCakesPage() {
                           <button
                             onClick={() => handleRestore(cake.id, cake.name)}
                             disabled={isBusy}
-                            className="btn-outline-gold"
-                            style={{ padding: "0.28rem 0.65rem", fontSize: "0.74rem" }}
+                            className="btn-outline-gold icon-hover-rotate"
+                            style={{ padding: "0.28rem 0.65rem", fontSize: "0.74rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
                             title="Restore cake to Pending Approval queue"
                           >
-                            ↩ Restore
+                            <Undo2 size={12} />
+                            <span>Restore</span>
                           </button>
                           <button
                             onClick={() => handleDelete(cake.id, cake.name)}
                             disabled={isBusy}
+                            className="icon-hover-lift"
                             style={{
                               background: "#FEF2F2",
                               border: "1px solid #FECACA",
@@ -276,10 +300,14 @@ export default function RejectedCakesPage() {
                               padding: "0.28rem 0.65rem",
                               fontSize: "0.74rem",
                               cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
                             }}
                             title="Delete permanently from database"
                           >
-                            Delete
+                            <Trash2 size={12} />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -326,9 +354,11 @@ export default function RejectedCakesPage() {
               </h3>
               <button
                 onClick={() => setSelectedCake(null)}
-                style={{ background: "none", border: "none", fontSize: "1.1rem", cursor: "pointer", color: "var(--text-secondary)" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "inline-flex", alignItems: "center", padding: "4px" }}
+                className="icon-hover-rotate"
+                aria-label="Close modal"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

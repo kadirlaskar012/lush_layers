@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Review } from "../lib/types";
 import { submitCustomerReview } from "../lib/api";
+import { Star } from "lucide-react";
 
 export function ReviewCard({ review }: { review: Review }) {
   return (
@@ -21,9 +22,22 @@ export function ReviewCard({ review }: { review: Review }) {
     >
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
-          <div className="rating-stars" aria-label={`Rating: ${review.rating} out of 5 stars`}>
-            {"★".repeat(review.rating)}
-            {"☆".repeat(5 - review.rating)}
+          <div
+            className="rating-stars"
+            style={{ display: "inline-flex", gap: "2px", alignItems: "center" }}
+            aria-label={`Rating: ${review.rating} out of 5 stars`}
+          >
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star
+                key={s}
+                size={14}
+                className={s <= review.rating ? "icon-hover-pulse" : ""}
+                style={{
+                  fill: s <= review.rating ? "var(--gold)" : "transparent",
+                  color: s <= review.rating ? "var(--gold)" : "var(--border-subtle)",
+                }}
+              />
+            ))}
           </div>
           <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
             {review.created_at ? new Date(review.created_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "Recent"}
@@ -163,23 +177,32 @@ export function ReviewForm() {
 
         <div style={{ marginBottom: "0.75rem" }}>
           <label className="form-label">Rating Experience</label>
-          <div style={{ display: "flex", gap: "0.4rem" }}>
+          <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 type="button"
                 onClick={() => setRating(star)}
                 style={{
-                  fontSize: "1.4rem",
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  color: star <= rating ? "var(--gold)" : "var(--border-subtle)",
-                  padding: "0 2px",
-                  transition: "transform 0.15s",
+                  padding: "4px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
+                className="icon-hover-lift"
+                aria-label={`Rate ${star} stars`}
               >
-                ★
+                <Star
+                  size={20}
+                  style={{
+                    fill: star <= rating ? "var(--gold)" : "transparent",
+                    color: star <= rating ? "var(--gold)" : "var(--border-subtle)",
+                    transition: "all 0.15s ease",
+                  }}
+                />
               </button>
             ))}
           </div>

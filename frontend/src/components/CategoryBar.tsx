@@ -3,6 +3,17 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Cake,
+  PartyPopper,
+  Heart,
+  Cookie,
+  Flower2,
+  Crown,
+  Shapes,
+  Baby,
+  Palette,
+} from "lucide-react";
 import { Category } from "../lib/types";
 
 interface CategoryBarProps {
@@ -14,13 +25,13 @@ interface CategoryBarProps {
 export default function CategoryBar({ categories, activeSlug, onSelectCategory }: CategoryBarProps) {
   const pathname = usePathname();
 
-  // Curated visual category items inspired by cake-commerce marketplaces
+  // Curated visual category items inspired by cake-commerce marketplaces with modern Lucide icons
   const curatedCategories = [
     {
       id: "all",
       name: "All Cakes",
       slug: "",
-      icon: "🍰",
+      icon: Cake,
       href: "/cakes",
       color: "#FAF6F0",
       accent: "#B88E3E",
@@ -29,7 +40,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "birthday",
       name: "Birthday",
       slug: "bespoke-birthday",
-      icon: "🎈",
+      icon: PartyPopper,
       href: "/category/bespoke-birthday",
       color: "#FFF5F7",
       accent: "#E11D48",
@@ -38,7 +49,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "anniversary",
       name: "Anniversary",
       slug: "signature-tiered",
-      icon: "💍",
+      icon: Heart,
       href: "/category/signature-tiered",
       color: "#FFF9EE",
       accent: "#B88E3E",
@@ -47,7 +58,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "chocolate",
       name: "Chocolate",
       slug: "pure-belgian-chocolate",
-      icon: "🍫",
+      icon: Cookie,
       href: "/category/pure-belgian-chocolate",
       color: "#F6F1EA",
       accent: "#6B4423",
@@ -56,7 +67,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "floral",
       name: "Floral & Rose",
       slug: "botanical-floral",
-      icon: "🌸",
+      icon: Flower2,
       href: "/category/botanical-floral",
       color: "#FFF0F3",
       accent: "#DB2777",
@@ -65,7 +76,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "wedding",
       name: "Wedding",
       slug: "signature-tiered",
-      icon: "👰",
+      icon: Crown,
       href: "/category/signature-tiered",
       color: "#F9F9F9",
       accent: "#C89B3C",
@@ -74,7 +85,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "minimalist",
       name: "Minimalist",
       slug: "modern-minimalist",
-      icon: "✨",
+      icon: Shapes,
       href: "/category/modern-minimalist",
       color: "#F4F6F8",
       accent: "#475569",
@@ -83,7 +94,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "baby-shower",
       name: "Baby Shower",
       slug: "bespoke-birthday",
-      icon: "🍼",
+      icon: Baby,
       href: "/category/bespoke-birthday",
       color: "#F0F9FF",
       accent: "#0284C7",
@@ -92,7 +103,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "custom",
       name: "Customised",
       slug: "custom",
-      icon: "🎨",
+      icon: Palette,
       href: "/contact",
       color: "#FDF2EC",
       accent: "#EA580C",
@@ -102,6 +113,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
   return (
     <div className="category-story-strip" id="category-filter-strip">
       {curatedCategories.map((item) => {
+        const IconComponent = item.icon;
         const isActive =
           (item.slug === "" && !activeSlug && pathname === "/cakes") ||
           (item.slug !== "" && activeSlug === item.slug);
@@ -115,17 +127,18 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
                 onSelectCategory(item.slug);
               }
             }}
-            className={`category-story-chip ${isActive ? "active" : ""}`}
+            className={`category-story-chip group ${isActive ? "active" : ""}`}
             id={`category-story-${item.id}`}
           >
             <div
-              className="category-story-avatar"
+              className="category-story-avatar icon-hover-lift"
               style={{
                 background: item.color,
                 borderColor: isActive ? "var(--gold)" : "var(--border-subtle)",
+                color: item.accent,
               }}
             >
-              <span style={{ fontSize: "1.65rem", lineHeight: 1 }}>{item.icon}</span>
+              <IconComponent size={24} strokeWidth={1.75} />
             </div>
             <span
               className="category-story-label"

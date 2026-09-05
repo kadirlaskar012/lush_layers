@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import PublicLayout from "../../components/PublicLayout";
+import { Cookie, Flower2, Sparkles, MapPin } from "lucide-react";
+import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
   title: "Our Story & Artisanal Philosophy • LUSH LAYERS",
@@ -44,7 +46,22 @@ export default function AboutPage() {
                 boxShadow: "var(--shadow-xs)",
               }}
             >
-              <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>🍫</div>
+              <div
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "var(--radius-xs)",
+                  background: "#FEF3C7",
+                  border: "1px solid #FDE68A",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "0.75rem",
+                  color: "#92400E",
+                }}
+              >
+                <Cookie size={20} />
+              </div>
               <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
                 Pure Callebaut Cocoa
               </h3>
@@ -62,7 +79,22 @@ export default function AboutPage() {
                 boxShadow: "var(--shadow-xs)",
               }}
             >
-              <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>🌸</div>
+              <div
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "var(--radius-xs)",
+                  background: "#FCE7F3",
+                  border: "1px solid #FBCFE8",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "0.75rem",
+                  color: "#9D174D",
+                }}
+              >
+                <Flower2 size={20} />
+              </div>
               <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
                 Botanical & Floral Infusions
               </h3>
@@ -80,7 +112,22 @@ export default function AboutPage() {
                 boxShadow: "var(--shadow-xs)",
               }}
             >
-              <div style={{ fontSize: "1.6rem", marginBottom: "0.5rem" }}>🏛️</div>
+              <div
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "var(--radius-xs)",
+                  background: "var(--bg-cream)",
+                  border: "1px solid var(--gold-border)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "0.75rem",
+                  color: "var(--gold-dark)",
+                }}
+              >
+                <Sparkles size={20} />
+              </div>
               <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
                 Architectural Precision
               </h3>
@@ -108,7 +155,7 @@ export default function AboutPage() {
               We design every tier around your aesthetic, guest count, and palette desires. Direct conversation via WhatsApp guarantees personal attention.
             </p>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "1.25rem", background: "var(--bg-cream)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid var(--border-subtle)" }}>
-              <span style={{ fontSize: "0.85rem" }}>📍</span>
+              <MapPin size={14} color="var(--gold-dark)" />
               <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 600 }}>Atelier Location: PD Road, Kolkata-41, India</span>
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -119,10 +166,11 @@ export default function AboutPage() {
                 href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-whatsapp"
-                style={{ padding: "0.5rem 1.2rem", fontSize: "0.84rem" }}
+                className="btn-whatsapp icon-hover-lift"
+                style={{ padding: "0.5rem 1.2rem", fontSize: "0.84rem", gap: "0.4rem" }}
               >
-                Chat on WhatsApp
+                <WhatsAppIcon size={16} />
+                <span>Chat on WhatsApp</span>
               </a>
             </div>
           </div>

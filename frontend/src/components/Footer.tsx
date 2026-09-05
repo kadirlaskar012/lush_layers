@@ -1,5 +1,7 @@
 import React from "react";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
+import WhatsAppIcon from "./WhatsAppIcon";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -65,7 +67,7 @@ export default function Footer() {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.85rem" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                <span style={{ fontSize: "0.85rem" }}>📍</span>
+                <MapPin size={14} color="var(--gold-dark)" />
                 <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500 }}>
                   PD Road, Kolkata-41, India
                 </span>
@@ -178,10 +180,11 @@ export default function Footer() {
               href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20place%20an%20enquiry.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-whatsapp"
-              style={{ width: "100%", padding: "0.45rem 0.85rem", fontSize: "0.8rem", justifyContent: "center" }}
+              className="btn-whatsapp icon-hover-lift"
+              style={{ width: "100%", padding: "0.48rem 0.85rem", fontSize: "0.8rem", justifyContent: "center", gap: "0.4rem" }}
             >
-              Chat on WhatsApp
+              <WhatsAppIcon size={16} />
+              <span>Chat on WhatsApp</span>
             </a>
           </div>
         </div>

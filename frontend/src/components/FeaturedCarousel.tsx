@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import Link from "next/link";
+import { Sparkles, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { Cake } from "../lib/types";
 import CakeCard from "./CakeCard";
 
@@ -22,7 +23,7 @@ export default function FeaturedCarousel({
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -300 : 300;
+      const scrollAmount = direction === "left" ? -280 : 280;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
@@ -53,7 +54,7 @@ export default function FeaturedCarousel({
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
               <span className="cake-category-badge">Trending & Bespoke</span>
-              <span style={{ fontSize: "0.75rem" }}>✨</span>
+              <Sparkles size={12} style={{ color: "var(--gold)" }} />
             </div>
             <h2
               style={{
@@ -70,7 +71,7 @@ export default function FeaturedCarousel({
             </p>
           </div>
 
-          {/* Desktop Navigation Arrows */}
+          {/* Navigation Controls */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <button
               onClick={() => scroll("left")}
@@ -89,9 +90,9 @@ export default function FeaturedCarousel({
                 boxShadow: "var(--shadow-xs)",
                 transition: "all 0.2s",
               }}
-              className="carousel-nav-btn"
+              className="carousel-nav-btn icon-hover-pulse"
             >
-              ←
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => scroll("right")}
@@ -110,21 +111,26 @@ export default function FeaturedCarousel({
                 boxShadow: "var(--shadow-xs)",
                 transition: "all 0.2s",
               }}
-              className="carousel-nav-btn"
+              className="carousel-nav-btn icon-hover-pulse"
             >
-              →
+              <ChevronRight size={16} />
             </button>
             <Link
               href="/cakes"
+              className="group"
               style={{
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 color: "var(--gold-dark)",
                 textDecoration: "none",
                 marginLeft: "0.5rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
               }}
             >
-              View All →
+              <span>View All</span>
+              <ArrowRight size={13} className="icon-hover-slide" />
             </Link>
           </div>
         </div>
@@ -134,10 +140,10 @@ export default function FeaturedCarousel({
           ref={scrollRef}
           style={{
             display: "flex",
-            gap: "1rem",
+            gap: "0.75rem",
             overflowX: "auto",
             scrollSnapType: "x mandatory",
-            padding: "0.5rem 0.5rem 1.15rem",
+            padding: "0.4rem 0.25rem 1rem",
             scrollbarWidth: "none",
             WebkitOverflowScrolling: "touch",
             scrollPadding: "0 0.5rem",
@@ -149,8 +155,6 @@ export default function FeaturedCarousel({
             <div
               key={cake.id}
               style={{
-                flex: "0 0 228px",
-                width: "228px",
                 scrollSnapAlign: "start",
                 display: "flex",
                 flexDirection: "column",
@@ -162,6 +166,19 @@ export default function FeaturedCarousel({
           ))}
         </div>
       </div>
+
+      <style jsx>{`
+        .featured-carousel-item {
+          flex: 0 0 172px;
+          width: 172px;
+        }
+        @media (min-width: 640px) {
+          .featured-carousel-item {
+            flex: 0 0 228px;
+            width: 228px;
+          }
+        }
+      `}</style>
     </section>
   );
 }

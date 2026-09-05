@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { getProcessingJobs, retryProcessingJob } from "../../../lib/api";
 import { ProcessingJob } from "../../../lib/types";
+import { Clock, Zap } from "lucide-react";
 
 export default function BulkUploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -105,8 +106,9 @@ export default function BulkUploadPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Link href="/admin/cakes/pending" className="btn-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
-            ⏳ Review Pending ({completedCount})
+          <Link href="/admin/cakes/pending" className="btn-gold icon-hover-lift" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+            <Clock size={14} />
+            <span>Review Pending ({completedCount})</span>
           </Link>
         </div>
       </div>
@@ -234,11 +236,16 @@ export default function BulkUploadPage() {
             <button
               onClick={handleStartUpload}
               disabled={isUploading}
-              className="btn-gold"
-              style={{ padding: "0.45rem 1rem", fontSize: "0.82rem" }}
+              className="btn-gold icon-hover-lift"
+              style={{ padding: "0.45rem 1rem", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
               id="start-bulk-upload-btn"
             >
-              {isUploading ? "Queueing..." : "⚡ Start Parallel Processing"}
+              {isUploading ? "Queueing..." : (
+                <>
+                  <Zap size={14} />
+                  <span>Start Parallel Processing</span>
+                </>
+              )}
             </button>
           </div>
         </div>

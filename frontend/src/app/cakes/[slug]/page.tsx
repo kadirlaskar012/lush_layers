@@ -6,6 +6,7 @@ import CakeDetailClient from "../../../components/CakeDetailClient";
 import CakeCard from "../../../components/CakeCard";
 import { getCakeBySlug, getPublishedCakes } from "../../../lib/api";
 import { getOptimizedImageUrl } from "../../../lib/imageHelper";
+import { Sparkles } from "lucide-react";
 
 export const revalidate = 60;
 
@@ -146,10 +147,10 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                   marginBottom: "1rem",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.3rem",
+                  gap: "0.4rem",
                 }}
               >
-                <span>✨</span>
+                <Sparkles size={15} color="var(--gold)" />
                 <span>{cake.flavour}</span>
               </div>
 

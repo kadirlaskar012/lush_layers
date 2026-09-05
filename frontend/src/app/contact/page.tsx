@@ -1,6 +1,7 @@
 import React from "react";
 import PublicLayout from "../../components/PublicLayout";
 import ContactForm from "../../components/ContactForm";
+import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
   title: "Contact & Atelier Consultations • LUSH LAYERS",
@@ -88,10 +89,11 @@ export default function ContactPage() {
                   href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20plan%20a%20tasting%20appointment.`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-whatsapp"
-                  style={{ width: "100%", justifyContent: "center", padding: "0.55rem 1rem", fontSize: "0.82rem" }}
+                  className="btn-whatsapp icon-hover-lift"
+                  style={{ width: "100%", justifyContent: "center", padding: "0.55rem 1rem", fontSize: "0.82rem", gap: "0.4rem" }}
                 >
-                  Schedule WhatsApp Consultation
+                  <WhatsAppIcon size={16} />
+                  <span>Schedule WhatsApp Consultation</span>
                 </a>
               </div>
             </div>

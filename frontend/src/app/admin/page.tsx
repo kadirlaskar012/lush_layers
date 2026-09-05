@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminStats, getAdminCakes, getEnquiries } from "../../lib/api";
 import { AdminStats, Cake, Enquiry } from "../../lib/types";
+import { ClipboardList, Clock, Zap, Cake as CakeIcon, ArrowUpRight } from "lucide-react";
 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -82,14 +83,17 @@ export default function AdminOverviewPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link href="/admin/orders" className="btn-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            📋 Orders / Enquiries
+          <Link href="/admin/orders" className="btn-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+            <ClipboardList size={14} />
+            <span>Orders / Enquiries</span>
           </Link>
-          <Link href="/admin/cakes/pending" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            ⏳ Pending Approval ({stats?.pending || 0})
+          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+            <Clock size={14} />
+            <span>Pending Approval ({stats?.pending || 0})</span>
           </Link>
-          <Link href="/admin/upload" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
-            ⚡ Bulk Upload
+          <Link href="/admin/upload" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+            <Zap size={14} />
+            <span>Bulk Upload</span>
           </Link>
         </div>
       </div>
@@ -130,9 +134,11 @@ export default function AdminOverviewPage() {
             href={`${systemInfo.lan_url}/portal`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600 }}
+            style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.25rem" }}
+            className="icon-hover-slide"
           >
-            Open LAN Bulk Portal ↗
+            <span>Open LAN Bulk Portal</span>
+            <ArrowUpRight size={13} />
           </a>
         </div>
       )}
@@ -140,8 +146,9 @@ export default function AdminOverviewPage() {
       {/* SECTION 1: CAKE STATISTICS (4 Compact Cards) */}
       <div style={{ marginBottom: "1.25rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.5rem" }}>
+          <CakeIcon size={15} color="var(--gold-dark)" />
           <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            🎂 Cake Catalog Statistics
+            Cake Catalog Statistics
           </span>
         </div>
         <div
@@ -196,11 +203,15 @@ export default function AdminOverviewPage() {
       {/* SECTION 2: ORDER / ENQUIRY STATISTICS (5 Compact Cards) */}
       <div style={{ marginBottom: "1.35rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-          <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-            📋 Customer Order / Enquiry Pipeline
-          </span>
-          <Link href="/admin/orders" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600 }}>
-            Manage All Enquiries ↗
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <ClipboardList size={15} color="var(--gold-dark)" />
+            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Customer Order / Enquiry Pipeline
+            </span>
+          </div>
+          <Link href="/admin/orders" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.2rem" }} className="icon-hover-slide">
+            <span>Manage All Enquiries</span>
+            <ArrowUpRight size={13} />
           </Link>
         </div>
         <div
@@ -284,8 +295,9 @@ export default function AdminOverviewPage() {
             <h3 style={{ fontSize: "0.98rem", color: "var(--text-primary)", fontWeight: 600 }}>
               Recent Orders / Enquiries
             </h3>
-            <Link href="/admin/orders" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600 }}>
-              All Enquiries ({stats?.enquiries?.total || recentEnquiries.length}) ↗
+            <Link href="/admin/orders" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.2rem" }} className="icon-hover-slide">
+              <span>All Enquiries ({stats?.enquiries?.total || recentEnquiries.length})</span>
+              <ArrowUpRight size={13} />
             </Link>
           </div>
 
@@ -320,8 +332,9 @@ export default function AdminOverviewPage() {
                           • {enq.phone}
                         </span>
                       </div>
-                      <div style={{ fontSize: "0.74rem", color: "var(--gold-dark)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        🎂 {enq.cake_name} ({enq.selected_size})
+                      <div style={{ fontSize: "0.74rem", color: "var(--gold-dark)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                        <CakeIcon size={12} color="var(--gold-dark)" />
+                        <span>{enq.cake_name} ({enq.selected_size})</span>
                       </div>
                       {enq.custom_message && (
                         <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: "0.1rem" }}>
@@ -366,8 +379,9 @@ export default function AdminOverviewPage() {
             <h3 style={{ fontSize: "0.98rem", color: "var(--text-primary)", fontWeight: 600 }}>
               Recent Confections
             </h3>
-            <Link href="/admin/cakes" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600 }}>
-              All Cakes ({((stats?.published || 0) + (stats?.approved || 0) + (stats?.pending || 0)) || recentCakes.length}) ↗
+            <Link href="/admin/cakes" style={{ fontSize: "0.76rem", color: "var(--gold-dark)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.2rem" }} className="icon-hover-slide">
+              <span>All Cakes ({((stats?.published || 0) + (stats?.approved || 0) + (stats?.pending || 0)) || recentCakes.length})</span>
+              <ArrowUpRight size={13} />
             </Link>
           </div>
 
