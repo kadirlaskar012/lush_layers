@@ -1,137 +1,101 @@
-# 🍰 LUSH LAYERS - ARTISAN CONFECTIONERY CLI
-**Professional Local Image Processing & Catalog Management System**
+# 🍰 LUSH LAYERS - ALL-IN-ONE MASTER CONTROL & CLI
+**Full-Stack Bakery Operations, Image Processing & Catalog Management System**
 
-This command-line tool allows you to process raw cake photos, remove backgrounds, composite onto 1:1 luxury studio canvases with ambient contact drop-shadows, extract AI sensory copy (Gemini Vision), upload to Cloudinary/local media, save to SQLite & Supabase PostgreSQL, and trigger instant Next.js ISR storefront revalidation.
-
----
-
-## 🚀 Quick Start / কিভাবে চালাবেন
-
-You can run the CLI from **PowerShell**, **Command Prompt (CMD)**, or by simply typing:
-
-```bash
-# Interactive Menu (সবচেয়ে সহজ - মেনু দেখে এক এক করে সিলেক্ট করুন)
-.\cake.bat
-```
-
-or via Python:
-
-```bash
-python -m backend.cli
-```
+This All-in-One system combines the **Python AI Image Processor**, **Interactive Browser Tools Portal**, **FastAPI Backend**, **Next.js Storefront**, and **Admin Dashboard** into a unified, one-click launcher.
 
 ---
 
-## 🛠️ Main Commands & Examples
+## 🚀 Quick Start / কিভাবে শুরু করবেন
 
-### 1. Interactive Wizard (স্টেপ বাই স্টেপ উইজার্ড)
-Run without arguments or pass `interactive`:
-```bash
-.\cake.bat interactive
+You can launch the All-in-One Master Control from **PowerShell**, **Command Prompt (CMD)**, or simply by double-clicking:
+
+```powershell
+.\start.bat
 ```
-- Drag-and-drop cake image path directly into terminal.
-- Choose whether to run AI copywriting (Gemini Vision).
-- Choose category from numbered list.
-- Stage as `pending` for review in Admin Panel OR publish live immediately!
+*(You can also use `.\lush.bat`, `.\cake.bat`, or `python -m backend.cli`)*
 
----
+When launched, it presents an interactive master console displaying real-time server health badges:
 
-### 2. Process & Add a Single Cake Image (সরাসরি কমান্ড দিয়ে কেক যোগ করা)
+```text
++----------------------------------------------------------------------+
+|            * LUSH LAYERS - ALL-IN-ONE MASTER CONTROL *               |
+|       Full Stack Bakery System: Python Tools + Website + Admin       |
++----------------------------------------------------------------------+
+  Backend: [ONLINE :8000]   Frontend: [ONLINE :3000]
 
-#### A. AI Auto-Generated (AI টাইটেল, বিবরণ, ক্যাটাগরি ও ফ্লেভার ঠিক করবে)
-```bash
-.\cake.bat add "C:\Users\KadiR-PC\Pictures\my_cake.jpg" --publish
-```
+=== [SERVER & BROWSER LAUNCHERS] ===
+  1. 🎨 Open Python Image Processing Web Tools (Browser: http://localhost:8000/portal)
+  2. 🌐 Open Website Storefront (Browser: http://localhost:3000)
+  3. 👑 Open Admin Dashboard (Browser: http://localhost:3000/admin)
+  4. ⏳ Open Pending Approval Queue (Browser: http://localhost:3000/admin/cakes/pending)
+  5. 🚀 Start Both Servers (Backend + Frontend)
+  6. 🛑 Stop All Servers
 
-#### B. Custom Title, Flavour & Category (নিজের পছন্দমতো নাম ও ক্যাটাগরি দিয়ে)
-```bash
-.\cake.bat add "C:\Users\KadiR-PC\Pictures\red_velvet.png" --name "Royal Crimson Velvet" --category "birthday-cakes" --flavour "Madagascar Cocoa & Cream Cheese" --publish
-```
-
-#### C. Add to Pending Review (সরাসরি লাইভ না করে অ্যাডমিন প্যানেলে রিভিউ এর জন্য রাখা)
-```bash
-.\cake.bat add "C:\Users\KadiR-PC\Pictures\bento_1.jpg"
-```
-*(Admin review URL: `http://localhost:3000/admin/cakes/pending`)*
-
-#### D. Keep Original Background without RemBG (ব্যাকগ্রাউন্ড রিমুভ না করে শুধু ১:১ স্কয়ার স্টুডিও ক্যানভাসে সাজানো)
-```bash
-.\cake.bat add "C:\Users\KadiR-PC\Pictures\photo.jpg" --no-bg --publish
+=== [IMAGE PROCESSING & CATALOG TOOLS] ===
+  7. 🍰 Process Single Cake Photo (Terminal Drag & Drop Wizard)
+  8. 📁 Bulk Process Photo Folder (Terminal Batch)
+  9. 📋 View All Cakes in Catalog (Table)
+ 10. 🏷️  View Available Categories
+ 11. 🚀 Publish a Staged Cake by ID / Slug
+ 12. ⏸️  Unpublish a Cake (Move back to Staged)
+ 13. 🗑️  Delete a Cake Record
+ 14. 🔄 Refresh Website Cache (Revalidate)
+ 15. 🩺 System Health Diagnostics
+  0. ❌ Exit
 ```
 
 ---
 
-### 3. Bulk Folder Import (একটি সম্পূর্ণ ফোল্ডারের সব ছবি একসাথে প্রসেস করা)
+## 🎯 ৩টি মূল ফিচারের ব্যবহার ও ওয়ার্কফ্লো
 
-```bash
-.\cake.bat bulk "C:\Users\KadiR-PC\Pictures\NewCakes\" --publish
-```
-- ফোল্ডারের সব `.jpg`, `.jpeg`, `.png`, `.webp` ছবি পর্যায়ক্রমে প্রসেস করে স্টুডিও শ্যাডো বানিয়ে আপলোড করবে।
-
----
-
-### 4. List All Cakes in Catalog (ওয়েবসাইটে বর্তমানে কী কী কেক আছে দেখা)
-
-```bash
-.\cake.bat list
-```
-Filter by status:
-```bash
-.\cake.bat list --status published
-.\cake.bat list --status pending
-```
+### ১. অপশন ১: ব্রাউজারে পাইথন ইমেজ প্রসেসিং টুলস ওপেন করা
+- টার্মিনালে **`1`** চাপলে ব্যাকএন্ড অটো-স্টার্ট হয়ে আপনার ব্রাউজারে **`http://localhost:8000/portal`** চালু হয়ে যাবে।
+- এখানে আপনি একসাথে ১টি বা ২০টি কেকের ছবি মাউস দিয়ে **Drag & Drop** করে ছেড়ে দিলেই:
+  1. `rembg` স্বয়ংক্রিয়ভাবে ছবির ব্যাকগ্রাউন্ড কেটে বাদ দিয়ে দেয়।
+  2. ১:১ লাক্সারি সাদা স্টুডিও ক্যানভাসে ড্রপ-শ্যাডো সহ সাজিয়ে দেয়।
+  3. 1200x1200 Master ও 600x600 Thumbnail WebP জেনারেট করে।
+  4. Google Gemini Vision AI ছবি দেখে সুন্দর টাইটেল, ফ্লেভার ও ডেসক্রিপশন লিখে ফেলে।
+  5. ক্লাউডিনারি ও ডাটাবেসে সেভ হয়ে অ্যাডমিন প্যানেলের পেন্ডিং কিউতে যুক্ত হয়ে যায়।
 
 ---
 
-### 5. View Categories (সব ৭টি ক্যাটাগরির Slug ও ID দেখা)
-
-```bash
-.\cake.bat categories
-```
-
-Available Categories:
-1. `birthday-cakes` (Birthday Cakes)
-2. `wedding-tiered-cakes` (Wedding & Tiered Cakes)
-3. `anniversary-cakes` (Anniversary & Romance)
-4. `bento-petite-cakes` (Bento & Petite Cakes)
-5. `botanical-floral-cakes` (Botanical & Floral Cakes)
-6. `belgian-chocolate-cakes` (Pure Belgian Chocolate)
-7. `custom-theme-cakes` (Custom & Theme Cakes)
+### ২. অপশন ২ ও ৩: ওয়েবসাইট ও অ্যাডমিন প্যানেল ওপেন করা
+- **`2`** চাপলে সরাসরি মূল ওয়েবসাইট ওপেন হবে (`http://localhost:3000`)।
+- **`3`** চাপলে অ্যাডমিন ড্যাশবোর্ড ওপেন হবে (`http://localhost:3000/admin`)।
+- **`4`** চাপলে পেন্ডিং কেক রিভিউ কিউ ওপেন হবে (`http://localhost:3000/admin/cakes/pending`)।
+- সার্ভার বন্ধ থাকলে এই অপশনগুলো স্বয়ংক্রিয়ভাবে ব্যাকএন্ড ও ফ্রন্টএন্ড চালু করে ব্রাউজারে পেজ খুলে দেবে।
 
 ---
 
-### 6. Publish / Unpublish / Delete
-
-```bash
-# Publish a pending cake
-.\cake.bat publish <cake_id_or_slug>
-
-# Move back to staged
-.\cake.bat unpublish <cake_id_or_slug>
-
-# Delete a cake permanently
-.\cake.bat delete <cake_id>
+### ৩. সম্পূর্ণ ডাটাফ্লো (প্রসেসিং থেকে লাইভ ওয়েবসাইট):
+```
+[কেকের ছবি] 
+    ↓ (ব্রাউজার পোর্টাল বা CLI দিয়ে আপলোড)
+[Python Image Processing & AI Engine]
+    ↓ (ব্যাকগ্রাউন্ড রিমুভ, স্টুডিও শ্যাডো, WebP, Gemini AI কপিরাইটিং)
+[Database (SQLite & Supabase PostgreSQL)]
+    ↓ (Status: 'pending')
+[Admin Panel: http://localhost:3000/admin/cakes/pending]
+    ↓ (অ্যাডমিন চেক করে 'Publish' বাটনে ক্লিক করবেন)
+[Live Storefront: http://localhost:3000/cakes]
+    (Next.js ISR অটোমেটিক ক্যাশে রিফ্রেশ করে ওয়েবসাইটে লাইভ দেখিয়ে দেয়!)
 ```
 
 ---
 
-### 7. Trigger Live Website Cache Revalidation (ক্যাশে রিফ্রেশ)
+## ⚡ ডিরেক্ট শর্টকাট কমান্ড (টার্মিনাল থেকে এক লাইনে)
 
-```bash
-.\cake.bat revalidate
-```
-
----
-
-### 8. System Diagnostics (সিস্টেম হেলথ চেক)
-
-```bash
-.\cake.bat diagnostics
-```
-Checks:
-- SQLite database status
-- Supabase direct PostgreSQL pooler connection
-- Cloudinary CDN status
-- Gemini AI Vision status
-- Background Removal (`rembg`) engine
-- Next.js frontend server status
+| কাজ | কমান্ড |
+| :--- | :--- |
+| **ব্রাউজারে পাইথন প্রসেসিং টুলস খোলা** | `.\start.bat tools` |
+| **ব্রাউজারে ওয়েবসাইট খোলা** | `.\start.bat site` |
+| **ব্রাউজারে অ্যাডমিন প্যানেল খোলা** | `.\start.bat admin` |
+| **ব্রাউজারে পেন্ডিং কিউ খোলা** | `.\start.bat pending` |
+| **উভয় সার্ভার চালু করা** | `.\start.bat start` |
+| **সব সার্ভার বন্ধ করা** | `.\start.bat stop` |
+| **টার্মিনাল দিয়ে ১টি ছবি প্রসেস ও লাইভ করা** | `.\start.bat add "C:\path\to\cake.jpg" --publish` |
+| **একটি ফোল্ডারের সব ছবি প্রসেস করা** | `.\start.bat bulk "C:\path\to\folder\" --publish` |
+| **ডাটাবেসের সব কেকের তালিকা দেখা** | `.\start.bat list` |
+| **৭টি ক্যাটাগরি ও স্লাগ দেখা** | `.\start.bat categories` |
+| **ওয়েবসাইট ক্যাশে রিভ্যালিডেট করা** | `.\start.bat revalidate` |
+| **সিস্টেম হেলথ চেক** | `.\start.bat diagnostics` |

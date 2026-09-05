@@ -915,11 +915,11 @@ async def serve_lan_portal():
             </div>
         </div>
 
-        <div class="quick-links">
-            <a href="http://{lan_ip}:3000/admin" class="link-pill" target="_blank">Next.js Admin Dashboard ↗</a>
-            <a href="http://{lan_ip}:3000/admin/cakes/pending" class="link-pill" target="_blank">Pending Cakes Queue ↗</a>
-            <a href="http://{lan_ip}:3000" class="link-pill" target="_blank">Public LUSH LAYERS Website ↗</a>
-            <a href="/docs" class="link-pill" target="_blank">FastAPI OpenAPI Specs ↗</a>
+        <div class="quick-links" style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin: 1.5rem 0 2rem 0;">
+            <a href="http://localhost:3000" class="link-pill" target="_blank">🌐 Public Website (Port 3000) ↗</a>
+            <a href="http://localhost:3000/admin" class="link-pill" target="_blank">👑 Admin Dashboard ↗</a>
+            <a href="http://localhost:3000/admin/cakes/pending" class="link-pill" target="_blank" style="border-color: var(--gold); color: var(--gold-light); background: rgba(212,175,55,0.12);">⏳ Pending Approval Queue ↗</a>
+            <a href="/docs" class="link-pill" target="_blank">📖 Backend API Docs ↗</a>
         </div>
 
         <script>
@@ -991,15 +991,27 @@ async def serve_lan_portal():
                     }}
 
                     listEl.innerHTML = jobs.map(j => `
-                        <div class="job-item">
-                            <div class="job-header">
-                                <span class="job-name" title="${{j.file_name}}">${{j.file_name}}</span>
-                                <span class="status-pill status-${{j.status}}">${{j.status.replace('_', ' ')}}</span>
+                        <div class="job-item" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.85rem; margin-bottom: 0.75rem;">
+                            <div class="job-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    ${{j.cake_image_url ? `<img src="${{j.cake_image_url}}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(212,175,55,0.4);" />` : ''}}
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.9rem; color: ${{j.cake_name ? '#F6E7B9' : 'var(--cream)'}};">${{j.cake_name || j.file_name}}</div>
+                                        ${{j.cake_name ? `<div style="font-size: 0.75rem; color: var(--muted);">${{j.file_name}}</div>` : ''}}
+                                    </div>
+                                </div>
+                                <span class="status-pill status-${{j.status}}" style="font-size: 0.75rem; text-transform: uppercase; padding: 0.25rem 0.65rem; border-radius: 9999px; background: ${{j.status === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(212,175,55,0.15)'}}; color: ${{j.status === 'completed' ? '#34D399' : '#F6E7B9'}};">${{j.status.replace('_', ' ')}}</span>
                             </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: ${{j.progress}}%;"></div>
+                            <div class="progress-bar-bg" style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden;">
+                                <div class="progress-bar-fill" style="width: ${{j.progress}}%; height: 100%; background: linear-gradient(90deg, #D4AF37, #10B981); transition: width 0.3s ease;"></div>
                             </div>
-                            ${{j.error_message ? `<div style="font-size: 0.72rem; color: #F87171; margin-top: 0.35rem;">${{j.error_message}}</div>` : ''}}
+                            ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.35rem;">${{j.error_message}}</div>` : ''}}
+                            ${{j.status === 'completed' ? `
+                                <div style="margin-top: 0.65rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <a href="http://localhost:3000/admin/cakes/pending" target="_blank" style="font-size: 0.75rem; color: #F6E7B9; text-decoration: none; padding: 0.25rem 0.65rem; background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">👉 Review & Approve ↗</a>
+                                    ${{j.cake_slug ? `<a href="http://localhost:3000/cakes/${{j.cake_slug}}" target="_blank" style="font-size: 0.75rem; color: #34D399; text-decoration: none; padding: 0.25rem 0.65rem; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px;">Storefront ↗</a>` : ''}}
+                                </div>
+                            ` : ''}}
                         </div>
                     `).join('');
                 }} catch (e) {{

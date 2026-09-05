@@ -653,7 +653,12 @@ class Database:
     def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
         conn = self._get_conn()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM processing_jobs WHERE id = ?", (job_id,))
+        cursor.execute("""
+            SELECT j.*, c.name as cake_name, c.image_url as cake_image_url, c.slug as cake_slug, c.status as cake_status
+            FROM processing_jobs j
+            LEFT JOIN cakes c ON j.cake_id = c.id
+            WHERE j.id = ?
+        """, (job_id,))
         row = cursor.fetchone()
         conn.close()
         return dict(row) if row else None
@@ -661,7 +666,12 @@ class Database:
     def get_jobs(self, limit: int = 50) -> List[Dict[str, Any]]:
         conn = self._get_conn()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM processing_jobs ORDER BY created_at DESC LIMIT ?", (limit,))
+        cursor.execute("""
+            SELECT j.*, c.name as cake_name, c.image_url as cake_image_url, c.slug as cake_slug, c.status as cake_status
+            FROM processing_jobs j
+            LEFT JOIN cakes c ON j.cake_id = c.id
+            ORDER BY j.created_at DESC LIMIT ?
+        """, (limit,))
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return rows

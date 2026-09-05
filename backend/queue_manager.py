@@ -125,23 +125,52 @@ class BackgroundJobQueue:
                 f"cake_{job_id[:8]}"
             )
 
-            # 4. Create Cake Record - STRICT: Status MUST be 'pending' with 'not_generated' AI state
-            clean_title = Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
+            # 4. AI Sensory Copywriting & Categorization
+            all_categories = db.get_categories(active_only=False)
+            cat_names = [c["name"] for c in all_categories]
+            ai_data = {}
+            try:
+                ai_data = await loop.run_in_executor(
+                    None,
+                    ai_analyzer.analyze_cake_image,
+                    master_file_path,
+                    None,
+                    cat_names
+                )
+            except Exception as e:
+                print(f"[Queue][{worker_name}] AI sensory analysis note: {e}")
+
+            # Resolve Cake Attributes
+            clean_title = (ai_data.get("name") if ai_data else None) or Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
             if not clean_title or clean_title.lower().startswith("img"):
-                clean_title = f"Pending Confection #{job_id[:6].upper()}"
+                clean_title = f"Artisan Confection #{job_id[:6].upper()}"
+
+            flavour = (ai_data.get("flavour") if ai_data else None) or "Chef's Signature Vanilla & Cocoa"
+            description = (ai_data.get("description") if ai_data else None) or "An exquisite handcrafted luxury confection prepared with pure artisanal ingredients."
+
+            category_id = None
+            if ai_data and ai_data.get("category"):
+                cat_match = next((c for c in all_categories if c["name"].lower() == ai_data["category"].lower()), None)
+                if cat_match:
+                    category_id = cat_match["id"]
+            if not category_id and all_categories:
+                category_id = all_categories[0]["id"]
+
+            sizes = (ai_data.get("available_sizes") if ai_data else None) or ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]
 
             cake_record = {
                 "name": clean_title,
-                "flavour": "Not specified",
-                "category_id": None,
-                "description": "Awaiting AI sensory analysis and artisan review.",
-                "available_sizes": ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"],
+                "flavour": flavour,
+                "category_id": category_id,
+                "description": description,
+                "available_sizes": sizes,
                 "image_url": upload_res["image_url"],
                 "cloudinary_public_id": upload_res.get("cloudinary_public_id"),
-                "status": "pending", # MANDATORY
+                "status": "pending", # MANDATORY: Artisan approval queue
                 "ai_metadata": {
-                    "ai_status": "not_generated",
+                    "ai_status": "generated" if ai_data else "manual",
                     "original_file": job["file_name"],
+                    "tags": ai_data.get("tags", []) if ai_data else [],
                     "local_preview_url": proc_result["relative_master_url"],
                     "local_thumb_url": proc_result["relative_thumb_url"]
                 }

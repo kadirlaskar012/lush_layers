@@ -18,6 +18,10 @@ from typing import Optional, List, Dict, Any
 
 from PIL import Image, ImageOps
 
+import socket
+import webbrowser
+import subprocess
+
 if sys.platform == "win32":
     try:
         if hasattr(sys.stdout, "reconfigure"):
@@ -47,15 +51,115 @@ from backend.storage import storage
 import httpx
 
 # =====================================================================
+# SERVER & PROCESS MANAGEMENT HELPERS
+# =====================================================================
+
+def is_port_in_use(port: int) -> bool:
+    """Checks if a TCP port is currently active on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.3)
+        return s.connect_ex(('127.0.0.1', port)) == 0
+
+def ensure_backend_running(timeout_sec: int = 15) -> bool:
+    """Checks if FastAPI backend is running; starts it if not."""
+    if is_port_in_use(settings.PORT):
+        return True
+    
+    info(f"FastAPI Backend is starting on port {settings.PORT}...")
+    if sys.platform == "win32":
+        subprocess.Popen(
+            ["cmd.exe", "/c", "start", "Lush Layers Backend (Port 8000)", sys.executable, "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", str(settings.PORT)],
+            cwd=str(settings.PROJECT_ROOT)
+        )
+    else:
+        subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", str(settings.PORT)],
+            cwd=str(settings.PROJECT_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        
+    start_t = time.time()
+    while time.time() - start_t < timeout_sec:
+        if is_port_in_use(settings.PORT):
+            success(f"Backend server is ONLINE on http://localhost:{settings.PORT}")
+            return True
+        time.sleep(0.5)
+    warning("Backend launch took longer than expected. Please check console window.")
+    return False
+
+def ensure_frontend_running(timeout_sec: int = 25) -> bool:
+    """Checks if Next.js frontend is running; starts it if not."""
+    if is_port_in_use(3000):
+        return True
+        
+    info("Next.js Frontend website is starting on port 3000...")
+    frontend_dir = settings.PROJECT_ROOT / "frontend"
+    if sys.platform == "win32":
+        subprocess.Popen(
+            ["cmd.exe", "/c", "start", "Lush Layers Frontend (Port 3000)", "npm.cmd", "run", "dev"],
+            cwd=str(frontend_dir)
+        )
+    else:
+        subprocess.Popen(
+            ["npm", "run", "dev"],
+            cwd=str(frontend_dir),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        
+    start_t = time.time()
+    while time.time() - start_t < timeout_sec:
+        if is_port_in_use(3000):
+            success("Frontend website is ONLINE on http://localhost:3000")
+            return True
+        time.sleep(1)
+    warning("Frontend launch took longer than expected. Please check console window.")
+    return False
+
+def start_all_servers():
+    """Starts both FastAPI backend and Next.js frontend."""
+    info("Checking and launching all services...")
+    b_ok = ensure_backend_running()
+    f_ok = ensure_frontend_running()
+    if b_ok and f_ok:
+        success("Both Backend (:8000) and Frontend (:3000) are fully operational!")
+    else:
+        warning("Services initiated. Give them a few seconds to finish compilation.")
+
+def stop_all_servers():
+    """Stops servers running on port 8000 and 3000."""
+    info("Stopping background servers on ports 8000 and 3000...")
+    if sys.platform == "win32":
+        cmd = 'Get-NetTCPConnection -LocalPort 8000,3000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }'
+        subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True)
+    success("Servers stopped.")
+
+def open_url(url: str):
+    """Opens specified URL in default browser."""
+    info(f"Opening browser: {url}")
+    try:
+        webbrowser.open(url)
+    except Exception as e:
+        warning(f"Could not open browser automatically: {e}. Please open {url} manually.")
+
+# =====================================================================
 # UI HELPER FUNCTIONS
 # =====================================================================
 
 def banner():
+    b_ok = is_port_in_use(settings.PORT)
+    f_ok = is_port_in_use(3000)
+    
+    b_badge = Fore.GREEN + "[ONLINE :8000]" if b_ok else Fore.RED + "[OFFLINE :8000]"
+    f_badge = Fore.GREEN + "[ONLINE :3000]" if f_ok else Fore.RED + "[OFFLINE :3000]"
+    
     print(Fore.CYAN + Style.BRIGHT + """
 +----------------------------------------------------------------------+
-|                  * LUSH LAYERS CONFECTIONERY CLI *                   |
-|         Professional Local Image Processor & Catalog Manager         |
+|            * LUSH LAYERS - ALL-IN-ONE MASTER CONTROL *               |
+|       Full Stack Bakery System: Python Tools + Website + Admin       |
 +----------------------------------------------------------------------+""" + Style.RESET_ALL)
+    print(f"  Backend: {b_badge}{Style.RESET_ALL}   Frontend: {f_badge}{Style.RESET_ALL}\n")
 
 def info(msg: str):
     print(Fore.BLUE + Style.BRIGHT + " [INFO] " + Style.RESET_ALL + msg)
@@ -321,54 +425,103 @@ def process_single_image(
 def interactive_wizard():
     while True:
         banner()
-        print(Fore.YELLOW + Style.BRIGHT + "SELECT AN ACTION:" + Style.RESET_ALL)
-        print("  1. " + Fore.CYAN + "🍰 Process & Add Single Cake Image (Step-by-step Wizard)" + Style.RESET_ALL)
-        print("  2. " + Fore.CYAN + "📁 Bulk Process Folder of Cake Images" + Style.RESET_ALL)
-        print("  3. " + Fore.GREEN + "📋 List Cakes in Catalog (Pending, Approved, Published)" + Style.RESET_ALL)
-        print("  4. " + Fore.GREEN + "🏷️  List Available Categories (IDs & Slugs)" + Style.RESET_ALL)
-        print("  5. " + Fore.MAGENTA + "🚀 Publish a Staged Cake by ID / Slug" + Style.RESET_ALL)
-        print("  6. " + Fore.MAGENTA + "⏸️  Unpublish a Cake (Move back to Staged)" + Style.RESET_ALL)
-        print("  7. " + Fore.RED + "🗑️  Delete a Cake Record" + Style.RESET_ALL)
-        print("  8. " + Fore.BLUE + "🔄 Trigger Next.js Website Cache Revalidation" + Style.RESET_ALL)
-        print("  9. " + Fore.YELLOW + "🩺 System Health & Connection Diagnostics" + Style.RESET_ALL)
+        print(Fore.YELLOW + Style.BRIGHT + "=== [SERVER & BROWSER LAUNCHERS] ===" + Style.RESET_ALL)
+        print("  1. " + Fore.CYAN + "🎨 Open Python Image Processing Web Tools (Browser: http://localhost:8000/portal)" + Style.RESET_ALL)
+        print("  2. " + Fore.GREEN + "🌐 Open Website Storefront (Browser: http://localhost:3000)" + Style.RESET_ALL)
+        print("  3. " + Fore.MAGENTA + "👑 Open Admin Dashboard (Browser: http://localhost:3000/admin)" + Style.RESET_ALL)
+        print("  4. " + Fore.MAGENTA + "⏳ Open Pending Approval Queue (Browser: http://localhost:3000/admin/cakes/pending)" + Style.RESET_ALL)
+        print("  5. " + Fore.BLUE + "🚀 Start Both Servers (Backend + Frontend)" + Style.RESET_ALL)
+        print("  6. " + Fore.RED + "🛑 Stop All Servers" + Style.RESET_ALL)
+        print()
+        print(Fore.YELLOW + Style.BRIGHT + "=== [IMAGE PROCESSING & CATALOG TOOLS] ===" + Style.RESET_ALL)
+        print("  7. " + Fore.CYAN + "🍰 Process Single Cake Photo (Terminal Drag & Drop Wizard)" + Style.RESET_ALL)
+        print("  8. " + Fore.CYAN + "📁 Bulk Process Photo Folder (Terminal Batch)" + Style.RESET_ALL)
+        print("  9. " + Fore.WHITE + "📋 View All Cakes in Catalog (Table)" + Style.RESET_ALL)
+        print(" 10. " + Fore.WHITE + "🏷️  View Available Categories" + Style.RESET_ALL)
+        print(" 11. " + Fore.GREEN + "🚀 Publish a Staged Cake by ID / Slug" + Style.RESET_ALL)
+        print(" 12. " + Fore.YELLOW + "⏸️  Unpublish a Cake (Move back to Staged)" + Style.RESET_ALL)
+        print(" 13. " + Fore.RED + "🗑️  Delete a Cake Record" + Style.RESET_ALL)
+        print(" 14. " + Fore.BLUE + "🔄 Refresh Website Cache (Revalidate)" + Style.RESET_ALL)
+        print(" 15. " + Fore.WHITE + "🩺 System Health Diagnostics" + Style.RESET_ALL)
         print("  0. " + Fore.WHITE + "❌ Exit" + Style.RESET_ALL)
         print()
         
-        choice = input(Fore.YELLOW + "Enter choice [0-9]: " + Style.RESET_ALL).strip()
+        choice = input(Fore.YELLOW + "Enter choice [0-15]: " + Style.RESET_ALL).strip()
         
         if choice == "0":
-            print(Fore.CYAN + "\nExiting Lush Layers CLI. Happy Baking!\n")
+            print(Fore.CYAN + "\nExiting Lush Layers Master Control. Happy Baking!\n")
             sys.exit(0)
             
         elif choice == "1":
+            ensure_backend_running()
+            open_url(f"http://localhost:{settings.PORT}/portal")
+            print()
+            success("Python Image Processing Web Tools is now open in your browser!")
+            print(Fore.WHITE + "  • Drag & drop photos into the portal to automatically process with AI & studio framing.")
+            print(Fore.WHITE + "  • When processed, click 'Review & Approve' to finalize in the Admin Panel.\n")
+            input(Fore.WHITE + "Press Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "2":
+            ensure_backend_running()
+            ensure_frontend_running()
+            open_url("http://localhost:3000")
+            print()
+            success("Public Website is now open at http://localhost:3000\n")
+            input(Fore.WHITE + "Press Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "3":
+            ensure_backend_running()
+            ensure_frontend_running()
+            open_url("http://localhost:3000/admin")
+            print()
+            success("Admin Dashboard is now open at http://localhost:3000/admin\n")
+            input(Fore.WHITE + "Press Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "4":
+            ensure_backend_running()
+            ensure_frontend_running()
+            open_url("http://localhost:3000/admin/cakes/pending")
+            print()
+            success("Pending Approval Queue is now open at http://localhost:3000/admin/cakes/pending\n")
+            input(Fore.WHITE + "Press Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "5":
+            start_all_servers()
+            input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "6":
+            stop_all_servers()
+            input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
+            
+        elif choice == "7":
             action_interactive_add()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "2":
+        elif choice == "8":
             action_interactive_bulk()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "3":
+        elif choice == "9":
             action_list_cakes()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "4":
+        elif choice == "10":
             action_list_categories()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "5":
+        elif choice == "11":
             cid = input(Fore.YELLOW + "Enter Cake ID or Slug to PUBLISH: " + Style.RESET_ALL).strip()
             if cid:
                 action_publish(cid)
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "6":
+        elif choice == "12":
             cid = input(Fore.YELLOW + "Enter Cake ID or Slug to UNPUBLISH: " + Style.RESET_ALL).strip()
             if cid:
                 action_unpublish(cid)
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "7":
+        elif choice == "13":
             cid = input(Fore.RED + "Enter Cake ID to DELETE: " + Style.RESET_ALL).strip()
             if cid:
                 confirm = input(Fore.RED + f"Are you sure you want to permanently delete '{cid}'? [y/N]: " + Style.RESET_ALL).strip().lower()
@@ -376,16 +529,16 @@ def interactive_wizard():
                     action_delete(cid)
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "8":
+        elif choice == "14":
             action_revalidate()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
-        elif choice == "9":
+        elif choice == "15":
             action_diagnostics()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
         else:
-            warning("Invalid choice. Please enter a number from 0 to 9.")
+            warning("Invalid choice. Please enter a number from 0 to 15.")
             time.sleep(1)
 
 def action_interactive_add():
@@ -740,6 +893,14 @@ def main():
     # Subcommand: diagnostics
     subparsers.add_parser("diagnostics", help="Run system health checks")
 
+    # Browser & Server subcommands
+    subparsers.add_parser("tools", help="Open Python Image Processing Web Tools in browser")
+    subparsers.add_parser("site", help="Open public website in browser")
+    subparsers.add_parser("admin", help="Open admin dashboard in browser")
+    subparsers.add_parser("pending", help="Open pending review queue in browser")
+    subparsers.add_parser("start", help="Start both servers (Backend + Frontend)")
+    subparsers.add_parser("stop", help="Stop all background servers")
+
     args = parser.parse_args()
     
     # If no arguments provided, launch interactive menu
@@ -830,6 +991,31 @@ def main():
 
     elif args.subcommand == "diagnostics":
         action_diagnostics()
+
+    elif args.subcommand == "tools":
+        ensure_backend_running()
+        open_url(f"http://localhost:{settings.PORT}/portal")
+
+    elif args.subcommand == "site":
+        ensure_backend_running()
+        ensure_frontend_running()
+        open_url("http://localhost:3000")
+
+    elif args.subcommand == "admin":
+        ensure_backend_running()
+        ensure_frontend_running()
+        open_url("http://localhost:3000/admin")
+
+    elif args.subcommand == "pending":
+        ensure_backend_running()
+        ensure_frontend_running()
+        open_url("http://localhost:3000/admin/cakes/pending")
+
+    elif args.subcommand == "start":
+        start_all_servers()
+
+    elif args.subcommand == "stop":
+        stop_all_servers()
 
 if __name__ == "__main__":
     main()
