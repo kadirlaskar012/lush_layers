@@ -645,24 +645,36 @@ button:hover .icon-hover-pulse {
 }
 
 /* 2. Infinite 120Hz Luxury Marquee Tape */
+.marquee-section-wrapper {
+  padding: 0.35rem 0;
+  background: var(--bg-main);
+  width: 100%;
+  overflow: hidden;
+}
+
 .luxury-marquee-wrap {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(90deg, #FBF8F2 0%, #FFFDF9 50%, #FBF8F2 100%);
-  border-top: 1px solid rgba(197, 152, 58, 0.25);
-  border-bottom: 1px solid rgba(197, 152, 58, 0.25);
-  padding: 0.65rem 0;
+  background: #FFFFFF;
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-full);
+  padding: 0.45rem 1.25rem;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(184, 142, 62, 0.07);
 }
 
 .luxury-marquee-track {
   display: inline-flex;
   align-items: center;
-  gap: 2.5rem;
-  animation: marquee120Hz 28s linear infinite;
+  gap: 2.25rem;
+  animation: marquee120Hz 32s linear infinite;
   will-change: transform;
   transform: translate3d(0, 0, 0);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
 }
 
 .luxury-marquee-wrap:hover .luxury-marquee-track {
@@ -677,17 +689,17 @@ button:hover .icon-hover-pulse {
 .marquee-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  font-size: 0.78rem;
+  gap: 0.55rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-primary);
 }
 
 .marquee-spark {
-  color: var(--gold);
-  font-size: 0.85rem;
+  color: var(--gold-dark);
+  font-size: 0.78rem;
 }
 
 /* 3. Dual Editorial Showcase Posters */

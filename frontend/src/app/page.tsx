@@ -177,8 +177,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. INFINITE 120HZ LUXURY MARQUEE TAPE */}
-      <LuxuryMarqueeTape />
+      {/* 2. INFINITE 120HZ LUXURY MARQUEE TAPE (Strictly bounded within container-lux) */}
+      <section className="marquee-section-wrapper">
+        <div className="container-lux">
+          <LuxuryMarqueeTape />
+        </div>
+      </section>
 
       {/* 3. COMPACT HORIZONTAL FEATURED CAKES (Mobile touch-friendly swipeable strip) */}
       <FeaturedCarousel
