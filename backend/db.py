@@ -238,37 +238,18 @@ class Database:
         if cursor.fetchone()[0] == 0:
             now = datetime.datetime.now(datetime.timezone.utc).isoformat()
             default_categories = [
-                ('c0000000-0000-0000-0000-000000000001', 'Signature Tiered', 'signature-tiered', 'Grand multi-tiered cakes adorned with delicate buttercream and gold leaf accents.', '/categories/tiered.webp', 1, 1, now, now),
-                ('c0000000-0000-0000-0000-000000000002', 'Bespoke Birthday', 'bespoke-birthday', 'Handcrafted birthday centrepieces curated to celebrate life''s most memorable milestones.', '/categories/birthday.webp', 1, 2, now, now),
-                ('c0000000-0000-0000-0000-000000000003', 'Botanical & Floral', 'botanical-floral', 'Intricately piped sugar florals and natural botanical infusions on velvety layers.', '/categories/floral.webp', 1, 3, now, now),
-                ('c0000000-0000-0000-0000-000000000004', 'Pure Belgian Chocolate', 'pure-belgian-chocolate', 'Decadent single-origin Belgian chocolate ganache, mousse, and cocoa sponges.', '/categories/chocolate.webp', 1, 4, now, now),
-                ('c0000000-0000-0000-0000-000000000005', 'Modern Minimalist', 'modern-minimalist', 'Sleek architectural lines, pristine textures, and contemporary luxury design.', '/categories/minimalist.webp', 1, 5, now, now)
+                ('c0000000-0000-0000-0000-000000000001', 'Birthday Cakes', 'birthday-cakes', 'Handcrafted celebration centrepieces tailored for unforgettable birthday milestones.', '/categories/birthday.webp', 'PartyPopper', '#FFF5F7', '#E11D48', 1, 1, now, now),
+                ('c0000000-0000-0000-0000-000000000002', 'Wedding & Tiered Cakes', 'wedding-tiered-cakes', 'Grand architectural multi-tiered masterworks with delicate textures, florals and luxury accents.', '/categories/tiered.webp', 'Crown', '#F9F9F9', '#C89B3C', 1, 2, now, now),
+                ('c0000000-0000-0000-0000-000000000003', 'Anniversary & Romance', 'anniversary-cakes', 'Romantic signature cakes, heart designs, and milestone celebration confections.', '/categories/romantic.webp', 'Heart', '#FFF9EE', '#B88E3E', 1, 3, now, now),
+                ('c0000000-0000-0000-0000-000000000004', 'Bento & Petite Cakes', 'bento-petite-cakes', 'Minimalist Korean-style lunchbox bento cakes crafted for intimate celebrations.', '/categories/bento.webp', 'Shapes', '#F4F6F8', '#475569', 1, 4, now, now),
+                ('c0000000-0000-0000-0000-000000000005', 'Botanical & Floral Cakes', 'botanical-floral-cakes', 'Intricately piped sugar florals, fresh blossoms, and delicate botanical infusions.', '/categories/floral.webp', 'Flower2', '#FFF0F3', '#DB2777', 1, 5, now, now),
+                ('c0000000-0000-0000-0000-000000000006', 'Pure Belgian Chocolate', 'belgian-chocolate-cakes', 'Decadent single-origin Belgian chocolate ganache, silk truffles, and rich cocoa sponges.', '/categories/chocolate.webp', 'Cookie', '#F6F1EA', '#6B4423', 1, 6, now, now),
+                ('c0000000-0000-0000-0000-000000000007', 'Custom & Theme Cakes', 'custom-theme-cakes', 'Bespoke novelty, themed creations, and personalized artistry crafted to your imagination.', '/categories/custom.webp', 'Palette', '#FDF2EC', '#EA580C', 1, 7, now, now),
             ]
             cursor.executemany("""
-                INSERT INTO categories (id, name, slug, description, image_url, active, sort_order, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO categories (id, name, slug, description, image_url, icon, color, accent, active, sort_order, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, default_categories)
-
-        # Seed reviews if empty
-        cursor.execute("SELECT COUNT(*) FROM reviews")
-        if cursor.fetchone()[0] == 0:
-            now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            sample_reviews = [
-                ('r0000000-0000-0000-0000-000000000001', 'Lady Vivienne Montgomery', 'Kensington Wedding', 'The three-tier Belgian chocolate and raspberry cascade was the undisputed highlight of our reception. The floral piping was a work of art and the crumb was exquisitely light.', 5, None, 'approved', now, now),
-                ('r0000000-0000-0000-0000-000000000002', 'Marcus & Camille Sterling', '30th Anniversary Gala', 'Ordering through WhatsApp was extraordinarily personal and seamless. The baker listened attentively to our palette preferences and delivered pure confectionary perfection.', 5, None, 'approved', now, now),
-                ('r0000000-0000-0000-0000-000000000003', 'Seraphina Vance', 'Private Birthday Salon', 'The Fleur de Sel Salted Caramel cake melted in our mouths. Guests are still asking for the baker''s contact details weeks later. Truly made with love.', 5, None, 'approved', now, now)
-            ]
-            cursor.executemany("""
-                INSERT INTO reviews (id, customer_name, customer_location, review_text, rating, cake_id, status, created_at, approved_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, sample_reviews)
-
-        # Backfill default icons if needed
-        cursor.execute("UPDATE categories SET icon = 'Crown', color = '#F9F9F9', accent = '#C89B3C' WHERE slug = 'signature-tiered' AND (icon IS NULL OR icon = 'Cake')")
-        cursor.execute("UPDATE categories SET icon = 'PartyPopper', color = '#FFF5F7', accent = '#E11D48' WHERE slug = 'bespoke-birthday' AND (icon IS NULL OR icon = 'Cake')")
-        cursor.execute("UPDATE categories SET icon = 'Flower2', color = '#FFF0F3', accent = '#DB2777' WHERE slug = 'botanical-floral' AND (icon IS NULL OR icon = 'Cake')")
-        cursor.execute("UPDATE categories SET icon = 'Cookie', color = '#F6F1EA', accent = '#6B4423' WHERE slug = 'pure-belgian-chocolate' AND (icon IS NULL OR icon = 'Cake')")
-        cursor.execute("UPDATE categories SET icon = 'Shapes', color = '#F4F6F8', accent = '#475569' WHERE slug = 'modern-minimalist' AND (icon IS NULL OR icon = 'Cake')")
 
         conn.commit()
         conn.close()
