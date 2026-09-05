@@ -90,6 +90,10 @@ async def get_system_status():
         "supabase_connected": db.is_connected
     }
 
+@app.get("/api/admin/stats")
+async def get_admin_stats_endpoint():
+    return db.get_admin_stats()
+
 # ==========================================
 # BULK UPLOAD & JOB QUEUE
 # ==========================================
@@ -194,6 +198,14 @@ async def list_cakes(
 async def list_pending_cakes():
     return db.get_cakes(status="pending")
 
+@app.get("/api/cakes/approved")
+async def list_approved_cakes():
+    """
+    Returns all approved cakes (both staged and published).
+    A published cake remains part of the approved collection.
+    """
+    return db.get_cakes(status="approved,published")
+
 @app.get("/api/cakes/{cake_id}")
 async def get_cake(cake_id: str):
     cake = db.get_cake_by_id(cake_id)
@@ -261,6 +273,76 @@ async def delete_cake(cake_id: str, background_tasks: BackgroundTasks):
         background_tasks.add_task(trigger_frontend_revalidation, ["/", "/cakes"])
         return {"message": "Cake deleted successfully."}
     raise HTTPException(status_code=500, detail="Failed to delete cake.")
+
+@app.post("/api/cakes/{cake_id}/unpublish")
+async def unpublish_cake(cake_id: str, background_tasks: BackgroundTasks):
+    """
+    Reverts a published cake back to approved (staged) status.
+    Removes it from live catalog and triggers ISR revalidation.
+    """
+    cake = db.get_cake_by_id(cake_id)
+    if not cake:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    
+    updated = db.update_cake(cake_id, {"status": "approved"})
+    background_tasks.add_task(trigger_frontend_revalidation, ["/", "/cakes", f"/cakes/{cake['slug']}"])
+    return {"message": "Cake moved back to staged approval.", "cake": updated}
+
+@app.post("/api/cakes/{cake_id}/restore")
+async def restore_cake(cake_id: str):
+    """
+    Restores a rejected cake back to pending state for review.
+    """
+    cake = db.get_cake_by_id(cake_id)
+    if not cake:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    
+    restored = db.restore_cake(cake_id)
+    return {"message": "Cake restored to pending approval.", "cake": restored}
+
+# --- CUSTOMER ENQUIRIES / ORDERS ---
+class EnquiryCreateRequest(BaseModel):
+    customer_name: str
+    phone: str
+    cake_name: str
+    flavour: Optional[str] = "Chef's Signature"
+    selected_size: Optional[str] = "1.0 kg"
+    custom_message: Optional[str] = ""
+
+class EnquiryStatusUpdateRequest(BaseModel):
+    status: str  # New, Contacted, Confirmed, Completed, Cancelled
+
+@app.post("/api/enquiries")
+async def create_enquiry(payload: EnquiryCreateRequest):
+    """
+    Registers customer WhatsApp order/enquiry. ZERO PRICE.
+    """
+    enquiry = db.create_enquiry(payload.dict())
+    return {"message": "Enquiry registered successfully.", "enquiry": enquiry}
+
+@app.get("/api/enquiries")
+async def list_enquiries(status: Optional[str] = None, limit: int = Query(100, ge=1, le=500)):
+    """
+    Returns list of customer orders / WhatsApp enquiries for Admin management.
+    """
+    return db.get_enquiries(status=status, limit=limit)
+
+@app.patch("/api/enquiries/{enquiry_id}")
+async def update_enquiry_status(enquiry_id: str, payload: EnquiryStatusUpdateRequest):
+    """
+    Updates the status of an order/enquiry.
+    """
+    updated = db.update_enquiry_status(enquiry_id, payload.status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Enquiry not found.")
+    return {"message": "Enquiry status updated.", "enquiry": updated}
+
+@app.delete("/api/enquiries/{enquiry_id}")
+async def delete_enquiry(enquiry_id: str):
+    deleted = db.delete_enquiry(enquiry_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Enquiry not found.")
+    return {"message": "Enquiry deleted successfully."}
 
 async def _execute_ai_generation_for_cake(cake: Dict[str, Any], is_regenerate: bool = False) -> Dict[str, Any]:
     cake_id = cake["id"]

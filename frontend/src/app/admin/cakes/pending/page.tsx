@@ -61,12 +61,10 @@ export default function PendingCakesPage() {
     loadData();
   }, []);
 
-  // Determine AI status of a cake
   const getAiStatus = (cake: Cake): "not_generated" | "generating" | "generated" | "failed" => {
     if (cake.ai_metadata?.ai_status) {
       return cake.ai_metadata.ai_status;
     }
-    // Backward compatibility check
     if (cake.ai_metadata?.suggested_name || cake.ai_metadata?.confidence) {
       return "generated";
     }
@@ -76,10 +74,8 @@ export default function PendingCakesPage() {
     return "not_generated";
   };
 
-  // Single AI Generate or Regenerate
   const handleAIGenerate = async (cakeId: string, isRegenerate: boolean = false) => {
     setActionLoading(cakeId);
-    // Optimistically show generating state
     setCakes((prev) =>
       prev.map((c) =>
         c.id === cakeId
@@ -101,9 +97,10 @@ export default function PendingCakesPage() {
         id: cakeId,
         msg: isRegenerate
           ? `AI suggestions refreshed for "${updated.name}"!`
-          : `AI generated metadata for "${updated.name}"! Status remains Pending.`,
+          : `AI generated metadata for "${updated.name}"! Status remains Pending for your review.`,
         type: "success",
       });
+      setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
       setCakes((prev) =>
         prev.map((c) =>
@@ -125,7 +122,6 @@ export default function PendingCakesPage() {
     }
   };
 
-  // Bulk AI Generate: processes all ungenerated pending cakes sequentially
   const handleGenerateAllWithAI = async () => {
     const ungenerated = cakes.filter((c) => getAiStatus(c) !== "generated");
     if (ungenerated.length === 0) {
@@ -146,24 +142,15 @@ export default function PendingCakesPage() {
     let fail = 0;
 
     for (let i = 0; i < ungenerated.length; i++) {
-      if (stopBulkRef.current) {
-        break;
-      }
+      if (stopBulkRef.current) break;
       const cake = ungenerated[i];
       setBulkState((prev) => ({ ...prev, current: i + 1 }));
       setActionLoading(cake.id);
 
-      // Set card to generating
       setCakes((prev) =>
         prev.map((c) =>
           c.id === cake.id
-            ? {
-                ...c,
-                ai_metadata: {
-                  ...c.ai_metadata,
-                  ai_status: "generating",
-                },
-              }
+            ? { ...c, ai_metadata: { ...c.ai_metadata, ai_status: "generating" } }
             : c
         )
       );
@@ -172,50 +159,37 @@ export default function PendingCakesPage() {
         const updated = await generateCakeAI(cake.id);
         setCakes((prev) => prev.map((c) => (c.id === cake.id ? updated : c)));
         succ++;
-        setBulkState((prev) => ({ ...prev, succeeded: succ }));
-      } catch (err: any) {
+      } catch {
         fail++;
-        setBulkState((prev) => ({ ...prev, failed: fail }));
-        setCakes((prev) =>
-          prev.map((c) =>
-            c.id === cake.id
-              ? {
-                  ...c,
-                  ai_metadata: {
-                    ...c.ai_metadata,
-                    ai_status: "failed",
-                    ai_error: err.message || "Failed",
-                  },
-                }
-              : c
-          )
-        );
       } finally {
-        setActionLoading(null);
+        setBulkState((prev) => ({ ...prev, succeeded: succ, failed: fail }));
       }
     }
 
+    setActionLoading(null);
     setBulkState((prev) => ({ ...prev, isRunning: false }));
     setFeedback({
-      msg: `Batch AI Generation Complete: ${succ} succeeded, ${fail} failed. All remain strictly in Pending status.`,
-      type: succ > 0 ? "success" : "error",
+      msg: `Bulk AI completed: ${succ} analyzed, ${fail} failed. Human approval required.`,
+      type: "success",
     });
+    setTimeout(() => setFeedback(null), 5000);
   };
 
-  const handleStopBulk = () => {
-    stopBulkRef.current = true;
-  };
-
-  // Editing state handlers
-  const startEditing = (cake: Cake) => {
+  const startEdit = (cake: Cake) => {
     setEditingCakeId(cake.id);
     setEditForm({
       name: cake.name,
       flavour: cake.flavour,
-      category_id: cake.category_id || "",
+      category_id: cake.category_id || (categories[0]?.id || ""),
       description: cake.description,
-      available_sizes: [...(cake.available_sizes || [])],
+      available_sizes: cake.available_sizes ? [...cake.available_sizes] : ["1.0 kg"],
     });
+    setNewSizeInput("");
+  };
+
+  const cancelEdit = () => {
+    setEditingCakeId(null);
+    setEditForm({});
     setNewSizeInput("");
   };
 
@@ -225,82 +199,53 @@ export default function PendingCakesPage() {
       const updated = await updateCakeDetails(cakeId, editForm);
       setCakes((prev) => prev.map((c) => (c.id === cakeId ? updated : c)));
       setEditingCakeId(null);
-      setFeedback({ id: cakeId, msg: "Cake details successfully updated.", type: "success" });
+      setFeedback({ id: cakeId, msg: `"${updated.name}" updated successfully!`, type: "success" });
+      setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      setFeedback({ id: cakeId, msg: err.message, type: "error" });
+      setFeedback({ id: cakeId, msg: err.message || "Failed to save edits", type: "error" });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleAddSize = () => {
-    if (!newSizeInput.trim()) return;
-    const current = editForm.available_sizes || [];
-    if (!current.includes(newSizeInput.trim())) {
-      setEditForm({
-        ...editForm,
-        available_sizes: [...current, newSizeInput.trim()],
-      });
-    }
-    setNewSizeInput("");
-  };
-
-  const handleRemoveSize = (sizeToRemove: string) => {
-    const current = editForm.available_sizes || [];
-    setEditForm({
-      ...editForm,
-      available_sizes: current.filter((s) => s !== sizeToRemove),
-    });
-  };
-
-  // Workflow actions
-  const handleApprove = async (cakeId: string) => {
+  const handleApprove = async (cakeId: string, cakeName: string) => {
     setActionLoading(cakeId);
     try {
       await approveCake(cakeId);
       setCakes((prev) => prev.filter((c) => c.id !== cakeId));
-      setFeedback({ id: cakeId, msg: "Cake approved! Moved to Approved queue.", type: "success" });
+      setFeedback({ msg: `"${cakeName}" approved and staged!`, type: "success" });
+      setTimeout(() => setFeedback(null), 3500);
     } catch (err: any) {
-      setFeedback({ id: cakeId, msg: err.message, type: "error" });
+      setFeedback({ id: cakeId, msg: err.message || "Approval failed", type: "error" });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleReject = async (cakeId: string) => {
+  const handleApproveAndPublish = async (cakeId: string, cakeName: string) => {
+    setActionLoading(cakeId);
+    try {
+      await approveCake(cakeId);
+      await publishCake(cakeId);
+      setCakes((prev) => prev.filter((c) => c.id !== cakeId));
+      setFeedback({ msg: `"${cakeName}" approved & published live to storefront!`, type: "success" });
+      setTimeout(() => setFeedback(null), 3500);
+    } catch (err: any) {
+      setFeedback({ id: cakeId, msg: err.message || "Publish failed", type: "error" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async (cakeId: string, cakeName: string) => {
     setActionLoading(cakeId);
     try {
       await rejectCake(cakeId);
       setCakes((prev) => prev.filter((c) => c.id !== cakeId));
-      setFeedback({ id: cakeId, msg: "Cake rejected.", type: "success" });
+      setFeedback({ msg: `"${cakeName}" moved to Rejected Archive.`, type: "info" });
+      setTimeout(() => setFeedback(null), 3500);
     } catch (err: any) {
-      setFeedback({ id: cakeId, msg: err.message, type: "error" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handlePublish = async (cakeId: string) => {
-    setActionLoading(cakeId);
-    try {
-      await publishCake(cakeId);
-      setCakes((prev) => prev.filter((c) => c.id !== cakeId));
-      setFeedback({ id: cakeId, msg: "Cake published live! ISR revalidation triggered.", type: "success" });
-    } catch (err: any) {
-      setFeedback({ id: cakeId, msg: err.message, type: "error" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleReprocess = async (cakeId: string) => {
-    setActionLoading(cakeId);
-    try {
-      const updated = await reprocessCakeImage(cakeId);
-      setCakes((prev) => prev.map((c) => (c.id === cakeId ? updated : c)));
-      setFeedback({ id: cakeId, msg: "Image reprocessed on studio white canvas successfully!", type: "success" });
-    } catch (err: any) {
-      setFeedback({ id: cakeId, msg: err.message, type: "error" });
+      setFeedback({ id: cakeId, msg: err.message || "Rejection failed", type: "error" });
     } finally {
       setActionLoading(null);
     }
@@ -318,125 +263,93 @@ export default function PendingCakesPage() {
           alignItems: "center",
           marginBottom: "1rem",
           flexWrap: "wrap",
-          gap: "0.75rem",
+          gap: "0.65rem",
         }}
       >
         <div>
           <span className="cake-category-badge">Human Review Atelier</span>
-          <h1 style={{ fontSize: "1.45rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.15rem 0" }}>
+          <h1 style={{ fontSize: "1.45rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.1rem 0" }}>
             Pending Approval Queue ({cakes.length})
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-            AI analyzes processed cake images to suggest metadata. AI never publishes — human approval strictly required.
+            AI suggests metadata for processed cake photos. Review, refine, and approve for staging or live publication.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-          {/* BULK AI GENERATE BUTTON */}
+        <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", alignItems: "center" }}>
           <button
             onClick={handleGenerateAllWithAI}
             disabled={bulkState.isRunning || ungeneratedCount === 0}
             className="btn-gold"
             style={{
-              padding: "0.45rem 0.95rem",
-              fontSize: "0.8rem",
+              padding: "0.42rem 0.85rem",
+              fontSize: "0.78rem",
               display: "inline-flex",
               alignItems: "center",
-              gap: "0.4rem",
+              gap: "0.35rem",
               opacity: ungeneratedCount === 0 ? 0.6 : 1,
               cursor: ungeneratedCount === 0 ? "not-allowed" : "pointer",
             }}
-            id="btn-generate-all-ai"
           >
             ✨ Generate All with AI {ungeneratedCount > 0 ? `(${ungeneratedCount})` : ""}
           </button>
-
-          <button onClick={loadData} className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+          <button onClick={loadData} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
             🔄 Refresh
           </button>
-          <Link href="/admin/upload" className="btn-outline-gold" style={{ padding: "0.45rem 0.85rem", fontSize: "0.8rem" }}>
+          <Link href="/admin/upload" className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem" }}>
             + Bulk Upload
           </Link>
         </div>
       </div>
 
-      {/* BULK GENERATION PROGRESS BAR */}
+      {feedback && (
+        <div
+          style={{
+            padding: "0.55rem 0.85rem",
+            borderRadius: "var(--radius-sm)",
+            background: feedback.type === "success" ? "#D1FAE5" : feedback.type === "info" ? "#EFF6FF" : "#FEE2E2",
+            border: feedback.type === "success" ? "1px solid #A7F3D0" : feedback.type === "info" ? "1px solid #BFDBFE" : "1px solid #FECACA",
+            color: feedback.type === "success" ? "#065F46" : feedback.type === "info" ? "#1D4ED8" : "#991B1B",
+            fontSize: "0.82rem",
+            marginBottom: "1rem",
+            fontWeight: 500,
+          }}
+        >
+          {feedback.type === "success" ? "✓ " : feedback.type === "info" ? "ℹ " : "✕ "}
+          {feedback.msg}
+        </div>
+      )}
+
+      {/* Bulk Progress Bar */}
       {bulkState.isRunning && (
         <div
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--gold-border)",
-            borderRadius: "var(--radius-md)",
-            padding: "0.85rem 1.15rem",
-            marginBottom: "1.25rem",
-            boxShadow: "var(--shadow-xs)",
+            borderRadius: "var(--radius-sm)",
+            padding: "0.75rem 1rem",
+            marginBottom: "1rem",
           }}
-          id="bulk-progress-panel"
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.45rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "1rem" }}>⚡</span>
-              <span style={{ fontWeight: 600, fontSize: "0.86rem", color: "var(--text-primary)" }}>
-                Generating {bulkState.current} / {bulkState.total} with AI...
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "0.85rem", alignItems: "center", fontSize: "0.78rem" }}>
-              <span style={{ color: "#047857", fontWeight: 600 }}>✓ {bulkState.succeeded} Succeeded</span>
-              {bulkState.failed > 0 && <span style={{ color: "#B91C1C", fontWeight: 600 }}>✕ {bulkState.failed} Failed</span>}
-              <button
-                onClick={handleStopBulk}
-                style={{
-                  background: "#FEE2E2",
-                  color: "#991B1B",
-                  border: "1px solid #FECACA",
-                  borderRadius: "var(--radius-xs)",
-                  padding: "0.2rem 0.55rem",
-                  fontSize: "0.72rem",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                ⏹ Stop
-              </button>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginBottom: "0.35rem" }}>
+            <span>⚡ Processing AI analysis ({bulkState.current} / {bulkState.total})...</span>
+            <button
+              onClick={() => { stopBulkRef.current = true; }}
+              style={{ background: "none", border: "none", color: "#EF4444", fontSize: "0.76rem", cursor: "pointer", fontWeight: 600 }}
+            >
+              Stop Bulk
+            </button>
           </div>
-          {/* Progress track */}
-          <div
-            style={{
-              width: "100%",
-              height: "7px",
-              background: "var(--bg-cream)",
-              borderRadius: "4px",
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ width: "100%", height: "5px", background: "var(--border-subtle)", borderRadius: "3px", overflow: "hidden" }}>
             <div
               style={{
-                width: `${bulkState.total > 0 ? (bulkState.current / bulkState.total) * 100 : 0}%`,
+                width: `${bulkState.total ? (bulkState.current / bulkState.total) * 100 : 0}%`,
                 height: "100%",
-                background: "linear-gradient(90deg, var(--gold) 0%, var(--gold-dark) 100%)",
+                background: "var(--gold)",
                 transition: "width 0.3s ease",
               }}
             />
           </div>
-        </div>
-      )}
-
-      {/* Alert / Feedback message */}
-      {feedback && (
-        <div
-          style={{
-            padding: "0.6rem 0.95rem",
-            borderRadius: "var(--radius-sm)",
-            marginBottom: "1rem",
-            background: feedback.type === "success" ? "#D1FAE5" : feedback.type === "info" ? "#EFF6FF" : "#FEE2E2",
-            border: feedback.type === "success" ? "1px solid #A7F3D0" : feedback.type === "info" ? "1px solid #BFDBFE" : "1px solid #FECACA",
-            color: feedback.type === "success" ? "#065F46" : feedback.type === "info" ? "#1D4ED8" : "#991B1B",
-            fontSize: "0.84rem",
-            fontWeight: 500,
-          }}
-        >
-          {feedback.msg}
         </div>
       )}
 
@@ -451,25 +364,29 @@ export default function PendingCakesPage() {
             borderRadius: "var(--radius-md)",
             marginTop: "1rem",
           }}
-          id="empty-pending-state"
         >
-          <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>✨</div>
-          <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
-            No pending cakes in queue.
+          <div style={{ fontSize: "2rem", marginBottom: "0.4rem" }}>✨</div>
+          <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+            No pending cakes in queue
           </h3>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-            All confections have been approved or rejected. Upload new cake photos to trigger review.
+          <p style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginBottom: "1rem" }}>
+            All processed photos have been approved or rejected. Upload new cake images to begin moderation.
           </p>
-          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.5rem 1.1rem", fontSize: "0.82rem" }}>
+          <Link href="/admin/upload" className="btn-gold" style={{ padding: "0.45rem 1.1rem", fontSize: "0.8rem" }}>
             Upload Cake Images
           </Link>
         </div>
       )}
 
-      {/* Pending Cakes List */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {/* Compact Pending Cakes Cards Grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
+          gap: "0.85rem",
+        }}
+      >
         {cakes.map((cake) => {
-          const isEditing = editingCakeId === cake.id;
           const isBusy = actionLoading === cake.id;
           const aiStatus = getAiStatus(cake);
 
@@ -480,33 +397,77 @@ export default function PendingCakesPage() {
                 background: "var(--bg-surface)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
-                padding: "1rem",
+                padding: "0.85rem",
                 boxShadow: "var(--shadow-xs)",
-                transition: "border-color 0.2s ease",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
               }}
               id={`pending-card-${cake.id}`}
             >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                  gap: "1.25rem",
-                  alignItems: "start",
-                }}
-              >
-                {/* Left: Studio White Image Preview */}
-                <div style={{ maxWidth: "260px", width: "100%" }}>
+              <div>
+                {/* Top status pills */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                  <span
+                    style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      padding: "0.15rem 0.45rem",
+                      borderRadius: "var(--radius-full)",
+                      background: "#FEF3C7",
+                      color: "#92400E",
+                      border: "1px solid #FCD34D",
+                    }}
+                  >
+                    ⏳ PENDING APPROVAL
+                  </span>
+
+                  <span
+                    style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                      padding: "0.15rem 0.45rem",
+                      borderRadius: "var(--radius-full)",
+                      background:
+                        aiStatus === "generated"
+                          ? "#D1FAE5"
+                          : aiStatus === "generating"
+                          ? "#EFF6FF"
+                          : "#F3F4F6",
+                      color:
+                        aiStatus === "generated"
+                          ? "#065F46"
+                          : aiStatus === "generating"
+                          ? "#1D4ED8"
+                          : "var(--text-muted)",
+                      border:
+                        aiStatus === "generated"
+                          ? "1px solid #A7F3D0"
+                          : aiStatus === "generating"
+                          ? "1px solid #BFDBFE"
+                          : "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    {aiStatus === "generated" ? "✓ AI Generated" : aiStatus === "generating" ? "⚡ AI Analyzing..." : "Awaiting AI"}
+                  </span>
+                </div>
+
+                {/* Content Row: Thumbnail + Details */}
+                <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.65rem" }}>
+                  {/* Thumbnail: Compact 85x85 preview */}
                   <div
                     style={{
+                      width: "85px",
+                      height: "85px",
                       background: "#FFFFFF",
-                      borderRadius: "var(--radius-sm)",
+                      borderRadius: "var(--radius-xs)",
                       border: "1px solid var(--border-light)",
-                      padding: "0.75rem",
+                      padding: "0.25rem",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      aspectRatio: "1/1",
-                      marginBottom: "0.5rem",
+                      flexShrink: 0,
                       position: "relative",
                     }}
                   >
@@ -525,421 +486,342 @@ export default function PendingCakesPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          borderRadius: "var(--radius-sm)",
                           fontSize: "0.8rem",
-                          fontWeight: 600,
-                          color: "var(--gold-dark)",
                         }}
                       >
-                        Analyzing...
+                        ⏳
                       </div>
                     )}
                   </div>
 
-                  {/* Status Pills */}
-                  <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
-                    <span className="badge-status badge-pending">Pending Approval</span>
-                    
-                    {/* AI Status Badge */}
-                    {aiStatus === "not_generated" && (
-                      <span className="badge-ai-not-generated" id={`ai-status-${cake.id}`}>
-                        ● Not Generated
+                  {/* Metadata */}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <span style={{ fontSize: "0.65rem", color: "var(--gold-dark)", textTransform: "uppercase", fontWeight: 600 }}>
+                        {cake.category_name || "Haute Confection"}
                       </span>
-                    )}
-                    {aiStatus === "generating" && (
-                      <span className="badge-ai-generating" id={`ai-status-${cake.id}`}>
-                        ⏳ Generating AI...
-                      </span>
-                    )}
-                    {aiStatus === "generated" && (
-                      <span className="badge-ai-generated" id={`ai-status-${cake.id}`}>
-                        ✓ AI Generated
-                      </span>
-                    )}
-                    {aiStatus === "failed" && (
-                      <span className="badge-ai-failed" id={`ai-status-${cake.id}`}>
-                        ✕ AI Failed
-                      </span>
+                      <button
+                        onClick={() => startEdit(cake)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--gold-dark)",
+                          fontSize: "0.74rem",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          padding: 0,
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
+                    </div>
+
+                    <h4
+                      style={{
+                        fontSize: "0.92rem",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        margin: "0.1rem 0",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={cake.name}
+                    >
+                      {cake.name}
+                    </h4>
+
+                    <p
+                      style={{
+                        fontSize: "0.74rem",
+                        color: "var(--text-secondary)",
+                        fontStyle: "italic",
+                        margin: "0 0 0.35rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={cake.flavour}
+                    >
+                      {cake.flavour || "Flavour pending..."}
+                    </p>
+
+                    {cake.available_sizes && cake.available_sizes.length > 0 && (
+                      <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
+                        {cake.available_sizes.slice(0, 3).map((s, idx) => (
+                          <span
+                            key={idx}
+                            style={{
+                              fontSize: "0.62rem",
+                              background: "var(--bg-cream)",
+                              border: "1px solid var(--border-subtle)",
+                              padding: "0.08rem 0.35rem",
+                              borderRadius: "var(--radius-full)",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            {s.replace(/ \([^)]*\)/, "")}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
+                </div>
 
-                  <button
-                    onClick={() => handleReprocess(cake.id)}
-                    disabled={isBusy}
+                {/* Description Preview snippet */}
+                {cake.description && (
+                  <p
                     style={{
-                      width: "100%",
-                      padding: "0.35rem 0.6rem",
                       fontSize: "0.72rem",
-                      background: "var(--bg-cream)",
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: "var(--radius-xs)",
                       color: "var(--text-secondary)",
-                      cursor: "pointer",
+                      lineHeight: 1.35,
+                      margin: "0 0 0.65rem",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
                     }}
                   >
-                    🎨 Reprocess Cutout
-                  </button>
-                </div>
+                    {cake.description}
+                  </p>
+                )}
+              </div>
 
-                {/* Middle & Right: Metadata or Inline Editor */}
-                <div style={{ flex: 1 }}>
-                  {isEditing ? (
-                    /* EDIT MODE */
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }} id={`edit-form-${cake.id}`}>
-                      <div>
-                        <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.2rem" }}>
-                          Cake Name:
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.name || ""}
-                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          className="form-input"
-                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
-                        />
-                      </div>
+              {/* Action Buttons Toolbar */}
+              <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "0.55rem", display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                {/* AI Generate / Regenerate */}
+                <button
+                  onClick={() => handleAIGenerate(cake.id, aiStatus === "generated")}
+                  disabled={isBusy}
+                  className="btn-outline-gold"
+                  style={{ padding: "0.32rem 0.6rem", fontSize: "0.74rem" }}
+                  title="Generate or refresh AI metadata suggestions"
+                >
+                  {aiStatus === "generated" ? "🔄 Regenerate AI" : "✨ AI Generate"}
+                </button>
 
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                        <div>
-                          <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.2rem" }}>
-                            Flavour Note:
-                          </label>
-                          <input
-                            type="text"
-                            value={editForm.flavour || ""}
-                            onChange={(e) => setEditForm({ ...editForm, flavour: e.target.value })}
-                            className="form-input"
-                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.2rem" }}>
-                            Category:
-                          </label>
-                          <select
-                            value={editForm.category_id || ""}
-                            onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
-                            className="form-select"
-                            style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
-                          >
-                            <option value="">Needs Review / Select Category</option>
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
+                {/* Approve (Stage) */}
+                <button
+                  onClick={() => handleApprove(cake.id, cake.name)}
+                  disabled={isBusy}
+                  style={{
+                    background: "#D1FAE5",
+                    border: "1px solid #A7F3D0",
+                    color: "#065F46",
+                    borderRadius: "var(--radius-full)",
+                    padding: "0.32rem 0.65rem",
+                    fontSize: "0.74rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                  title="Approve and move to staged ready for live release"
+                >
+                  ✓ Approve
+                </button>
 
-                      <div>
-                        <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.2rem" }}>
-                          Description:
-                        </label>
-                        <textarea
-                          rows={2}
-                          value={editForm.description || ""}
-                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                          className="form-textarea"
-                          style={{ padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
-                        />
-                      </div>
+                {/* Approve & Publish */}
+                <button
+                  onClick={() => handleApproveAndPublish(cake.id, cake.name)}
+                  disabled={isBusy}
+                  className="btn-gold"
+                  style={{ padding: "0.32rem 0.65rem", fontSize: "0.74rem" }}
+                  title="Approve and instantly publish live to storefront"
+                >
+                  🚀 Approve & Publish
+                </button>
 
-                      {/* Interactive Available Sizes */}
-                      <div>
-                        <label className="form-label" style={{ fontSize: "0.75rem", marginBottom: "0.2rem" }}>
-                          Available Sizes (Admin Configurable):
-                        </label>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.4rem" }}>
-                          {editForm.available_sizes?.map((sz, sIdx) => (
-                            <span
-                              key={sIdx}
-                              className="cake-size-pill"
-                              style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
-                            >
-                              {sz}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSize(sz)}
-                                style={{
-                                  background: "transparent",
-                                  border: "none",
-                                  color: "#991B1B",
-                                  cursor: "pointer",
-                                  padding: 0,
-                                  fontSize: "0.7rem",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                ✕
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                        <div style={{ display: "flex", gap: "0.4rem" }}>
-                          <input
-                            type="text"
-                            placeholder="e.g. 1.5 kg (Tiered)"
-                            value={newSizeInput}
-                            onChange={(e) => setNewSizeInput(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddSize())}
-                            className="form-input"
-                            style={{ padding: "0.35rem 0.6rem", fontSize: "0.78rem", maxWidth: "200px" }}
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddSize}
-                            className="btn-outline-gold"
-                            style={{ padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
-                          >
-                            + Add Size
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Save / Cancel */}
-                      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.35rem" }}>
-                        <button
-                          onClick={() => saveEdit(cake.id)}
-                          disabled={isBusy}
-                          className="btn-gold"
-                          style={{ padding: "0.4rem 0.95rem", fontSize: "0.78rem" }}
-                        >
-                          💾 Save Changes
-                        </button>
-                        <button
-                          onClick={() => setEditingCakeId(null)}
-                          className="btn-outline-gold"
-                          style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* VIEW MODE WITH AI METADATA */
-                    <div>
-                      {/* Category & Name Header */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.35rem" }}>
-                        <div>
-                          <span
-                            style={{
-                              fontSize: "0.68rem",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.08em",
-                              color: cake.category_name ? "var(--gold-dark)" : "#B45309",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {cake.category_name || (cake.ai_metadata?.suggested_category) || "Needs Review"}
-                          </span>
-                          <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", margin: "0.15rem 0 0.35rem", fontWeight: 700 }}>
-                            {cake.name}
-                          </h3>
-                        </div>
-                        <button
-                          onClick={() => startEditing(cake)}
-                          style={{
-                            background: "var(--bg-cream)",
-                            border: "1px solid var(--border-subtle)",
-                            borderRadius: "var(--radius-xs)",
-                            padding: "0.25rem 0.6rem",
-                            fontSize: "0.75rem",
-                            cursor: "pointer",
-                            color: "var(--text-primary)",
-                            fontWeight: 500,
-                          }}
-                        >
-                          ✎ Edit
-                        </button>
-                      </div>
-
-                      {/* Flavour */}
-                      <div style={{ fontSize: "0.82rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.5rem" }}>
-                        ✨ <span style={{ fontWeight: 600 }}>Flavour:</span> {cake.flavour}
-                      </div>
-
-                      {/* Description Box */}
-                      <div
-                        style={{
-                          background: "var(--bg-main)",
-                          padding: "0.6rem 0.8rem",
-                          borderRadius: "var(--radius-xs)",
-                          border: "1px solid var(--border-light)",
-                          fontSize: "0.8rem",
-                          color: "var(--text-secondary)",
-                          lineHeight: 1.5,
-                          marginBottom: "0.6rem",
-                        }}
-                      >
-                        <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Description: </span>
-                        {cake.description || "No description provided."}
-                      </div>
-
-                      {/* Available Sizes */}
-                      <div style={{ marginBottom: "0.85rem" }}>
-                        <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, display: "block", marginBottom: "0.25rem" }}>
-                          Available Sizes:
-                        </span>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                          {cake.available_sizes?.map((sz, idx) => (
-                            <span key={idx} className="cake-size-pill">
-                              {sz}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Error details if failed */}
-                      {aiStatus === "failed" && cake.ai_metadata?.ai_error && (
-                        <div
-                          style={{
-                            background: "#FEF2F2",
-                            border: "1px solid #FECACA",
-                            borderRadius: "var(--radius-xs)",
-                            padding: "0.4rem 0.65rem",
-                            fontSize: "0.75rem",
-                            color: "#991B1B",
-                            marginBottom: "0.65rem",
-                          }}
-                        >
-                          ⚠️ AI Error: {cake.ai_metadata.ai_error}
-                        </div>
-                      )}
-
-                      {/* Action Buttons Toolbar */}
-                      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-                        {/* 1. NOT GENERATED: Prominent AI Generate Button */}
-                        {aiStatus === "not_generated" && (
-                          <button
-                            onClick={() => handleAIGenerate(cake.id, false)}
-                            disabled={isBusy}
-                            className="btn-gold"
-                            style={{
-                              padding: "0.4rem 0.85rem",
-                              fontSize: "0.78rem",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.35rem",
-                            }}
-                            id={`btn-ai-generate-${cake.id}`}
-                          >
-                            ✨ AI Generate
-                          </button>
-                        )}
-
-                        {/* 2. GENERATING: Loading state */}
-                        {aiStatus === "generating" && (
-                          <button
-                            disabled
-                            style={{
-                              background: "#EFF6FF",
-                              border: "1px solid #BFDBFE",
-                              color: "#1D4ED8",
-                              padding: "0.4rem 0.85rem",
-                              borderRadius: "var(--radius-full)",
-                              fontSize: "0.78rem",
-                              fontWeight: 600,
-                            }}
-                          >
-                            ⏳ Analyzing Image...
-                          </button>
-                        )}
-
-                        {/* 3. GENERATED: Regenerate AI Button */}
-                        {aiStatus === "generated" && (
-                          <button
-                            onClick={() => handleAIGenerate(cake.id, true)}
-                            disabled={isBusy}
-                            style={{
-                              background: "var(--bg-surface)",
-                              border: "1px solid var(--gold-border)",
-                              color: "var(--gold-dark)",
-                              padding: "0.4rem 0.75rem",
-                              borderRadius: "var(--radius-full)",
-                              fontSize: "0.78rem",
-                              cursor: "pointer",
-                              fontWeight: 500,
-                            }}
-                            id={`btn-ai-regenerate-${cake.id}`}
-                          >
-                            ✨ Regenerate AI
-                          </button>
-                        )}
-
-                        {/* 4. FAILED: Retry AI Button */}
-                        {aiStatus === "failed" && (
-                          <button
-                            onClick={() => handleAIGenerate(cake.id, false)}
-                            disabled={isBusy}
-                            style={{
-                              background: "#FEF2F2",
-                              border: "1px solid #FECACA",
-                              color: "#B91C1C",
-                              padding: "0.4rem 0.85rem",
-                              borderRadius: "var(--radius-full)",
-                              fontSize: "0.78rem",
-                              cursor: "pointer",
-                              fontWeight: 600,
-                            }}
-                            id={`btn-ai-retry-${cake.id}`}
-                          >
-                            ↻ Retry AI
-                          </button>
-                        )}
-
-                        {/* Workflow Actions: Approve, Publish, Reject */}
-                        <button
-                          onClick={() => handleApprove(cake.id)}
-                          disabled={isBusy}
-                          style={{
-                            background: "#ECFDF5",
-                            border: "1px solid #A7F3D0",
-                            color: "#065F46",
-                            padding: "0.4rem 0.85rem",
-                            borderRadius: "var(--radius-full)",
-                            fontSize: "0.78rem",
-                            cursor: "pointer",
-                            fontWeight: 600,
-                          }}
-                        >
-                          ✓ Approve
-                        </button>
-
-                        <button
-                          onClick={() => handlePublish(cake.id)}
-                          disabled={isBusy}
-                          className="btn-gold"
-                          style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
-                        >
-                          🚀 Approve & Publish
-                        </button>
-
-                        <button
-                          onClick={() => handleReject(cake.id)}
-                          disabled={isBusy}
-                          style={{
-                            background: "#FEF2F2",
-                            border: "1px solid #FECACA",
-                            color: "#991B1B",
-                            padding: "0.4rem 0.75rem",
-                            borderRadius: "var(--radius-full)",
-                            fontSize: "0.78rem",
-                            cursor: "pointer",
-                            fontWeight: 500,
-                          }}
-                        >
-                          ✕ Reject
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Reject */}
+                <button
+                  onClick={() => handleReject(cake.id, cake.name)}
+                  disabled={isBusy}
+                  style={{
+                    background: "#FEF2F2",
+                    border: "1px solid #FECACA",
+                    color: "#991B1B",
+                    borderRadius: "var(--radius-full)",
+                    padding: "0.32rem 0.55rem",
+                    fontSize: "0.74rem",
+                    cursor: "pointer",
+                  }}
+                  title="Reject and move to archive"
+                >
+                  ✕ Reject
+                </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Compact Inline Edit Modal */}
+      {editingCakeId && (
+        <div
+          className="modal-overlay"
+          onClick={cancelEdit}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999,
+            padding: "1rem",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--bg-surface)",
+              borderRadius: "var(--radius-md)",
+              maxWidth: "500px",
+              width: "100%",
+              padding: "1.25rem",
+              boxShadow: "var(--shadow-lg)",
+              border: "1px solid var(--border-subtle)",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.85rem" }}>
+              <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", fontWeight: 700, margin: 0 }}>
+                Edit Confection Metadata
+              </h3>
+              <button
+                onClick={cancelEdit}
+                style={{ background: "none", border: "none", fontSize: "1.1rem", cursor: "pointer", color: "var(--text-secondary)" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Cake Name *</label>
+              <input
+                type="text"
+                value={editForm.name || ""}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                className="form-input"
+                style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Flavour Notes *</label>
+              <input
+                type="text"
+                value={editForm.flavour || ""}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, flavour: e.target.value }))}
+                className="form-input"
+                style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select
+                value={editForm.category_id || ""}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, category_id: e.target.value }))}
+                className="form-input"
+                style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Artisanal Description</label>
+              <textarea
+                rows={3}
+                value={editForm.description || ""}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                className="form-input"
+                style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem", resize: "vertical" }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Available Sizes (Portions)</label>
+              <div style={{ display: "flex", gap: "0.35rem", marginBottom: "0.45rem", flexWrap: "wrap" }}>
+                {(editForm.available_sizes || []).map((sz, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      fontSize: "0.72rem",
+                      background: "var(--bg-cream)",
+                      border: "1px solid var(--border-subtle)",
+                      padding: "0.2rem 0.55rem",
+                      borderRadius: "var(--radius-full)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                    }}
+                  >
+                    <span>{sz}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          available_sizes: prev.available_sizes?.filter((_, idx) => idx !== i),
+                        }))
+                      }
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#EF4444", fontSize: "0.75rem", padding: 0 }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: "0.4rem" }}>
+                <input
+                  type="text"
+                  placeholder="e.g. 1.5 kg (Tiered)"
+                  value={newSizeInput}
+                  onChange={(e) => setNewSizeInput(e.target.value)}
+                  className="form-input"
+                  style={{ padding: "0.35rem 0.65rem", fontSize: "0.78rem" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newSizeInput.trim()) {
+                      setEditForm((prev) => ({
+                        ...prev,
+                        available_sizes: [...(prev.available_sizes || []), newSizeInput.trim()],
+                      }));
+                      setNewSizeInput("");
+                    }
+                  }}
+                  className="btn-outline-gold"
+                  style={{ padding: "0.35rem 0.75rem", fontSize: "0.78rem" }}
+                >
+                  + Add Size
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "1rem" }}>
+              <button onClick={cancelEdit} className="btn-outline-gold" style={{ padding: "0.42rem 0.85rem", fontSize: "0.8rem" }}>
+                Cancel
+              </button>
+              <button
+                onClick={() => saveEdit(editingCakeId)}
+                disabled={actionLoading === editingCakeId}
+                className="btn-gold"
+                style={{ padding: "0.42rem 1rem", fontSize: "0.8rem" }}
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

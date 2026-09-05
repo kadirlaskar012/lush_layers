@@ -57,9 +57,8 @@ export default function ContactPage() {
                     Location:
                   </div>
                   <p style={{ color: "var(--text-primary)", fontSize: "0.86rem", lineHeight: "1.5" }}>
-                    14 Kensington Crescent, Atelier 4B<br />
-                    Royal Borough of Kensington<br />
-                    London W8 5EP
+                    PD Road, Kolkata-41, India<br />
+                    LUSH LAYERS Confectionery Atelier
                   </p>
                 </div>
 

@@ -1,15 +1,29 @@
 "use client";
 
 import React from "react";
+import { createEnquiry } from "../lib/api";
 
 export default function ContactForm({ bakeryWhatsApp }: { bakeryWhatsApp: string }) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const target = e.currentTarget as any;
     const name = target.name.value;
     const date = target.date.value;
     const guests = target.guests.value;
     const notes = target.notes.value;
+
+    try {
+      await createEnquiry({
+        customer_name: name,
+        phone: "WhatsApp Consultation",
+        cake_name: "Bespoke Celebration Tier",
+        flavour: "Bespoke Consultation",
+        selected_size: `${guests} Guests`,
+        custom_message: `Event Date: ${date}. Notes: ${notes || "None"}`,
+      });
+    } catch (err) {
+      console.warn("Could not register enquiry:", err);
+    }
 
     const text = [
       "Hello LUSH LAYERS,",

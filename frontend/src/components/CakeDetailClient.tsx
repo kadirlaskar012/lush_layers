@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Cake } from "../lib/types";
+import { createEnquiry } from "../lib/api";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
 
 export default function CakeDetailClient({ cake }: { cake: Cake }) {
@@ -17,11 +18,24 @@ export default function CakeDetailClient({ cake }: { cake: Cake }) {
 
   const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
 
-  const handleDirectWhatsAppOrder = (e: React.FormEvent) => {
+  const handleDirectWhatsAppOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !phone.trim()) {
       setIsModalOpen(true);
       return;
+    }
+
+    try {
+      await createEnquiry({
+        customer_name: customerName.trim(),
+        phone: phone.trim(),
+        cake_name: cake.name,
+        flavour: cake.flavour,
+        selected_size: selectedSize,
+        custom_message: customMessage.trim(),
+      });
+    } catch (err) {
+      console.warn("Could not save enquiry in background:", err);
     }
 
     const messageLines = [

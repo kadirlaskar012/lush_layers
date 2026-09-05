@@ -19,7 +19,7 @@ export default function CakeCard({ cake }: CakeCardProps) {
 
   return (
     <>
-      <div className="cake-card" id={`cake-card-${cake.slug}`}>
+      <div className="cake-card" id={`cake-card-${cake.slug}`} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         {/* Studio White Image Container */}
         <Link href={`/cakes/${cake.slug}`} style={{ textDecoration: "none", position: "relative", display: "block" }}>
           <div className="cake-card-image-wrap">
@@ -37,8 +37,8 @@ export default function CakeCard({ cake }: CakeCardProps) {
             <div
               style={{
                 position: "absolute",
-                bottom: "6px",
-                right: "6px",
+                bottom: "8px",
+                right: "8px",
                 display: "flex",
                 alignItems: "center",
                 gap: "2px",
@@ -49,6 +49,7 @@ export default function CakeCard({ cake }: CakeCardProps) {
                 padding: "2px 5px",
                 borderRadius: "3px",
                 boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                zIndex: 2,
               }}
             >
               <span>{rating}</span>
@@ -58,7 +59,7 @@ export default function CakeCard({ cake }: CakeCardProps) {
         </Link>
 
         {/* Details Area */}
-        <div className="cake-card-body">
+        <div className="cake-card-body" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {cake.category_name && (
             <span className="cake-category-badge">{cake.category_name}</span>
           )}

@@ -23,9 +23,19 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
     return () => clearInterval(interval);
   }, []);
 
+  const newEnquiriesCount = stats?.enquiries?.new ?? (stats as any)?.enquiries_new ?? 0;
+  const approvedTotalCount = stats?.total_approved ?? ((stats?.approved || 0) + (stats?.published || 0));
+
   const navItems = [
-    { href: "/admin", label: "Dashboard Overview", icon: "📊" },
-    { href: "/admin/cakes", label: "All Cakes Catalog", icon: "🎂" },
+    { href: "/admin", label: "Dashboard", icon: "📊" },
+    {
+      href: "/admin/orders",
+      label: "Orders / Enquiries",
+      icon: "📋",
+      count: newEnquiriesCount,
+      highlight: true,
+    },
+    { href: "/admin/cakes", label: "All Cakes", icon: "🎂" },
     {
       href: "/admin/cakes/pending",
       label: "Pending Approval",
@@ -33,16 +43,21 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
       count: stats?.pending,
       highlight: true,
     },
-    { href: "/admin/cakes/approved", label: "Approved Cakes", icon: "✨", count: stats?.approved },
-    { href: "/admin/cakes/rejected", label: "Rejected Archive", icon: "🚫", count: stats?.rejected },
-    { href: "/admin/upload", label: "Bulk Image Upload", icon: "⚡" },
+    {
+      href: "/admin/cakes/approved",
+      label: "Approved & Published",
+      icon: "✨",
+      count: approvedTotalCount,
+    },
+    { href: "/admin/cakes/rejected", label: "Rejected / Archive", icon: "🚫", count: stats?.rejected },
     {
       href: "/admin/reviews",
-      label: "Review Moderation",
+      label: "Reviews",
       icon: "⭐",
       count: stats?.pending_reviews,
     },
-    { href: "/admin/categories", label: "Category Manager", icon: "🏷️" },
+    { href: "/admin/categories", label: "Categories", icon: "🏷️" },
+    { href: "/admin/upload", label: "Bulk Upload", icon: "⚡" },
   ];
 
   return (

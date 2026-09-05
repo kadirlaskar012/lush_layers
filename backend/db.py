@@ -155,6 +155,72 @@ class Database:
             )
         """)
 
+        # Customer Orders / WhatsApp Enquiries (ZERO PRICE)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS enquiries (
+                id TEXT PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                cake_name TEXT NOT NULL,
+                flavour TEXT,
+                selected_size TEXT,
+                custom_message TEXT,
+                status TEXT NOT NULL DEFAULT 'New',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+
+        # Seed sample enquiries if empty
+        cursor.execute("SELECT COUNT(*) FROM enquiries")
+        if cursor.fetchone()[0] == 0:
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            default_enquiries = [
+                (
+                    "enq-001",
+                    "Priya Sengupta",
+                    "+91 98301 23456",
+                    "Rosewater Strawberry Champagne Tier",
+                    "Raspberry Coulis Layered with White Chocolate Mousse",
+                    "1.0 kg (Medium)",
+                    "Happy 25th Anniversary Ma & Baba! Delivery to Salt Lake by 4 PM.",
+                    "New",
+                    now_iso,
+                    now_iso,
+                ),
+                (
+                    "enq-002",
+                    "Arjun Mukherjee",
+                    "+91 98312 98765",
+                    "Silken Dark Gianduja Confection",
+                    "Belgian Truffle Mousse with Espresso Infusion",
+                    "2.0 kg (Celebration)",
+                    "Eggless preference. Inscription: 'Happy 30th Birthday Rhea!'",
+                    "Contacted",
+                    now_iso,
+                    now_iso,
+                ),
+                (
+                    "enq-003",
+                    "Sunita Roy",
+                    "+91 97480 55432",
+                    "Royal Imperial Callebaut Cascade",
+                    "70% Single-Origin Belgian Cocoa with Wild Raspberry Infusion",
+                    "1.5 kg (Tiered)",
+                    "Golden anniversary celebration banquet at Tollygunge Club.",
+                    "Confirmed",
+                    now_iso,
+                    now_iso,
+                ),
+            ]
+            cursor.executemany("""
+                INSERT INTO enquiries (
+                    id, customer_name, phone, cake_name, flavour, selected_size,
+                    custom_message, status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, default_enquiries)
+            conn.commit()
+
         # Seed categories if empty
         cursor.execute("SELECT COUNT(*) FROM categories")
         if cursor.fetchone()[0] == 0:
@@ -221,8 +287,14 @@ class Database:
         """
         params = []
         if status:
-            query += " AND c.status = ?"
-            params.append(status)
+            status_list = [s.strip() for s in status.split(",") if s.strip()]
+            if len(status_list) == 1:
+                query += " AND c.status = ?"
+                params.append(status_list[0])
+            elif len(status_list) > 1:
+                placeholders = ",".join(["?"] * len(status_list))
+                query += f" AND c.status IN ({placeholders})"
+                params.extend(status_list)
         if category_id:
             query += " AND c.category_id = ?"
             params.append(category_id)
@@ -622,8 +694,112 @@ class Database:
         conn.close()
         return rows > 0
 
+    def restore_cake(self, cake_id: str) -> Optional[Dict[str, Any]]:
+        """Restores a rejected cake back to pending state for review."""
+        return self.update_cake(cake_id, {"status": "pending"})
+
+    # --- CUSTOMER ENQUIRIES / ORDERS ---
+    def create_enquiry(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        enquiry_id = data.get("id") or f"enq-{str(uuid.uuid4())[:8]}"
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO enquiries (
+                id, customer_name, phone, cake_name, flavour, selected_size,
+                custom_message, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            enquiry_id,
+            data.get("customer_name", "Anonymous Patron"),
+            data.get("phone", ""),
+            data.get("cake_name", "Bespoke Confection"),
+            data.get("flavour", "Chef's Signature"),
+            data.get("selected_size", "1.0 kg"),
+            data.get("custom_message", ""),
+            data.get("status", "New"),
+            now,
+            now
+        ))
+        conn.commit()
+        conn.close()
+
+        if self.supabase:
+            try:
+                self.supabase.table("enquiries").insert({
+                    "id": enquiry_id,
+                    "customer_name": data.get("customer_name"),
+                    "phone": data.get("phone"),
+                    "cake_name": data.get("cake_name"),
+                    "flavour": data.get("flavour"),
+                    "selected_size": data.get("selected_size"),
+                    "custom_message": data.get("custom_message"),
+                    "status": data.get("status", "New"),
+                    "created_at": now,
+                    "updated_at": now
+                }).execute()
+            except Exception:
+                pass
+
+        return self.get_enquiry_by_id(enquiry_id)
+
+    def get_enquiry_by_id(self, enquiry_id: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM enquiries WHERE id = ?", (enquiry_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def get_enquiries(self, status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        query = "SELECT * FROM enquiries"
+        params = []
+        if status:
+            query += " WHERE status = ?"
+            params.append(status)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
+        
+        cursor.execute(query, params)
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return rows
+
+    def update_enquiry_status(self, enquiry_id: str, status: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        cursor.execute("""
+            UPDATE enquiries SET status = ?, updated_at = ? WHERE id = ?
+        """, (status, now, enquiry_id))
+        conn.commit()
+        conn.close()
+
+        if self.supabase:
+            try:
+                self.supabase.table("enquiries").update({
+                    "status": status,
+                    "updated_at": now
+                }).eq("id", enquiry_id).execute()
+            except Exception:
+                pass
+
+        return self.get_enquiry_by_id(enquiry_id)
+
+    def delete_enquiry(self, enquiry_id: str) -> bool:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM enquiries WHERE id = ?", (enquiry_id,))
+        rows = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return rows > 0
+
     # --- ADMIN STATS ---
-    def get_admin_stats(self) -> Dict[str, int]:
+    def get_admin_stats(self) -> Dict[str, Any]:
         conn = self._get_conn()
         cursor = conn.cursor()
         
@@ -636,15 +812,27 @@ class Database:
         cursor.execute("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")
         pending_reviews = cursor.fetchone()[0]
 
+        cursor.execute("SELECT status, COUNT(*) FROM enquiries GROUP BY status")
+        enquiry_counts = {row[0]: row[1] for row in cursor.fetchall()}
+
         conn.close()
         return {
             "pending": cake_counts.get("pending", 0),
             "approved": cake_counts.get("approved", 0),
             "published": cake_counts.get("published", 0),
+            "total_approved": cake_counts.get("approved", 0) + cake_counts.get("published", 0),
             "rejected": cake_counts.get("rejected", 0),
             "processing": job_counts.get("processing", 0) + job_counts.get("queued", 0) + job_counts.get("image_processed", 0) + job_counts.get("ai_processing", 0) + job_counts.get("uploading", 0),
             "failed": job_counts.get("failed", 0),
-            "pending_reviews": pending_reviews
+            "pending_reviews": pending_reviews,
+            "enquiries": {
+                "total": sum(enquiry_counts.values()),
+                "new": enquiry_counts.get("New", 0),
+                "contacted": enquiry_counts.get("Contacted", 0),
+                "confirmed": enquiry_counts.get("Confirmed", 0),
+                "completed": enquiry_counts.get("Completed", 0),
+                "cancelled": enquiry_counts.get("Cancelled", 0),
+            }
         }
 
 db = Database()

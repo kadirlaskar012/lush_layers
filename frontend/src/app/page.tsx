@@ -4,17 +4,15 @@ import PublicLayout from "../components/PublicLayout";
 import MarketplaceListing from "../components/MarketplaceListing";
 import FeaturedCarousel from "../components/FeaturedCarousel";
 import MasonryGallery from "../components/MasonryGallery";
-import { ReviewCard } from "../components/ReviewComponents";
-import { getPublishedCakes, getCategories, getApprovedReviews } from "../lib/api";
+import { getPublishedCakes, getCategories } from "../lib/api";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 export const revalidate = 60; // ISR: 60 seconds revalidation
 
 export default async function HomePage() {
-  const [cakes, categories, reviews] = await Promise.all([
+  const [cakes, categories] = await Promise.all([
     getPublishedCakes(),
     getCategories(),
-    getApprovedReviews(),
   ]);
 
   const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
@@ -27,7 +25,7 @@ export default async function HomePage() {
       <section
         style={{
           position: "relative",
-          padding: "2rem 0 1.75rem",
+          padding: "1.25rem 0 1.15rem",
           background: "linear-gradient(180deg, #FFFFFF 0%, var(--bg-main) 100%)",
           borderBottom: "1px solid var(--border-subtle)",
           overflow: "hidden",
@@ -40,7 +38,7 @@ export default async function HomePage() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               alignItems: "center",
-              gap: "1.75rem",
+              gap: "1.25rem",
             }}
           >
             {/* Left: Compact Copy & Quick Actions */}
@@ -65,9 +63,9 @@ export default async function HomePage() {
 
               <h1
                 style={{
-                  fontSize: "clamp(1.75rem, 3.6vw, 2.5rem)",
-                  lineHeight: 1.16,
-                  marginBottom: "0.75rem",
+                  fontSize: "clamp(1.5rem, 3vw, 2.15rem)",
+                  lineHeight: 1.15,
+                  marginBottom: "0.5rem",
                   color: "var(--text-primary)",
                   fontWeight: 700,
                 }}
@@ -78,19 +76,19 @@ export default async function HomePage() {
 
               <p
                 style={{
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   color: "var(--text-secondary)",
-                  lineHeight: 1.55,
-                  marginBottom: "1.15rem",
-                  maxWidth: "500px",
+                  lineHeight: 1.5,
+                  marginBottom: "0.95rem",
+                  maxWidth: "480px",
                 }}
               >
                 Architectural tiers, velvety ganache, and hand-piped florals. Every bespoke creation is crafted fresh for your most cherished milestones.
               </p>
 
               {/* Compact CTA Row */}
-              <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                <Link href="/cakes" className="btn-gold" id="hero-browse-btn" style={{ padding: "0.55rem 1.25rem", fontSize: "0.84rem" }}>
+              <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                <Link href="/cakes" className="btn-gold" id="hero-browse-btn" style={{ padding: "0.48rem 1.15rem", fontSize: "0.82rem" }}>
                   Explore All Cakes
                 </Link>
                 <a
@@ -99,7 +97,7 @@ export default async function HomePage() {
                   rel="noopener noreferrer"
                   className="btn-whatsapp"
                   id="hero-whatsapp-btn"
-                  style={{ padding: "0.55rem 1.15rem", fontSize: "0.84rem" }}
+                  style={{ padding: "0.48rem 1.05rem", fontSize: "0.82rem" }}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.086s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.099.824z" />
@@ -133,9 +131,9 @@ export default async function HomePage() {
                     background: "#FFFFFF",
                     border: "1px solid var(--border-subtle)",
                     borderRadius: "var(--radius-md)",
-                    padding: "0.85rem",
+                    padding: "0.65rem",
                     boxShadow: "var(--shadow-sm)",
-                    maxWidth: "320px",
+                    maxWidth: "270px",
                     width: "100%",
                     position: "relative",
                   }}
@@ -241,39 +239,6 @@ export default async function HomePage() {
           </div>
 
           <MasonryGallery cakes={cakes || []} />
-        </div>
-      </section>
-
-      {/* 5. GUEST TESTIMONIALS */}
-      <section style={{ padding: "2.5rem 0", background: "var(--bg-surface)" }} id="reviews">
-        <div className="container-lux">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
-            <div>
-              <span className="cake-category-badge">Guest Praise</span>
-              <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)" }}>
-                Words of Delight
-              </h2>
-            </div>
-            <Link href="/reviews" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.8rem", fontWeight: 600 }}>
-              All Testimonials ({reviews?.length || 0}) →
-            </Link>
-          </div>
-
-          {reviews && reviews.length > 0 ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: "1rem",
-              }}
-            >
-              {reviews.slice(0, 3).map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>No reviews yet.</p>
-          )}
         </div>
       </section>
 

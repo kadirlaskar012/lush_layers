@@ -63,19 +63,27 @@ export default function Footer() {
             >
               Boutique artisanal confectionery atelier devoted to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
             </p>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-              <span
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  background: "#25D366",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                }}
-              ></span>
-              <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>
-                Orders & consultations via WhatsApp
-              </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.85rem" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "0.85rem" }}>📍</span>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500 }}>
+                  PD Road, Kolkata-41, India
+                </span>
+              </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                <span
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    background: "#25D366",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                  }}
+                ></span>
+                <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontWeight: 500 }}>
+                  Orders & consultations via WhatsApp
+                </span>
+              </div>
             </div>
           </div>
 
@@ -191,7 +199,7 @@ export default function Footer() {
           }}
         >
           <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-            © {currentYear} LUSH LAYERS. Handcrafted with Love. Zero online payment friction.
+            © {currentYear} LUSH LAYERS • Made with Love • PD Road, Kolkata-41, India
           </div>
           <div style={{ display: "flex", gap: "1rem", fontSize: "0.76rem" }}>
             <Link href="/cakes" style={{ color: "var(--text-muted)", textDecoration: "none" }}>

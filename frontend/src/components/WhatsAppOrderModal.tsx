@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Cake } from "../lib/types";
+import { createEnquiry } from "../lib/api";
 
 interface WhatsAppOrderModalProps {
   cake: Cake;
@@ -26,7 +27,7 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
 
   const bakeryWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "1234567890";
 
-  const handleOrder = (e: React.FormEvent) => {
+  const handleOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName.trim()) {
       setError("Please enter your name.");
@@ -35,6 +36,20 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
     if (!phone.trim()) {
       setError("Please enter your contact phone number.");
       return;
+    }
+
+    // Automatically register order enquiry in database
+    try {
+      await createEnquiry({
+        customer_name: customerName.trim(),
+        phone: phone.trim(),
+        cake_name: cake.name,
+        flavour: cake.flavour,
+        selected_size: selectedSize,
+        custom_message: customMessage.trim(),
+      });
+    } catch (err) {
+      console.warn("Could not save enquiry in background:", err);
     }
 
     // STRICT FORMAT (ZERO PRICE)

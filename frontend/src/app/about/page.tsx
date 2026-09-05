@@ -104,9 +104,13 @@ export default function AboutPage() {
             <h3 style={{ fontSize: "1.25rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
               Discuss Your Celebration with Our Master Pâtissier
             </h3>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem", maxWidth: "550px", margin: "0 auto 1.25rem" }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem", maxWidth: "550px", margin: "0 auto 0.75rem" }}>
               We design every tier around your aesthetic, guest count, and palette desires. Direct conversation via WhatsApp guarantees personal attention.
             </p>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "1.25rem", background: "var(--bg-cream)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid var(--border-subtle)" }}>
+              <span style={{ fontSize: "0.85rem" }}>📍</span>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 600 }}>Atelier Location: PD Road, Kolkata-41, India</span>
+            </div>
             <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
               <Link href="/cakes" className="btn-gold" style={{ padding: "0.5rem 1.2rem", fontSize: "0.84rem" }}>
                 Browse Catalog

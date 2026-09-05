@@ -30,13 +30,15 @@ export default function FeaturedCarousel({
   return (
     <section
       style={{
-        padding: "2rem 0",
+        padding: "1.75rem 0",
         background: "var(--bg-main)",
         borderBottom: "1px solid var(--border-subtle)",
+        overflow: "hidden",
+        maxWidth: "100%",
       }}
       id="featured-spotlight"
     >
-      <div className="container-lux">
+      <div className="container-lux" style={{ overflow: "hidden", maxWidth: "100%" }}>
         {/* Section Header */}
         <div
           style={{
@@ -132,12 +134,14 @@ export default function FeaturedCarousel({
           ref={scrollRef}
           style={{
             display: "flex",
-            gap: "0.85rem",
+            gap: "1rem",
             overflowX: "auto",
             scrollSnapType: "x mandatory",
-            padding: "0.35rem 0.15rem 0.85rem",
+            padding: "0.5rem 0.5rem 1.15rem",
             scrollbarWidth: "none",
             WebkitOverflowScrolling: "touch",
+            scrollPadding: "0 0.5rem",
+            alignItems: "stretch",
           }}
           className="featured-carousel-track"
         >
@@ -145,9 +149,11 @@ export default function FeaturedCarousel({
             <div
               key={cake.id}
               style={{
-                flex: "0 0 220px",
+                flex: "0 0 228px",
+                width: "228px",
                 scrollSnapAlign: "start",
-                maxWidth: "240px",
+                display: "flex",
+                flexDirection: "column",
               }}
               className="featured-carousel-item"
             >

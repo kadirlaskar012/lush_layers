@@ -46,7 +46,8 @@ export default function BulkUploadPage() {
     selectedFiles.forEach((file) => formData.append("files", file));
 
     try {
-      const resp = await fetch("http://127.0.0.1:8000/api/upload/bulk", {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+      const resp = await fetch(`${backendUrl}/api/upload/bulk`, {
         method: "POST",
         body: formData,
       });

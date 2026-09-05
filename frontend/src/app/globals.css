@@ -78,6 +78,9 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 body {
@@ -86,6 +89,9 @@ body {
   color: var(--text-primary);
   line-height: 1.55;
   overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -274,6 +280,7 @@ h1, h2, h3, h4, .font-heading {
   box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .cake-card:hover {
@@ -297,7 +304,7 @@ h1, h2, h3, h4, .font-heading {
 
 @media (min-width: 640px) {
   .cake-card-image-wrap {
-    padding: 0.75rem;
+    padding: 0.65rem;
   }
 }
 
@@ -321,7 +328,7 @@ h1, h2, h3, h4, .font-heading {
 
 @media (min-width: 640px) {
   .cake-card-body {
-    padding: 0.9rem;
+    padding: 0.85rem;
   }
 }
 
@@ -339,8 +346,9 @@ h1, h2, h3, h4, .font-heading {
 }
 
 .cake-title {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   line-height: 1.25;
+  height: 2.3em;
   margin-bottom: 0.25rem;
   color: var(--text-primary);
   font-weight: 600;
@@ -348,12 +356,13 @@ h1, h2, h3, h4, .font-heading {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
   transition: color 0.2s;
 }
 
 @media (min-width: 640px) {
   .cake-title {
-    font-size: 1.05rem;
+    font-size: 0.98rem;
   }
 }
 
@@ -362,28 +371,30 @@ h1, h2, h3, h4, .font-heading {
 }
 
 .cake-flavour {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: var(--text-secondary);
   margin-bottom: 0.45rem;
   font-style: italic;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  display: block;
+  height: 1.25em;
 }
 
 .cake-sizes-wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+  min-height: 22px;
+  max-height: 22px;
+  overflow: hidden;
   margin-bottom: 0.65rem;
 }
 
 .cake-size-pill {
   font-size: 0.65rem;
-  padding: 0.15rem 0.45rem;
+  padding: 0.12rem 0.45rem;
   border-radius: var(--radius-full);
   background: var(--bg-cream);
   border: 1px solid var(--border-subtle);
@@ -536,6 +547,22 @@ h1, h2, h3, h4, .font-heading {
   outline: none;
   cursor: pointer;
   transition: border-color 0.2s;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .marketplace-toolbar {
+    padding: 0.55rem 0.65rem;
+  }
+  .marketplace-search-wrap {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  .marketplace-filter-select {
+    flex: 1 1 calc(50% - 0.35rem);
+    min-width: 120px;
+    font-size: 0.72rem;
+  }
 }
 
 .marketplace-filter-select:focus {
