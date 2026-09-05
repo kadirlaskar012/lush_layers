@@ -113,25 +113,38 @@ export default function MarketplaceListing({
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.5rem",
+              alignItems: "flex-end",
+              marginBottom: "0.65rem",
+              flexWrap: "wrap",
+              gap: "0.25rem 0.6rem",
             }}
           >
             <h2
               style={{
-                fontSize: "1.1rem",
+                fontSize: "clamp(1.02rem, 3.5vw, 1.25rem)",
                 color: "var(--text-primary)",
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
-                gap: "0.4rem",
+                gap: "0.35rem",
+                margin: 0,
               }}
             >
               <span>Celebrate with the Perfect Cake</span>
-              <Sparkles size={16} style={{ color: "var(--gold)" }} />
+              <Sparkles size={15} style={{ color: "var(--gold)" }} />
             </h2>
-            <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-              Swipe to explore collections
+            <span
+              style={{
+                fontSize: "0.74rem",
+                color: "var(--text-muted)",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.2rem",
+              }}
+            >
+              <span>Swipe collections</span>
+              <span style={{ color: "var(--gold-dark)" }}>→</span>
             </span>
           </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Sparkles, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { Cake } from "../lib/types";
@@ -18,15 +18,45 @@ export default function FeaturedCarousel({
   subtitle = "Most admired artisanal tiers and handcrafted seasonal designs",
 }: FeaturedCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  if (!cakes || cakes.length === 0) return null;
+  // Stop auto-play permanently when user manually navigates
+  const stopAutoPlay = useCallback(() => {
+    setIsAutoPlaying(false);
+  }, []);
 
   const scroll = (direction: "left" | "right") => {
+    // User manually clicked next or previous
+    stopAutoPlay();
+
     if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -280 : 280;
+      const scrollAmount = direction === "left" ? -260 : 260;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
+
+  // Auto-play interval: scrolls to the next card every 3.2 seconds
+  useEffect(() => {
+    if (!isAutoPlaying || !cakes || cakes.length <= 1) return;
+
+    const interval = setInterval(() => {
+      if (document.hidden || !scrollRef.current) return;
+      const el = scrollRef.current;
+      const cardWidth = el.firstElementChild?.clientWidth || 220;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+
+      // When reaching near the end, loop smoothly back to start
+      if (el.scrollLeft >= maxScroll - 15) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: cardWidth + 12, behavior: "smooth" });
+      }
+    }, 3200);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, cakes]);
+
+  if (!cakes || cakes.length === 0) return null;
 
   return (
     <section
@@ -91,6 +121,7 @@ export default function FeaturedCarousel({
                 transition: "all 0.2s",
               }}
               className="carousel-nav-btn icon-hover-pulse"
+              id="featured-carousel-prev"
             >
               <ChevronLeft size={16} />
             </button>
@@ -112,6 +143,7 @@ export default function FeaturedCarousel({
                 transition: "all 0.2s",
               }}
               className="carousel-nav-btn icon-hover-pulse"
+              id="featured-carousel-next"
             >
               <ChevronRight size={16} />
             </button>
@@ -138,6 +170,9 @@ export default function FeaturedCarousel({
         {/* Horizontal Swipeable Track */}
         <div
           ref={scrollRef}
+          onTouchStart={stopAutoPlay}
+          onPointerDown={stopAutoPlay}
+          onWheel={stopAutoPlay}
           style={{
             display: "flex",
             gap: "0.75rem",
@@ -150,6 +185,7 @@ export default function FeaturedCarousel({
             alignItems: "stretch",
           }}
           className="featured-carousel-track"
+          id="featured-carousel-track"
         >
           {cakes.map((cake) => (
             <div
