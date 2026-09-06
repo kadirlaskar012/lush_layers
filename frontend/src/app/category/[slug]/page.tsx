@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import PublicLayout from "../../../components/PublicLayout";
 import MarketplaceListing from "../../../components/MarketplaceListing";
 import MasonryGallery from "../../../components/MasonryGallery";
-import { getPublishedCakes, getCategories } from "../../../lib/api";
+import { getPublishedCakes, getCategories } from "../../../lib/serverData";
 
 export const revalidate = 60;
 

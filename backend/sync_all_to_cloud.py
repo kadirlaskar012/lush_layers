@@ -16,11 +16,11 @@ cloudinary.config(
 )
 
 # Configure Supabase
-HOST = "aws-0-ap-northeast-1.pooler.supabase.com"
-PORT = 6543
-USER = "postgres.phpisimuahahngdaeohg"
-PASSWORD = "2IiVSM6jSwDN6dvr"
-DBNAME = "postgres"
+HOST = settings.SUPABASE_HOST
+PORT = settings.SUPABASE_PORT
+USER = settings.SUPABASE_USER
+PASSWORD = settings.SUPABASE_PASSWORD
+DBNAME = settings.SUPABASE_DB
 
 def sync():
     print("=== SYNCING ALL DATA TO CLOUDINARY & SUPABASE ===")
@@ -94,12 +94,17 @@ def sync():
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
-                ai_metadata, created_at, updated_at, published_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ai_metadata, is_hero, is_trending, is_inspiration, display_id,
+                created_at, updated_at, published_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (slug) DO UPDATE SET
                 image_url = EXCLUDED.image_url,
                 cloudinary_public_id = EXCLUDED.cloudinary_public_id,
                 status = EXCLUDED.status,
+                is_hero = EXCLUDED.is_hero,
+                is_trending = EXCLUDED.is_trending,
+                is_inspiration = EXCLUDED.is_inspiration,
+                display_id = EXCLUDED.display_id,
                 updated_at = EXCLUDED.updated_at,
                 published_at = EXCLUDED.published_at;
         """, (
@@ -114,6 +119,10 @@ def sync():
             pub_id,
             c["status"],
             json.dumps(c.get("ai_metadata", {})),
+            bool(c.get("is_hero")),
+            bool(c.get("is_trending")),
+            bool(c.get("is_inspiration")),
+            c.get("display_id"),
             c["created_at"],
             c["updated_at"],
             c.get("published_at")

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import PublicLayout from "../../../components/PublicLayout";
 import CakeDetailClient from "../../../components/CakeDetailClient";
 import CakeCard from "../../../components/CakeCard";
-import { getCakeBySlug, getPublishedCakes } from "../../../lib/api";
+import { getCakeBySlug, getPublishedCakes } from "../../../lib/serverData";
 import { getOptimizedImageUrl } from "../../../lib/imageHelper";
 import { getCakeDisplayId } from "../../../lib/cakeHelper";
 import { Sparkles } from "lucide-react";

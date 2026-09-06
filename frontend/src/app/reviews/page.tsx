@@ -1,7 +1,7 @@
 import React from "react";
 import PublicLayout from "../../components/PublicLayout";
 import { ReviewCard, ReviewForm } from "../../components/ReviewComponents";
-import { getApprovedReviews } from "../../lib/api";
+import { getApprovedReviews } from "../../lib/serverData";
 import { Star } from "lucide-react";
 
 export const revalidate = 60;

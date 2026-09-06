@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import { getPublishedCakes, getCategories } from "../lib/api";
+import { getPublishedCakes, getCategories } from "../lib/serverData";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lushlayers.com";

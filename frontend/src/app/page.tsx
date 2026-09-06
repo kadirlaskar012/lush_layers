@@ -12,7 +12,7 @@ import {
 } from "../components/AnimatedPosters";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import HeroMasterworkRotator from "../components/HeroMasterworkRotator";
-import { getPublishedCakes, getCategories } from "../lib/api";
+import { getPublishedCakes, getCategories } from "../lib/serverData";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 export const revalidate = 60; // ISR: 60 seconds revalidation
