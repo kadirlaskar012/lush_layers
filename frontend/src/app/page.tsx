@@ -11,7 +11,7 @@ import {
   DualEditorialPosters,
 } from "../components/AnimatedPosters";
 import WhatsAppIcon from "../components/WhatsAppIcon";
-import HeroMobileCarousel from "../components/HeroMobileCarousel";
+import HeroMasterworkRotator from "../components/HeroMasterworkRotator";
 import { getPublishedCakes, getCategories } from "../lib/api";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
@@ -100,56 +100,12 @@ export default async function HomePage() {
                   <span>Studio White Clarity</span>
                 </div>
               </div>
-
-              {/* Mobile Only: Height-Compact Hero Carousel with Swipeable Confection Cards */}
-              <HeroMobileCarousel cakes={finalHeroCakes} />
             </div>
 
-            {/* Right: Featured Hero Creation Preview (Desktop/Tablet Only to keep mobile sleek & compact) */}
-            {heroCake && (
-              <div className="hero-preview-col">
-                <div className="hero-preview-card">
-                  <div className="hero-masterwork-badge">
-                    <Sparkles size={10} style={{ color: "var(--gold-dark)" }} />
-                    <span>Chef's Masterwork</span>
-                  </div>
-
-                  <Link href={`/cakes/${heroCake.slug}`} style={{ textDecoration: "none", display: "block" }}>
-                    <div className="hero-preview-img-wrap">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getOptimizedImageUrl(heroCake.image_url, { width: 540 })}
-                        alt={heroCake.name}
-                        width={270}
-                        height={270}
-                        loading="eager"
-                        decoding="async"
-                        className="hero-preview-img"
-                      />
-                    </div>
-                  </Link>
-
-                  <div className="hero-preview-info">
-                    <span className="hero-preview-cat">
-                      {heroCake.category_name || "Signature"}
-                    </span>
-                    <h3 className="hero-preview-title">
-                      {heroCake.name}
-                    </h3>
-                    <p className="hero-preview-flavour">
-                      {heroCake.flavour}
-                    </p>
-                    <Link
-                      href={`/cakes/${heroCake.slug}`}
-                      className="btn-order-now"
-                      style={{ height: "32px", fontSize: "0.76rem" }}
-                    >
-                      <span>Order Now</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Right: Atelier Masterwork Rotator (Live Cycling, Thumbnails & Fully Responsive) */}
+            <div className="hero-preview-col" style={{ width: "100%" }}>
+              <HeroMasterworkRotator cakes={finalHeroCakes} />
+            </div>
           </div>
         </div>
       </section>

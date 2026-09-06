@@ -16,7 +16,6 @@ import {
   Star,
   Tag,
   Zap,
-  Palette,
   X,
   ArrowUpRight,
 } from "lucide-react";
@@ -80,7 +79,6 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
     },
     { href: "/admin/categories", label: "Categories", icon: <Tag size={16} strokeWidth={1.8} /> },
     { href: "/admin/upload", label: "Bulk Upload", icon: <Zap size={16} strokeWidth={1.8} /> },
-    { href: "/admin/hero-preview", label: "Hero Designs (5 Ideas)", icon: <Palette size={16} strokeWidth={1.8} />, highlight: true },
   ];
 
   return (
