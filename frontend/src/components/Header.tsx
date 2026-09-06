@@ -15,15 +15,12 @@ import {
   ShieldCheck,
   PackageCheck,
 } from "lucide-react";
-import WhatsAppIcon from "./WhatsAppIcon";
 
 export default function Header() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
-
-  const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,44 +153,10 @@ export default function Header() {
             </button>
           </form>
 
-          {/* Desktop Right Actions */}
-          <div className="desktop-actions">
-            <a
-              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-whatsapp icon-hover-pulse"
-              id="header-whatsapp-btn"
-              style={{ padding: "0.4rem 0.85rem", fontSize: "0.78rem" }}
-            >
-              <WhatsAppIcon size={14} />
-              <span>Order on WhatsApp</span>
-            </a>
-          </div>
 
-          {/* Mobile Right Controls: WhatsApp Icon + Search Toggle + Hamburger */}
+
+          {/* Mobile Right Controls: Search Toggle + Hamburger */}
           <div className="mobile-controls">
-            <a
-              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20artisanal%20cakes.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Order on WhatsApp"
-              className="whatsapp-pulse-badge icon-hover-pulse"
-              style={{
-                background: "var(--whatsapp-soft)",
-                color: "var(--whatsapp)",
-                border: "1px solid rgba(37, 211, 102, 0.25)",
-                borderRadius: "var(--radius-sm)",
-                width: "34px",
-                height: "34px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-              }}
-            >
-              <WhatsAppIcon size={17} />
-            </a>
             <button
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
               className="icon-hover-rotate"
@@ -362,18 +325,7 @@ export default function Header() {
             <span>Admin Panel</span>
           </Link>
 
-          <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border-subtle)" }}>
-            <a
-              href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20LUSH%20LAYERS%2C%20I%20would%20like%20to%20enquire%20about%20your%20cakes.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-whatsapp"
-              style={{ width: "100%", justifyContent: "center", padding: "0.65rem 1rem", gap: "0.45rem" }}
-            >
-              <WhatsAppIcon size={16} />
-              <span>Order on WhatsApp</span>
-            </a>
-          </div>
+
         </div>
       )}
     </header>

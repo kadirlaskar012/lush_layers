@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "./Header";
 import Footer from "./Footer";
+import FloatingWhatsApp from "./FloatingWhatsApp";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,6 +9,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <Header />
       <main style={{ flex: 1 }}>{children}</main>
       <Footer />
+      <FloatingWhatsApp />
     </div>
   );
 }
