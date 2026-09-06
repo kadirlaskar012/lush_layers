@@ -33,6 +33,8 @@ except ImportError:
     Fore = Style = DummyColor()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LOGS_DIR = PROJECT_ROOT / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
 
 # =====================================================================
 # PROCESS & PORT MANAGEMENT
@@ -76,21 +78,24 @@ def spawn_backend():
         sys.executable, "-m", "uvicorn", "backend.main:app",
         "--host", "0.0.0.0", "--port", "8000"
     ]
+    log_file = open(LOGS_DIR / "backend.log", "a", encoding="utf-8")
+    
     if sys.platform == "win32":
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        # DETACHED_PROCESS = 0x00000008, CREATE_NEW_PROCESS_GROUP = 0x00000200
+        flags = 0x00000008 | 0x00000200
         subprocess.Popen(
             cmd,
             cwd=str(PROJECT_ROOT),
             creationflags=flags,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=log_file,
+            stderr=log_file
         )
     else:
         subprocess.Popen(
             cmd,
             cwd=str(PROJECT_ROOT),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=log_file,
+            stderr=log_file
         )
     return False
 
@@ -102,22 +107,23 @@ def spawn_frontend():
     frontend_dir = PROJECT_ROOT / "frontend"
     npm_bin = "npm.cmd" if sys.platform == "win32" else "npm"
     cmd = [npm_bin, "run", "dev"]
+    log_file = open(LOGS_DIR / "frontend.log", "a", encoding="utf-8")
     
     if sys.platform == "win32":
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        flags = 0x00000008 | 0x00000200
         subprocess.Popen(
             cmd,
             cwd=str(frontend_dir),
             creationflags=flags,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=log_file,
+            stderr=log_file
         )
     else:
         subprocess.Popen(
             cmd,
             cwd=str(frontend_dir),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=log_file,
+            stderr=log_file
         )
     return False
 
@@ -127,21 +133,26 @@ def spawn_frontend():
 
 def render_progress_bar(percent: float, label: str, bar_len: int = 32):
     """Renders a modern in-place animated progress bar with smooth gradient color."""
-    clamped = max(0.0, min(100.0, percent))
-    filled_len = int(clamped / 100.0 * bar_len)
-    empty_len = bar_len - filled_len
-    
-    bar = "█" * filled_len + "░" * empty_len
-    
-    if clamped < 40:
-        color = Fore.CYAN
-    elif clamped < 80:
-        color = Fore.YELLOW
-    else:
-        color = Fore.GREEN
+    try:
+        clamped = max(0.0, min(100.0, percent))
+        filled_len = int(clamped / 100.0 * bar_len)
+        empty_len = bar_len - filled_len
         
-    sys.stdout.write(f"\r  {color}[{bar}] {clamped:5.1f}%{Style.RESET_ALL} {Style.BRIGHT}{label:<42}{Style.RESET_ALL}")
-    sys.stdout.flush()
+        # Use Unicode block if possible, fallback to standard chars
+        bar = "█" * filled_len + "░" * empty_len
+        
+        if clamped < 35:
+            color = Fore.CYAN
+        elif clamped < 75:
+            color = Fore.YELLOW
+        else:
+            color = Fore.GREEN
+            
+        sys.stdout.write(f"\r  {color}[{bar}] {clamped:5.1f}%{Style.RESET_ALL} {Style.BRIGHT}{label:<42}{Style.RESET_ALL}")
+        sys.stdout.flush()
+    except Exception:
+        # Fallback in case of terminal encoding issues
+        pass
 
 def animate_stage(from_pct: int, to_pct: int, label: str, duration_sec: float = 0.5):
     """Smoothly animates progress between two percentages."""
@@ -158,31 +169,30 @@ def animate_stage(from_pct: int, to_pct: int, label: str, duration_sec: float = 
 def start_python_image_tools():
     print(Fore.CYAN + Style.BRIGHT + "\n=== [STARTING PYTHON IMAGE TOOLS] ===" + Style.RESET_ALL)
     
-    # 0% - 20%
-    animate_stage(0, 20, "Initializing Storage & Media Pipelines...", 0.4)
+    # Stage 1: 0% - 20%
+    animate_stage(0, 20, "Initializing Storage & Media Pipelines...", 0.35)
     
-    # 20% - 40%
-    animate_stage(20, 40, "Pre-loading AI & RemBG Engine...", 0.4)
+    # Stage 2: 20% - 40%
+    animate_stage(20, 40, "Pre-loading AI & RemBG Engine...", 0.35)
     
-    # 40% - 60%
+    # Stage 3: 40% - 60%
     spawn_backend()
-    animate_stage(40, 60, "Starting Python FastAPI Backend (Port 8000)...", 0.6)
+    animate_stage(40, 60, "Starting Python FastAPI Backend (Port 8000)...", 0.5)
     
-    # 60% - 90%: Wait for port 8000 to become active
+    # Stage 4: 60% - 90%: Wait for port 8000 to become active
     t0 = time.time()
-    backend_ready = False
     curr_pct = 60
-    while time.time() - t0 < 12.0:
+    while time.time() - t0 < 15.0:
         if is_port_active(8000):
-            backend_ready = True
             break
         if curr_pct < 88:
             curr_pct += 4
-            render_progress_bar(float(curr_pct), "Waiting for Port 8000 to bind...")
+            render_progress_bar(float(curr_pct), "Waiting for Backend (Port 8000)...")
         time.sleep(0.4)
         
-    animate_stage(curr_pct, 95, "Verifying Database Connection...", 0.3)
-    animate_stage(95, 100, "Opening Browser Image Processing Portal...", 0.3)
+    # Stage 5: 90% - 100%
+    animate_stage(curr_pct, 95, "Verifying Database Connection...", 0.25)
+    animate_stage(95, 100, "Opening Browser Image Processing Portal...", 0.25)
     print("\n")
     
     portal_url = "http://localhost:8000/portal"
@@ -208,33 +218,34 @@ def start_python_image_tools():
 def start_full_website():
     print(Fore.MAGENTA + Style.BRIGHT + "\n=== [STARTING LUSH LAYERS WEBSITE] ===" + Style.RESET_ALL)
     
-    # 0% - 20%
-    animate_stage(0, 20, "Bootstrapping Full-Stack Architecture...", 0.4)
+    # Stage 1: 0% - 20%
+    animate_stage(0, 20, "Bootstrapping Full-Stack Architecture...", 0.35)
     
-    # 20% - 40%
+    # Stage 2: 20% - 45%
     spawn_backend()
-    animate_stage(20, 45, "Launching Python Backend Engine (Port 8000)...", 0.5)
+    animate_stage(20, 45, "Launching Python Backend Engine (Port 8000)...", 0.45)
     
-    # 40% - 65%
+    # Stage 3: 45% - 65%
     spawn_frontend()
-    animate_stage(45, 65, "Launching Next.js Luxury Frontend (Port 3000)...", 0.5)
+    animate_stage(45, 65, "Launching Next.js Luxury Frontend (Port 3000)...", 0.45)
     
-    # 65% - 90%: Wait for both port 8000 and 3000 to become active
+    # Stage 4: 65% - 90%: Wait for both port 8000 and 3000 to become active
     t0 = time.time()
     curr_pct = 65
-    while time.time() - t0 < 15.0:
+    while time.time() - t0 < 25.0:
         b_ok = is_port_active(8000)
         f_ok = is_port_active(3000)
         if b_ok and f_ok:
             break
         if curr_pct < 88:
-            curr_pct += 3
+            curr_pct += 2
             msg = "Compiling Next.js pages..." if b_ok else "Starting Backend & Frontend..."
             render_progress_bar(float(curr_pct), msg)
         time.sleep(0.5)
         
-    animate_stage(curr_pct, 95, "Synchronizing Live Database & ISR Cache...", 0.4)
-    animate_stage(95, 100, "Opening Live Storefront in Browser...", 0.3)
+    # Stage 5: 90% - 100%
+    animate_stage(curr_pct, 95, "Synchronizing Live Database & ISR Cache...", 0.3)
+    animate_stage(95, 100, "Opening Live Storefront in Browser...", 0.25)
     print("\n")
     
     site_url = "http://localhost:3000"
@@ -313,4 +324,15 @@ def main():
             time.sleep(1)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\nLauncher closed by user.")
+    except Exception as e:
+        import traceback
+        print("\n======================================================================")
+        print("  [X] An unexpected error occurred in Launcher:")
+        print("======================================================================")
+        traceback.print_exc()
+        print("======================================================================\n")
+        input("Press Enter to exit...")
