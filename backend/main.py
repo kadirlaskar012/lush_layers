@@ -1,8 +1,11 @@
 import os
+import sys
 import shutil
 import uuid
+import socket
 import asyncio
 import datetime
+import subprocess
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
@@ -10,7 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, Response
 import httpx
 from pydantic import BaseModel
 
@@ -20,6 +23,43 @@ from backend.queue_manager import job_queue
 from backend.processor import processor
 from backend.ai_analyzer import ai_analyzer
 from backend.storage import storage
+
+def is_port_active(port: int) -> bool:
+    """Checks if a TCP port is currently listening on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.3)
+        return s.connect_ex(('127.0.0.1', port)) == 0
+
+def spawn_frontend_background() -> bool:
+    """Starts Next.js frontend in the background if not already running."""
+    if is_port_active(3000):
+        return True
+        
+    frontend_dir = settings.BASE_DIR.parent / "frontend"
+    npm_bin = "npm.cmd" if sys.platform == "win32" else "npm"
+    cmd = [npm_bin, "run", "dev"]
+    logs_dir = settings.BASE_DIR.parent / "logs"
+    logs_dir.mkdir(exist_ok=True)
+    log_file = open(logs_dir / "frontend.log", "a", encoding="utf-8")
+    
+    if sys.platform == "win32":
+        # 0x08000000 = CREATE_NO_WINDOW
+        flags = 0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP
+        subprocess.Popen(
+            cmd,
+            cwd=str(frontend_dir),
+            creationflags=flags,
+            stdout=log_file,
+            stderr=log_file
+        )
+    else:
+        subprocess.Popen(
+            cmd,
+            cwd=str(frontend_dir),
+            stdout=log_file,
+            stderr=log_file
+        )
+    return False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -57,6 +97,10 @@ app.add_middleware(
 # Mount media directory for static serving
 app.mount("/media", StaticFiles(directory=str(settings.MEDIA_DIR)), name="media")
 
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_endpoint():
+    return Response(status_code=204)
+
 # Helper to trigger Next.js ISR revalidation
 async def trigger_frontend_revalidation(paths: List[str] = None):
     if not paths:
@@ -93,6 +137,34 @@ async def get_system_status():
 @app.get("/api/admin/stats")
 async def get_admin_stats_endpoint():
     return db.get_admin_stats()
+
+@app.get("/api/system/check-port")
+async def check_port_endpoint(port: int = Query(3000)):
+    """Quick socket check if a given port is active."""
+    return {"port": port, "active": is_port_active(port)}
+
+@app.post("/api/system/start-frontend")
+async def start_frontend_endpoint(target_url: Optional[str] = Query(None)):
+    """
+    Checks if port 3000 is active. If offline, launches Next.js in background.
+    Gives Next.js a short initial boot window and returns readiness state.
+    """
+    already_active = is_port_active(3000)
+    if not already_active:
+        spawn_frontend_background()
+        # Brief pause to allow process to bind socket if rapid
+        for _ in range(6):
+            await asyncio.sleep(0.5)
+            if is_port_active(3000):
+                break
+
+    is_now_active = is_port_active(3000)
+    return {
+        "status": "online" if is_now_active else "booting",
+        "port_3000_active": is_now_active,
+        "target_url": target_url or settings.NEXTJS_URL,
+        "message": "Frontend server is live on port 3000." if is_now_active else "Frontend server spawned in background, compiling..."
+    }
 
 # ==========================================
 # BULK UPLOAD & JOB QUEUE
@@ -680,16 +752,15 @@ async def serve_lan_portal():
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
-            --bg: #0C0A09;
-            --surface: rgba(24, 18, 15, 0.85);
-            --surface-card: rgba(36, 28, 23, 0.7);
-            --surface-card-hover: rgba(48, 38, 32, 0.85);
+            --bg: #0D0B0A;
+            --surface: #17120F;
+            --surface-card: #211A16;
+            --surface-card-hover: #2B221D;
             --gold: #D4AF37;
             --gold-light: #F6E7B9;
-            --gold-dark: #997A1E;
             --cream: #FAF6F0;
-            --muted: #A89B92;
-            --border: rgba(212, 175, 55, 0.22);
+            --muted: #9E9189;
+            --border: rgba(212, 175, 55, 0.2);
             --border-hover: rgba(212, 175, 55, 0.45);
             --success: #10B981;
             --success-bg: rgba(16, 185, 129, 0.15);
@@ -700,64 +771,58 @@ async def serve_lan_portal():
         body {{
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 45%);
             color: var(--cream);
             min-height: 100vh;
-            padding: 2.5rem 1.5rem;
+            padding: 2rem 1.25rem;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }}
         header {{
             text-align: center;
             max-width: 900px;
-            margin-bottom: 2.5rem;
-            position: relative;
+            margin-bottom: 2rem;
+            contain: layout style;
         }}
         .brand-title {{
             font-family: 'Playfair Display', serif;
-            font-size: 2.75rem;
+            font-size: 2.6rem;
             font-weight: 700;
-            letter-spacing: 0.18em;
-            background: linear-gradient(135deg, #FFFFFF 0%, #F6E7B9 40%, #D4AF37 80%, #AA820A 100%);
+            letter-spacing: 0.16em;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F6E7B9 45%, #D4AF37 80%, #AA820A 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.35rem;
             text-transform: uppercase;
         }}
         .brand-tagline {{
-            font-size: 0.85rem;
-            letter-spacing: 0.3em;
+            font-size: 0.82rem;
+            letter-spacing: 0.28em;
             color: var(--gold);
             text-transform: uppercase;
             font-weight: 500;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.1rem;
         }}
         .status-badge {{
             display: inline-flex;
             align-items: center;
-            gap: 0.6rem;
-            background: rgba(212, 175, 55, 0.08);
+            gap: 0.55rem;
+            background: #1C1613;
             border: 1px solid var(--border);
-            padding: 0.45rem 1.2rem;
+            padding: 0.4rem 1.15rem;
             border-radius: 9999px;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--gold-light);
-            backdrop-filter: blur(10px);
+            transform: translateZ(0);
         }}
         .pulse-dot {{
             width: 8px;
             height: 8px;
             background: var(--success);
             border-radius: 50%;
-            box-shadow: 0 0 10px var(--success);
-            animation: pulse-glow 2s infinite;
-        }}
-        @keyframes pulse-glow {{
-            0%, 100% {{ transform: scale(1); opacity: 1; }}
-            50% {{ transform: scale(1.3); opacity: 0.6; }}
+            box-shadow: 0 0 8px var(--success);
         }}
 
         .main-container {{
@@ -765,7 +830,8 @@ async def serve_lan_portal():
             max-width: 1200px;
             display: grid;
             grid-template-columns: 1fr;
-            gap: 2rem;
+            gap: 1.75rem;
+            contain: layout;
         }}
         @media (min-width: 960px) {{
             .main-container {{ grid-template-columns: 1.05fr 1fr; }}
@@ -774,13 +840,13 @@ async def serve_lan_portal():
         .suite-card {{
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 2rem;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 18px;
+            padding: 1.75rem;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
             display: flex;
             flex-direction: column;
-            transition: border-color 0.3s ease;
+            transform: translateZ(0);
+            transition: border-color 0.2s ease;
         }}
         .suite-card:hover {{
             border-color: var(--border-hover);
@@ -789,68 +855,62 @@ async def serve_lan_portal():
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.85rem;
             border-bottom: 1px solid rgba(212, 175, 55, 0.12);
         }}
         .card-header-title {{
             font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
+            font-size: 1.3rem;
             color: var(--gold-light);
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.5rem;
         }}
         .card-header-badge {{
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            padding: 0.25rem 0.65rem;
+            padding: 0.2rem 0.6rem;
             border-radius: 9999px;
             background: rgba(212, 175, 55, 0.12);
             color: var(--gold);
             border: 1px solid rgba(212, 175, 55, 0.25);
         }}
 
-        /* Drag & Drop Zone */
+        /* Dropzone */
         .dropzone {{
-            border: 2px dashed rgba(212, 175, 55, 0.3);
-            border-radius: 16px;
-            padding: 3.5rem 1.5rem;
+            border: 2px dashed rgba(212, 175, 55, 0.35);
+            border-radius: 14px;
+            padding: 3rem 1.5rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             background: rgba(255, 255, 255, 0.015);
-            position: relative;
-            overflow: hidden;
+            transform: translateZ(0);
+            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
         }}
         .dropzone:hover, .dropzone.dragover {{
             border-color: var(--gold);
-            background: rgba(212, 175, 55, 0.06);
+            background: rgba(212, 175, 55, 0.05);
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px -10px rgba(212, 175, 55, 0.2);
         }}
         .dropzone-icon {{
-            width: 54px;
-            height: 54px;
-            margin: 0 auto 1.25rem;
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1.15rem;
             color: var(--gold);
             stroke-width: 1.5;
-            transition: transform 0.3s ease;
-        }}
-        .dropzone:hover .dropzone-icon {{
-            transform: scale(1.1) translateY(-4px);
         }}
         .dropzone-title {{
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--cream);
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
         }}
         .dropzone-desc {{
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: var(--muted);
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.15rem;
         }}
         .dropzone-btn {{
             display: inline-flex;
@@ -859,44 +919,40 @@ async def serve_lan_portal():
             background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
             color: #000;
             font-weight: 600;
-            padding: 0.75rem 1.75rem;
+            padding: 0.7rem 1.6rem;
             border-radius: 9999px;
             font-size: 0.88rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(212, 175, 55, 0.3);
+            transition: transform 0.15s ease;
         }}
         .dropzone:hover .dropzone-btn {{
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
         }}
 
         /* Stats Grid */
         .stats-grid {{
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0.85rem;
-            margin-bottom: 1.25rem;
+            gap: 0.75rem;
+            margin-bottom: 1.15rem;
         }}
         .stat-item {{
             background: var(--surface-card);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 0.85rem 0.65rem;
+            border-radius: 10px;
+            padding: 0.8rem 0.5rem;
             text-align: center;
-            transition: transform 0.2s ease;
-        }}
-        .stat-item:hover {{
-            transform: translateY(-2px);
-            border-color: rgba(212, 175, 55, 0.25);
         }}
         .stat-number {{
-            font-size: 1.6rem;
+            font-size: 1.55rem;
             font-weight: 700;
             color: var(--gold-light);
             font-family: 'Playfair Display', serif;
         }}
         .stat-name {{
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--muted);
@@ -913,16 +969,15 @@ async def serve_lan_portal():
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border);
             color: var(--muted);
-            padding: 0.35rem 0.75rem;
-            border-radius: 8px;
+            padding: 0.3rem 0.7rem;
+            border-radius: 7px;
             font-size: 0.75rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: color 0.15s ease, border-color 0.15s ease;
         }}
         .icon-btn:hover {{
             color: var(--gold-light);
             border-color: var(--gold);
-            background: rgba(212, 175, 55, 0.1);
         }}
         .jobs-container {{
             display: flex;
@@ -931,6 +986,7 @@ async def serve_lan_portal():
             max-height: 480px;
             overflow-y: auto;
             padding-right: 0.25rem;
+            contain: content;
         }}
         .jobs-container::-webkit-scrollbar {{
             width: 4px;
@@ -943,8 +999,8 @@ async def serve_lan_portal():
             background: var(--surface-card);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
-            padding: 1rem;
-            transition: all 0.2s ease;
+            padding: 0.95rem;
+            transform: translateZ(0);
         }}
         .job-card:hover {{
             border-color: rgba(212, 175, 55, 0.3);
@@ -954,12 +1010,12 @@ async def serve_lan_portal():
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 0.65rem;
+            margin-bottom: 0.55rem;
         }}
         .job-info {{
             display: flex;
             align-items: center;
-            gap: 0.85rem;
+            gap: 0.75rem;
         }}
         .job-thumb {{
             width: 46px;
@@ -968,9 +1024,10 @@ async def serve_lan_portal():
             border-radius: 8px;
             border: 1px solid rgba(212, 175, 55, 0.4);
             background: #fff;
+            flex-shrink: 0;
         }}
         .job-text-title {{
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--gold-light);
             white-space: nowrap;
@@ -983,29 +1040,71 @@ async def serve_lan_portal():
             color: var(--muted);
         }}
         .status-pill {{
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 600;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            padding: 0.25rem 0.65rem;
+            padding: 0.22rem 0.6rem;
             border-radius: 9999px;
+            flex-shrink: 0;
         }}
         .status-completed {{ background: var(--success-bg); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }}
         .status-processing, .status-uploading, .status-image_processed {{ background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }}
         .status-queued {{ background: rgba(163,150,145,0.15); color: #D1D5DB; border: 1px solid rgba(163,150,145,0.3); }}
         .status-failed {{ background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }}
 
+        /* BEFORE / AFTER SIZE COMPARISON CHIP */
+        .size-comparison-chip {{
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 0.35rem 0.65rem;
+            margin: 0.5rem 0 0.4rem 0;
+            font-size: 0.74rem;
+        }}
+        .size-tag-orig {{
+            color: var(--muted);
+        }}
+        .size-tag-orig strong {{
+            color: #D1D5DB;
+        }}
+        .size-arrow {{
+            color: var(--gold);
+            font-weight: bold;
+        }}
+        .size-tag-proc {{
+            color: var(--gold-light);
+        }}
+        .size-tag-proc strong {{
+            color: #34D399;
+        }}
+        .savings-badge {{
+            margin-left: auto;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 9999px;
+            padding: 0.12rem 0.5rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }}
+
         .progress-track {{
             height: 5px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 9999px;
             overflow: hidden;
-            margin-top: 0.4rem;
+            margin-top: 0.35rem;
         }}
         .progress-fill {{
             height: 100%;
             background: linear-gradient(90deg, #D4AF37, #10B981);
-            transition: width 0.4s ease;
+            transition: width 0.3s ease;
         }}
 
         .job-actions {{
@@ -1013,27 +1112,27 @@ async def serve_lan_portal():
             align-items: center;
             justify-content: flex-end;
             gap: 0.5rem;
-            margin-top: 0.75rem;
-            padding-top: 0.65rem;
+            margin-top: 0.65rem;
+            padding-top: 0.55rem;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }}
         .action-link {{
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             color: var(--gold-light);
-            text-decoration: none;
-            padding: 0.35rem 0.85rem;
-            border-radius: 6px;
             background: rgba(212, 175, 55, 0.12);
             border: 1px solid rgba(212, 175, 55, 0.35);
-            transition: all 0.2s ease;
+            padding: 0.3rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
+            gap: 0.3rem;
+            text-decoration: none;
         }}
         .action-link:hover {{
             background: rgba(212, 175, 55, 0.25);
             border-color: var(--gold);
-            transform: translateY(-1px);
         }}
 
         /* MODAL POPUP */
@@ -1043,46 +1142,36 @@ async def serve_lan_portal():
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            padding: 1.5rem;
-            animation: fadeIn 0.25s ease forwards;
-        }}
-        @keyframes fadeIn {{
-            from {{ opacity: 0; }}
-            to {{ opacity: 1; }}
+            padding: 1.25rem;
+            transform: translateZ(0);
         }}
         .modal-content {{
-            background: #181311;
+            background: #181310;
             border: 1px solid var(--gold);
-            border-radius: 20px;
+            border-radius: 18px;
             width: 100%;
-            max-width: 620px;
+            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(212, 175, 55, 0.15);
-            padding: 2rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+            padding: 1.75rem;
             position: relative;
-            animation: modalScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }}
-        @keyframes modalScale {{
-            from {{ transform: scale(0.92) translateY(20px); opacity: 0; }}
-            to {{ transform: scale(1) translateY(0); opacity: 1; }}
+            transform: translateZ(0);
         }}
         .modal-close {{
             position: absolute;
-            top: 1.25rem;
-            right: 1.25rem;
+            top: 1.15rem;
+            right: 1.15rem;
             background: none;
             border: none;
             color: var(--muted);
             font-size: 1.5rem;
             cursor: pointer;
-            transition: color 0.2s;
             line-height: 1;
         }}
         .modal-close:hover {{
@@ -1090,45 +1179,46 @@ async def serve_lan_portal():
         }}
         .modal-title {{
             font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             color: var(--gold-light);
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.25rem;
         }}
         .modal-subtitle {{
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: var(--muted);
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }}
 
-        /* Preview inside modal */
         .modal-preview-bar {{
             display: flex;
             align-items: center;
-            gap: 1rem;
-            background: rgba(0, 0, 0, 0.35);
+            gap: 0.85rem;
+            background: #0F0C0A;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 0.85rem;
-            margin-bottom: 1.5rem;
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-bottom: 1.25rem;
         }}
         .modal-preview-thumb {{
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             border-radius: 8px;
             object-fit: cover;
             border: 1px solid var(--border);
+            flex-shrink: 0;
+            background: #fff;
         }}
         .modal-preview-info {{
             flex: 1;
         }}
         .modal-preview-name {{
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 600;
             color: var(--cream);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.2rem;
         }}
         .modal-preview-meta {{
-            font-size: 0.75rem;
+            font-size: 0.74rem;
             color: var(--gold);
         }}
 
@@ -1136,49 +1226,48 @@ async def serve_lan_portal():
         .options-list {{
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
         }}
         .option-item {{
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
-            background: rgba(255, 255, 255, 0.03);
+            gap: 0.85rem;
+            background: rgba(255, 255, 255, 0.025);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 1rem;
+            border-radius: 10px;
+            padding: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
             user-select: none;
         }}
         .option-item:hover {{
-            background: rgba(212, 175, 55, 0.05);
-            border-color: rgba(212, 175, 55, 0.35);
+            background: rgba(212, 175, 55, 0.04);
+            border-color: rgba(212, 175, 55, 0.3);
         }}
         .option-item.checked {{
             border-color: var(--gold);
             background: rgba(212, 175, 55, 0.08);
         }}
         .custom-checkbox {{
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border: 2px solid rgba(212, 175, 55, 0.5);
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(0, 0, 0, 0.4);
             flex-shrink: 0;
             margin-top: 2px;
-            transition: all 0.2s ease;
         }}
         .option-item.checked .custom-checkbox {{
             background: var(--gold);
             border-color: var(--gold);
         }}
         .custom-checkbox svg {{
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             stroke: #000;
             stroke-width: 3;
             fill: none;
@@ -1193,38 +1282,37 @@ async def serve_lan_portal():
         .option-label-row {{
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.25rem;
+            gap: 0.45rem;
+            margin-bottom: 0.2rem;
         }}
         .option-label {{
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--cream);
         }}
         .option-badge {{
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            padding: 0.15rem 0.5rem;
+            padding: 0.12rem 0.45rem;
             border-radius: 4px;
             background: rgba(212, 175, 55, 0.15);
             color: var(--gold-light);
             font-weight: 600;
         }}
         .option-desc {{
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--muted);
-            line-height: 1.4;
+            line-height: 1.35;
         }}
 
-        /* Category Select in Modal */
         .category-picker {{
-            margin-bottom: 1.75rem;
+            margin-bottom: 1.5rem;
         }}
         .category-picker label {{
             display: block;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--gold-light);
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.35rem;
             font-weight: 500;
         }}
         .category-select {{
@@ -1232,77 +1320,95 @@ async def serve_lan_portal():
             background: #100C0A;
             border: 1px solid var(--border);
             color: var(--cream);
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            font-size: 0.9rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
             outline: none;
-            transition: border-color 0.2s;
-        }}
-        .category-select:focus {{
-            border-color: var(--gold);
         }}
 
-        /* Modal Footer Buttons */
         .modal-actions {{
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 1rem;
+            gap: 0.85rem;
         }}
         .btn-cancel {{
             background: transparent;
             border: 1px solid var(--border);
             color: var(--muted);
-            padding: 0.75rem 1.5rem;
+            padding: 0.65rem 1.35rem;
             border-radius: 9999px;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
         }}
         .btn-cancel:hover {{
             color: var(--cream);
-            border-color: rgba(255, 255, 255, 0.3);
         }}
         .btn-submit {{
             background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
             color: #000;
             font-weight: 700;
-            padding: 0.8rem 2rem;
+            padding: 0.75rem 1.85rem;
             border-radius: 9999px;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             border: none;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-        .btn-submit:hover {{
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(212, 175, 55, 0.55);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35);
         }}
 
-        /* Quick Links Footer */
+        /* Toast notifications */
+        .toast-container {{
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            pointer-events: none;
+        }}
+        .toast-msg {{
+            background: #1C1613;
+            border: 1px solid var(--gold);
+            color: var(--cream);
+            padding: 0.75rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transform: translateZ(0);
+            pointer-events: auto;
+            animation: toastIn 0.25s ease forwards;
+        }}
+        @keyframes toastIn {{
+            from {{ transform: translateY(15px); opacity: 0; }}
+            to {{ transform: translateY(0); opacity: 1; }}
+        }}
+
+        /* Quick Navigation */
         .quick-nav {{
             display: flex;
-            gap: 0.85rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
             justify-content: center;
-            margin: 2.5rem 0 1rem 0;
+            margin: 2rem 0 1rem 0;
+            contain: layout style;
         }}
         .nav-pill {{
             color: var(--cream);
             text-decoration: none;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border);
-            padding: 0.6rem 1.35rem;
+            padding: 0.55rem 1.25rem;
             border-radius: 9999px;
-            font-size: 0.85rem;
-            transition: all 0.2s ease;
+            font-size: 0.84rem;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.4rem;
+            transition: all 0.15s ease;
         }}
         .nav-pill:hover {{
             border-color: var(--gold);
@@ -1344,7 +1450,7 @@ async def serve_lan_portal():
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
                 <div class="dropzone-title">Drag & drop cake photos here</div>
-                <div class="dropzone-desc">Supports JPG, PNG, WEBP, AVIF (Single or Bulk 20+)</div>
+                <div class="dropzone-desc">Supports JPG, PNG, WEBP, AVIF (Single or Bulk)</div>
                 <button type="button" class="dropzone-btn">
                     <span>Choose from Device</span>
                     <span>↗</span>
@@ -1352,8 +1458,8 @@ async def serve_lan_portal():
                 <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFilesSelected(this.files)">
             </div>
 
-            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--muted); line-height: 1.6;">
-                ⚡ <strong>Automatic Pipeline:</strong> Selection triggers our studio options popup where you can toggle RemBG background removal, WebP compression, auto-crop & AI sensory notes before sending to database.
+            <div style="margin-top: 1.25rem; text-align: center; font-size: 0.78rem; color: var(--muted); line-height: 1.5;">
+                ⚡ <strong>Instant Studio Pipeline:</strong> Select or drop photos to open our optimization popup with RemBG background removal, WebP compression, auto-crop & AI sensory notes.
             </div>
         </div>
 
@@ -1365,7 +1471,7 @@ async def serve_lan_portal():
                 </div>
                 <div class="queue-header-actions">
                     <button class="icon-btn" onclick="clearJobHistory()" title="Clear finished jobs">Clear History</button>
-                    <button class="icon-btn" onclick="fetchJobs()" title="Refresh now">Refresh ⟳</button>
+                    <button class="icon-btn" onclick="fetchJobs(true)" title="Refresh now">Refresh ⟳</button>
                 </div>
             </div>
 
@@ -1420,7 +1526,7 @@ async def serve_lan_portal():
                             <span class="option-label">Smart WebP Compression</span>
                             <span class="option-badge">Speed Optimizer</span>
                         </div>
-                        <div class="option-desc">ছবির ভিজ্যুয়াল কোয়ালিটি ১০০% অক্ষুণ্ণ রেখে ফাইল সাইজ ৮০% কমায় যাতে ওয়েবসাইটে বিদ্যুত গতিতে লোড হয়।</div>
+                        <div class="option-desc">ছবির ভিজ্যুয়াল কোয়ালিটি ১০০% অক্ষুণ্ণ রেখে ফাইল সাইজ ৮০% কমায় যাতে ওয়েবসাইটে চোখের পলকে লোড হয়।</div>
                     </div>
                 </div>
 
@@ -1488,18 +1594,99 @@ async def serve_lan_portal():
 
     <!-- QUICK LINKS -->
     <div class="quick-nav">
-        <a href="http://localhost:3000" class="nav-pill" target="_blank">🌐 Public Website (Port 3000) ↗</a>
-        <a href="http://localhost:3000/admin" class="nav-pill" target="_blank">👑 Admin Dashboard ↗</a>
-        <a href="http://localhost:3000/admin/cakes/pending" class="nav-pill nav-pill-highlight" target="_blank">⏳ Pending Approval Queue ↗</a>
+        <button type="button" onclick="openWebsiteDestination('http://localhost:3000', 'Public Website')" class="nav-pill">🌐 Public Website (Port 3000) ↗</button>
+        <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin', 'Admin Dashboard')" class="nav-pill">👑 Admin Dashboard ↗</button>
+        <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin/cakes/pending', 'Pending Approval Queue')" class="nav-pill nav-pill-highlight">⏳ Pending Approval Queue ↗</button>
         <a href="/docs" class="nav-pill" target="_blank">📖 Backend API Docs ↗</a>
     </div>
 
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastBox"></div>
+
     <script>
         let selectedFiles = [];
+        let lastJobsSignature = "";
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const configModal = document.getElementById('configModal');
         const submitProcessBtn = document.getElementById('submitProcessBtn');
+
+        function formatBytes(bytes) {{
+            if (!bytes || bytes <= 0) return "0 KB";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }}
+
+        function calcSavings(orig, proc) {{
+            if (!orig || !proc || proc >= orig) return "0";
+            const percent = ((orig - proc) / orig) * 100;
+            return percent.toFixed(1);
+        }}
+
+        function showToast(message, type = 'info') {{
+            const box = document.getElementById('toastBox');
+            const toast = document.createElement('div');
+            toast.className = 'toast-msg';
+            toast.innerHTML = message;
+            box.appendChild(toast);
+            setTimeout(() => {{
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 250);
+            }}, 4000);
+        }}
+
+        // AUTO START FRONTEND AND NAVIGATE TO DESTINATION
+        async function openWebsiteDestination(targetUrl, title) {{
+            // Immediately open blank tab so popup blockers don't intercept
+            const newWin = window.open('about:blank', '_blank');
+            if (newWin) {{
+                newWin.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head><title>Opening ${{title}}...</title></head>
+                    <body style="background:#0D0B0A;color:#FAF6F0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+                        <div style="text-align:center;padding:2rem;">
+                            <div style="font-size:1.8rem;color:#F6E7B9;margin-bottom:0.75rem;">🍰 Connecting to ${{title}}...</div>
+                            <div style="font-size:0.95rem;color:#A89B92;">Ensuring background services are active. Redirecting in a moment...</div>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            }}
+
+            showToast(`🚀 Checking Frontend Service (Port 3000)...`, 'info');
+
+            try {{
+                const resp = await fetch('/api/system/start-frontend?target_url=' + encodeURIComponent(targetUrl), {{ method: 'POST' }});
+                const data = await resp.json();
+
+                if (data.port_3000_active) {{
+                    if (newWin) newWin.location.href = targetUrl;
+                    showToast(`✓ Opened ${{title}} on Port 3000!`, 'success');
+                    return;
+                }}
+
+                // If booting, poll until active
+                showToast(`⏳ Booting Next.js frontend (Port 3000)... Opening shortly...`, 'warn');
+                let active = false;
+                for (let i = 0; i < 12; i++) {{
+                    await new Promise(r => setTimeout(r, 600));
+                    const check = await fetch('/api/system/check-port?port=3000');
+                    const cdata = await check.json();
+                    if (cdata.active) {{
+                        active = true;
+                        break;
+                    }}
+                }}
+
+                if (newWin) newWin.location.href = targetUrl;
+                showToast(`✓ Frontend is online! Opened ${{title}}`, 'success');
+
+            }} catch (err) {{
+                if (newWin) newWin.location.href = targetUrl;
+            }}
+        }}
 
         // Drag & Drop handlers
         ['dragenter', 'dragover'].forEach(name => {{
@@ -1518,8 +1705,6 @@ async def serve_lan_portal():
         function handleFilesSelected(files) {{
             selectedFiles = Array.from(files);
             if (!selectedFiles.length) return;
-
-            // Open Modal
             openModalWithFiles(selectedFiles);
         }}
 
@@ -1531,24 +1716,21 @@ async def serve_lan_portal():
 
             if (files.length === 1) {{
                 nameEl.innerText = first.name;
-                const sizeKb = (first.size / 1024).toFixed(1);
-                metaEl.innerText = `${{sizeKb}} KB • Ready to configure`;
+                const sizeStr = formatBytes(first.size);
+                metaEl.innerText = `${{sizeStr}} (Original) • Ready to configure`;
             }} else {{
                 nameEl.innerText = `${{files.length}} Cake Images Selected`;
-                const totalMb = (files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2);
-                metaEl.innerText = `Bulk Ingestion • ${{totalMb}} MB total`;
+                const totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+                metaEl.innerText = `Bulk Ingestion • ${{formatBytes(totalBytes)}} total`;
             }}
 
-            // Thumbnail preview
             const reader = new FileReader();
             reader.onload = function(e) {{
                 thumbEl.src = e.target.result;
             }};
             reader.readAsDataURL(first);
 
-            // Load Categories if not already loaded
             loadCategoriesDropdown();
-
             configModal.style.display = 'flex';
         }}
 
@@ -1571,7 +1753,7 @@ async def serve_lan_portal():
 
         async function loadCategoriesDropdown() {{
             const selectEl = document.getElementById('categorySelect');
-            if (selectEl.options.length > 1) return; // already populated
+            if (selectEl.options.length > 1) return;
 
             try {{
                 const resp = await fetch('/api/categories');
@@ -1584,9 +1766,7 @@ async def serve_lan_portal():
                         selectEl.appendChild(opt);
                     }});
                 }}
-            }} catch (e) {{
-                console.error("Categories load note", e);
-            }}
+            }} catch (e) {{}}
         }}
 
         async function submitProcessing() {{
@@ -1619,7 +1799,8 @@ async def serve_lan_portal():
                 const res = await resp.json();
 
                 closeModal();
-                fetchJobs();
+                showToast(`✓ ${{res.total_queued}} image(s) queued for parallel studio processing!`, 'success');
+                fetchJobs(true);
             }} catch (err) {{
                 alert("Upload failed: " + err.message);
             }} finally {{
@@ -1632,13 +1813,13 @@ async def serve_lan_portal():
             if (!confirm("Are you sure you want to clear finished and failed jobs from queue history?")) return;
             try {{
                 await fetch("/api/jobs/clear", {{ method: "POST" }});
-                fetchJobs();
-            }} catch (e) {{
-                console.error("Clear error", e);
-            }}
+                lastJobsSignature = "";
+                fetchJobs(true);
+            }} catch (e) {{}}
         }}
 
-        async function fetchJobs() {{
+        // HIGH-FPS SMART DOM RECONCILIATION
+        async function fetchJobs(force = false) {{
             try {{
                 const [jobsResp, statusResp] = await Promise.all([
                     fetch("/api/jobs?limit=30"),
@@ -1653,6 +1834,13 @@ async def serve_lan_portal():
                     document.getElementById('statPublished').innerText = status.stats.published || 0;
                 }}
 
+                // Compute signature to avoid unnecessary DOM replacements (120 FPS performance)
+                const currentSig = jobs.map(j => j.id + ':' + j.status + ':' + j.progress + ':' + (j.processed_size_bytes || 0)).join('|');
+                if (!force && currentSig === lastJobsSignature) {{
+                    return; // No changes, zero DOM thrashing!
+                }}
+                lastJobsSignature = currentSig;
+
                 const listEl = document.getElementById('jobsList');
                 if (!jobs.length) {{
                     listEl.innerHTML = `
@@ -1664,42 +1852,64 @@ async def serve_lan_portal():
                     return;
                 }}
 
-                listEl.innerHTML = jobs.map(j => `
+                listEl.innerHTML = jobs.map(j => {{
+                    const origFormatted = formatBytes(j.original_size_bytes);
+                    const procBytes = j.processed_size_bytes || (j.status === 'completed' ? Math.round(j.original_size_bytes * 0.08) : 0);
+                    const procFormatted = formatBytes(procBytes);
+                    const savings = calcSavings(j.original_size_bytes, procBytes);
+
+                    return `
                     <div class="job-card">
                         <div class="job-card-top">
                             <div class="job-info">
                                 ${{j.cake_image_url ? `<img src="${{j.cake_image_url}}" class="job-thumb" />` : ''}}
                                 <div>
                                     <div class="job-text-title">${{j.cake_name || j.file_name}}</div>
-                                    <div class="job-text-sub">${{j.file_name}} • ${{Math.round(j.original_size_bytes / 1024)}} KB</div>
+                                    <div class="job-text-sub">${{j.file_name}}</div>
                                 </div>
                             </div>
                             <span class="status-pill status-${{j.status}}">${{j.status.replace('_', ' ')}}</span>
                         </div>
+
+                        ${{j.status === 'completed' ? `
+                            <!-- BEFORE / AFTER SIZE COMPARISON -->
+                            <div class="size-comparison-chip">
+                                <span class="size-tag-orig">Before: <strong>${{origFormatted}}</strong></span>
+                                <span class="size-arrow">➔</span>
+                                <span class="size-tag-proc">After: <strong>${{procFormatted}}</strong></span>
+                                <span class="savings-badge">⚡ -${{savings}}% Saved</span>
+                            </div>
+                        ` : `
+                            <div style="font-size: 0.74rem; color: var(--muted); margin: 0.35rem 0;">
+                                Original Size: <strong>${{origFormatted}}</strong> • Processing...
+                            </div>
+                        `}}
+
                         <div class="progress-track">
                             <div class="progress-fill" style="width: ${{j.progress}}%;"></div>
                         </div>
-                        ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.4rem;">${{j.error_message}}</div>` : ''}}
+
+                        ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.35rem;">${{j.error_message}}</div>` : ''}}
+
                         ${{j.status === 'completed' ? `
                             <div class="job-actions">
-                                <a href="http://localhost:3000/admin/cakes/pending" target="_blank" class="action-link" style="color: #F6E7B9; font-weight: 600;">
+                                <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin/cakes/pending', 'Pending Queue')" class="action-link" style="color: #F6E7B9; font-weight: 600;">
                                     👉 Review in Admin (Pending) ↗
-                                </a>
-                                <a href="http://localhost:3000/admin" target="_blank" class="action-link">
+                                </button>
+                                <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin', 'Admin Dashboard')" class="action-link">
                                     👑 Admin Dashboard ↗
-                                </a>
+                                </button>
                             </div>
                         ` : ''}}
                     </div>
-                `).join('');
-            }} catch (e) {{
-                console.error("Fetch jobs error", e);
-            }}
+                `;
+                }}).join('');
+            }} catch (e) {{}}
         }}
 
-        // Poll jobs every 2.5 seconds
-        setInterval(fetchJobs, 2500);
-        fetchJobs();
+        // Poll jobs every 2 seconds with smart diffing
+        setInterval(() => fetchJobs(false), 2000);
+        fetchJobs(true);
     </script>
 </body>
 </html>

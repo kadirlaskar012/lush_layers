@@ -202,12 +202,13 @@ class BackgroundJobQueue:
 
             created_cake = db.create_cake(cake_record)
 
-            # 7. Mark Job Completed
+            # 7. Mark Job Completed with Before/After size tracking
             db.update_job(
                 job_id,
                 status="completed",
                 progress=100,
                 cake_id=created_cake["id"],
+                processed_size_bytes=proc_result.get("file_size_bytes", 0),
                 error_message=None
             )
             print(f"[Queue][{worker_name}] Successfully completed job {job_id} -> Cake '{created_cake['name']}' (PENDING)")

@@ -607,7 +607,15 @@ class Database:
                 
         return self.get_job(job_id)
 
-    def update_job(self, job_id: str, status: Optional[str] = None, progress: Optional[int] = None, error_message: Optional[str] = None, cake_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def update_job(
+        self,
+        job_id: str,
+        status: Optional[str] = None,
+        progress: Optional[int] = None,
+        error_message: Optional[str] = None,
+        cake_id: Optional[str] = None,
+        processed_size_bytes: Optional[int] = None
+    ) -> Optional[Dict[str, Any]]:
         conn = self._get_conn()
         cursor = conn.cursor()
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -630,6 +638,9 @@ class Database:
         if cake_id is not None:
             fields.append("cake_id = ?")
             params.append(cake_id)
+        if processed_size_bytes is not None:
+            fields.append("processed_size_bytes = ?")
+            params.append(processed_size_bytes)
             
         params.append(job_id)
         cursor.execute(f"UPDATE processing_jobs SET {', '.join(fields)} WHERE id = ?", params)
@@ -643,6 +654,7 @@ class Database:
                 if progress is not None: payload["progress"] = progress
                 if error_message is not None: payload["error_message"] = error_message
                 if cake_id is not None: payload["cake_id"] = cake_id
+                if processed_size_bytes is not None: payload["processed_size_bytes"] = processed_size_bytes
                 if status in ("completed", "failed"): payload["completed_at"] = now
                 self.supabase.table("processing_jobs").update(payload).eq("id", job_id).execute()
             except Exception:
