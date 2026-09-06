@@ -44,7 +44,14 @@ export default async function HomePage() {
   return (
     <PublicLayout>
       {/* 1. ULTRA-COMPACT PROMOTIONAL HERO (Optimized for Mobile Viewport Glance) */}
-      <section className="hero-section-wrapper" id="hero-section">
+      <section
+        className="hero-section-wrapper"
+        id="hero-section"
+        style={{
+          background: "linear-gradient(180deg, #FBFDF9 0%, #F1F7EE 100%)",
+          borderBottom: "1px solid var(--border-subtle)",
+        }}
+      >
         <div className="container-lux">
           <div className="hero-grid-layout">
             {/* Left: Compact Copy & Quick Actions */}
@@ -112,8 +119,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. INFINITE 120HZ LUXURY MARQUEE TAPE (Strictly bounded within container-lux) */}
-      <section className="marquee-section-wrapper">
+      {/* 2. INFINITE 120HZ LUXURY MARQUEE TAPE */}
+      <section
+        className="marquee-section-wrapper"
+        style={{
+          background: "linear-gradient(90deg, #EBE3D3 0%, #F5ECDA 50%, #EBE3D3 100%)",
+          borderTop: "1px solid rgba(191, 154, 62, 0.25)",
+          borderBottom: "1px solid rgba(191, 154, 62, 0.25)",
+        }}
+      >
         <div className="container-lux">
           <LuxuryMarqueeTape />
         </div>
@@ -127,14 +141,28 @@ export default async function HomePage() {
       />
 
       {/* 4. ANIMATED ATELIER EDITORIAL POSTER BANNER */}
-      <section style={{ padding: "0.5rem 0", background: "var(--bg-main)" }}>
+      <section
+        style={{
+          padding: "1.25rem 0",
+          background: "linear-gradient(180deg, #EDF5EA 0%, #E1EFE0 100%)",
+          borderBottom: "1px solid #D0E3CA",
+        }}
+      >
         <div className="container-lux">
           <AtelierFeaturedPoster whatsappNumber={bakeryWhatsApp} />
         </div>
       </section>
 
-      {/* 5. MAIN CAKE MARKETPLACE BROWSING (Category Story Strip + Toolbar + Responsive Grid) */}
-      <section style={{ padding: "2rem 0 2.5rem", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-subtle)" }} id="marketplace">
+      {/* 5. MAIN CAKE MARKETPLACE & CATEGORY BROWSING (Category Story Strip + Toolbar + Responsive Grid) */}
+      <section
+        style={{
+          padding: "2.25rem 0 2.75rem",
+          background: "linear-gradient(180deg, #FFFFFF 0%, #FAFBF8 100%)",
+          borderBottom: "1px solid #DCE6DA",
+        }}
+        id="marketplace"
+      >
+        <div id="categories" style={{ scrollMarginTop: "75px" }} />
         <div className="container-lux">
           <MarketplaceListing
             initialCakes={cakes || []}
@@ -147,7 +175,13 @@ export default async function HomePage() {
       </section>
 
       {/* 6. DUAL EDITORIAL SHOWCASE POSTERS */}
-      <section style={{ padding: "1.25rem 0 0.5rem", background: "var(--bg-cream)" }}>
+      <section
+        style={{
+          padding: "1.75rem 0 1.25rem",
+          background: "linear-gradient(180deg, #F6F1E6 0%, #ECE3D1 100%)",
+          borderBottom: "1px solid #DCD0BC",
+        }}
+      >
         <div className="container-lux">
           <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 0.75rem" }}>
             <span className="cake-category-badge">Seasonal Creations</span>
@@ -165,7 +199,14 @@ export default async function HomePage() {
 
       {/* 7. EDITORIAL MASONRY DISCOVERY SECTION */}
       {cakes && cakes.length > 0 && (
-        <section style={{ padding: "2.25rem 0 2.75rem", background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }} id="inspiration-wall">
+        <section
+          style={{
+            padding: "2.5rem 0 3rem",
+            background: "linear-gradient(180deg, #FDF7F3 0%, #F5ECE5 100%)",
+            borderBottom: "1px solid #E8D7CD",
+          }}
+          id="inspiration-wall"
+        >
           <div className="container-lux">
             <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 1.5rem" }}>
               <span className="cake-category-badge">Editorial Discovery</span>
@@ -182,8 +223,16 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 6. ATELIER PHILOSOPHY & WHATSAPP CONSULTATION */}
-      <section style={{ padding: "2.5rem 0", background: "var(--bg-main)", borderTop: "1px solid var(--border-subtle)" }} id="about">
+      {/* 8. ATELIER PHILOSOPHY & WHATSAPP CONSULTATION */}
+      <section
+        style={{
+          padding: "2.75rem 0",
+          background: "linear-gradient(180deg, #EAF2E6 0%, #DDE9D9 100%)",
+          borderTop: "1px solid #C6DEC1",
+          borderBottom: "1px solid #C6DEC1",
+        }}
+        id="about"
+      >
         <div className="container-lux">
           <div
             style={{

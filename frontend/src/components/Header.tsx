@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -21,6 +21,18 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
+
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +94,7 @@ export default function Header() {
             id="desktop-navigation"
           >
             <Link href="/cakes" className="header-nav-link">All Cakes</Link>
-            <Link href="/#categories" className="header-nav-link">Categories</Link>
+            <Link href="/categories" className="header-nav-link">Categories</Link>
             <Link href="/about" className="header-nav-link">Our Story</Link>
             <Link href="/reviews" className="header-nav-link">Guest Reviews</Link>
             <Link href="/contact" className="header-nav-link">Contact</Link>
@@ -164,24 +176,15 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Mobile Right Controls: Track Order CTA + Search Toggle + Hamburger */}
+          {/* Mobile Right Controls: Search Toggle + Track Order CTA + Hamburger Menu */}
           <div className="mobile-controls">
-            <Link
-              href="/track"
-              className="mobile-track-cta icon-hover-slide"
-              id="mobile-header-track-cta"
-              aria-label="Track your order"
-            >
-              <PackageCheck size={13} />
-              <span>Track</span>
-            </Link>
             <button
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
               className="icon-hover-rotate"
               style={{
                 background: "none",
                 border: "none",
-                color: "var(--text-secondary)",
+                color: isSearchOpenMobile ? "var(--gold-dark)" : "var(--text-secondary)",
                 padding: "6px",
                 cursor: "pointer",
                 display: "flex",
@@ -193,23 +196,33 @@ export default function Header() {
               <Search size={18} />
             </button>
 
+            <Link
+              href="/track"
+              className="mobile-track-cta icon-hover-slide"
+              id="mobile-header-track-cta"
+              aria-label="Track your order"
+            >
+              <PackageCheck size={13} />
+              <span>Track</span>
+            </Link>
+
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               style={{
-                background: "var(--bg-cream)",
-                border: "1px solid var(--border-subtle)",
+                background: isMobileMenuOpen ? "var(--gold-subtle)" : "var(--bg-cream)",
+                border: `1px solid ${isMobileMenuOpen ? "var(--gold)" : "var(--border-subtle)"}`,
                 borderRadius: "var(--radius-sm)",
-                color: "var(--text-primary)",
+                color: isMobileMenuOpen ? "var(--gold-dark)" : "var(--text-primary)",
                 width: "36px",
                 height: "36px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                transition: "background 0.2s ease",
+                transition: "all 0.2s ease",
               }}
               id="mobile-menu-toggle-btn"
-              aria-label="Toggle navigation menu"
+              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             >
               {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -272,15 +285,19 @@ export default function Header() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "var(--bg-surface)",
+            height: "calc(100dvh - 58px)",
+            minHeight: "calc(100vh - 58px)",
+            background: "rgba(255, 255, 255, 0.98)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
             borderTop: "1px solid var(--border-subtle)",
-            zIndex: 99,
+            zIndex: 99999,
             padding: "1.25rem",
             display: "flex",
             flexDirection: "column",
             gap: "0.75rem",
             overflowY: "auto",
-            boxShadow: "var(--shadow-md)",
+            boxShadow: "0 20px 40px rgba(26, 32, 24, 0.12)",
           }}
           id="mobile-navigation-drawer"
         >
@@ -293,7 +310,7 @@ export default function Header() {
             <span>All Cakes</span>
           </Link>
           <Link
-            href="/#categories"
+            href="/categories"
             onClick={() => setIsMobileMenuOpen(false)}
             className="mobile-nav-link"
           >
@@ -342,8 +359,6 @@ export default function Header() {
             <ShieldCheck size={18} style={{ color: "var(--gold-dark)" }} />
             <span>Admin Panel</span>
           </Link>
-
-
         </div>
       )}
     </header>

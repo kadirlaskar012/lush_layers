@@ -123,9 +123,10 @@ export default function FeaturedCarousel({
       className="featured-spotlight-section"
       id="featured-spotlight"
       style={{
-        padding: "1.75rem 0 2rem",
-        background: "var(--bg-main)",
-        borderBottom: "1px solid var(--border-subtle)",
+        padding: "2rem 0 2.25rem",
+        background: "linear-gradient(180deg, #FAF7F0 0%, #F3ECE0 100%)",
+        borderTop: "1px solid #EAE2D2",
+        borderBottom: "1px solid #E2D7C5",
         position: "relative",
         width: "100%",
         overflow: "hidden",

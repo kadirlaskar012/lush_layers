@@ -62,7 +62,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               Home
             </Link>
             <span>/</span>
-            <Link href="/cakes" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
+            <Link href="/categories" style={{ color: "var(--text-muted)", textDecoration: "none" }}>
               Categories
             </Link>
             <span>/</span>
