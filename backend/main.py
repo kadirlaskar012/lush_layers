@@ -315,6 +315,7 @@ class CakeUpdateRequest(BaseModel):
     description: Optional[str] = None
     available_sizes: Optional[List[str]] = None
     image_url: Optional[str] = None
+    status: Optional[str] = None
 
 @app.get("/api/cakes")
 async def list_cakes(
@@ -359,7 +360,7 @@ async def get_cake(cake_id: str):
     return cake
 
 @app.put("/api/cakes/{cake_id}")
-async def update_cake(cake_id: str, payload: CakeUpdateRequest):
+async def update_cake(cake_id: str, payload: CakeUpdateRequest, background_tasks: BackgroundTasks):
     updates = {k: v for k, v in payload.dict().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="No fields provided for update.")
@@ -367,6 +368,13 @@ async def update_cake(cake_id: str, payload: CakeUpdateRequest):
     updated = db.update_cake(cake_id, updates)
     if not updated:
         raise HTTPException(status_code=404, detail="Cake not found.")
+        
+    # Revalidate frontend pages if cake is live or was updated
+    if updated.get("status") == "published" or updates.get("status") == "published":
+        background_tasks.add_task(
+            trigger_frontend_revalidation,
+            ["/", "/cakes", f"/cakes/{updated.get('slug', '')}"]
+        )
     return updated
 
 @app.post("/api/cakes/{cake_id}/approve")

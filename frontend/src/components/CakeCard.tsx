@@ -13,6 +13,7 @@ interface CakeCardProps {
 
 export default function CakeCard({ cake }: CakeCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Derive rating for marketplace social proof
   const rating = "4.9";
@@ -22,14 +23,15 @@ export default function CakeCard({ cake }: CakeCardProps) {
       <div className="cake-card" id={`cake-card-${cake.slug}`} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
         {/* Studio White Image Container */}
         <Link href={`/cakes/${cake.slug}`} style={{ textDecoration: "none", position: "relative", display: "block" }}>
-          <div className="cake-card-image-wrap">
+          <div className={`cake-card-image-wrap ${!isImageLoaded ? "cake-card-image-loading" : ""}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={getOptimizedImageUrl(cake.image_url, { width: 480 })}
+              src={getOptimizedImageUrl(cake.image_url, { width: 420 })}
               alt={cake.name}
-              className="cake-card-img"
+              className={`cake-card-img ${isImageLoaded ? "cake-img-loaded" : "cake-img-loading"}`}
               loading="lazy"
               decoding="async"
+              onLoad={() => setIsImageLoaded(true)}
               width={300}
               height={300}
             />
