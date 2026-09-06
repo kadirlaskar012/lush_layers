@@ -323,10 +323,11 @@ async def list_cakes(
     category_id: Optional[str] = None,
     flavour: Optional[str] = None,
     search: Optional[str] = None,
+    sort_by: Optional[str] = None,
     limit: int = Query(100, ge=1, le=300)
 ):
     """
-    Returns list of cakes filtered by status, category, flavour, or search.
+    Returns list of cakes filtered by status, category, flavour, search, or sort_by.
     STRICT RULE: NO PRICE RETURNED.
     """
     return db.get_cakes(
@@ -334,6 +335,7 @@ async def list_cakes(
         category_id=category_id,
         flavour=flavour,
         search=search,
+        sort_by=sort_by,
         limit=limit
     )
 

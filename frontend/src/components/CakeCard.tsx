@@ -6,6 +6,7 @@ import { Star, Sparkles } from "lucide-react";
 import { Cake } from "../lib/types";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
+import { getCakeDisplayId } from "../lib/cakeHelper";
 
 interface CakeCardProps {
   cake: Cake;
@@ -17,6 +18,7 @@ export default function CakeCard({ cake, priority = false }: CakeCardProps) {
 
   // Derive rating for marketplace social proof
   const rating = "4.9";
+  const displayId = getCakeDisplayId(cake);
 
   return (
     <>
@@ -24,6 +26,11 @@ export default function CakeCard({ cake, priority = false }: CakeCardProps) {
         {/* Studio White Image Container */}
         <Link href={`/cakes/${cake.slug}`} style={{ textDecoration: "none", position: "relative", display: "block" }}>
           <div className="cake-card-image-wrap">
+            {/* Unique 4-digit ID badge on image top-left */}
+            <div className="cake-id-badge" title={`Confection ID #${displayId}`}>
+              #{displayId}
+            </div>
+
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getOptimizedImageUrl(cake.image_url, { width: 380 })}
@@ -70,7 +77,7 @@ export default function CakeCard({ cake, priority = false }: CakeCardProps) {
             <h3 className="cake-title" title={cake.name}>{cake.name}</h3>
           </Link>
 
-          <div className="cake-flavour" title={cake.flavour} style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+          <div className="cake-flavour" title={cake.flavour}>
             <Sparkles size={11} style={{ color: "var(--gold)", flexShrink: 0 }} />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cake.flavour}</span>
           </div>

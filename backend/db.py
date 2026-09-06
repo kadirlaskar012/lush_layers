@@ -134,6 +134,24 @@ class Database:
             )
         """)
 
+        # Ensure display_id column exists
+        try:
+            cursor.execute("ALTER TABLE cakes ADD COLUMN display_id TEXT")
+        except Exception:
+            pass
+
+        # Backfill display_id for existing cakes if any are null or empty
+        cursor.execute("SELECT id FROM cakes WHERE display_id IS NULL OR display_id = '' ORDER BY created_at ASC")
+        unassigned = cursor.fetchall()
+        if unassigned:
+            cursor.execute("SELECT MAX(CAST(display_id AS INTEGER)) FROM cakes WHERE display_id GLOB '[0-9][0-9][0-9][0-9]'")
+            max_row = cursor.fetchone()
+            current_id = (max_row[0] if max_row and max_row[0] else 1000)
+            for row in unassigned:
+                current_id += 1
+                cursor.execute("UPDATE cakes SET display_id = ? WHERE id = ?", (str(current_id), row["id"]))
+            conn.commit()
+
         # Reviews
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS reviews (
@@ -304,7 +322,7 @@ class Database:
         return dict(row) if row else None
 
     # --- CAKES ---
-    def get_cakes(self, status: Optional[str] = None, category_id: Optional[str] = None, flavour: Optional[str] = None, search: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_cakes(self, status: Optional[str] = None, category_id: Optional[str] = None, flavour: Optional[str] = None, search: Optional[str] = None, sort_by: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         conn = self._get_conn()
         cursor = conn.cursor()
         
@@ -331,11 +349,23 @@ class Database:
             query += " AND LOWER(c.flavour) LIKE LOWER(?)"
             params.append(f"%{flavour}%")
         if search:
-            query += " AND (LOWER(c.name) LIKE LOWER(?) OR LOWER(c.flavour) LIKE LOWER(?) OR LOWER(c.description) LIKE LOWER(?))"
+            clean_search = search.strip().lstrip("#")
+            query += " AND (c.display_id = ? OR LOWER(c.name) LIKE LOWER(?) OR LOWER(c.flavour) LIKE LOWER(?) OR LOWER(c.description) LIKE LOWER(?))"
             search_param = f"%{search}%"
-            params.extend([search_param, search_param, search_param])
+            params.extend([clean_search, search_param, search_param, search_param])
             
-        query += " ORDER BY c.created_at DESC LIMIT ?"
+        if sort_by == "oldest":
+            query += " ORDER BY c.created_at ASC LIMIT ?"
+        elif sort_by == "id_asc":
+            query += " ORDER BY CAST(COALESCE(c.display_id, '9999') AS INTEGER) ASC, c.created_at ASC LIMIT ?"
+        elif sort_by == "id_desc":
+            query += " ORDER BY CAST(COALESCE(c.display_id, '0') AS INTEGER) DESC, c.created_at DESC LIMIT ?"
+        elif sort_by == "name_asc":
+            query += " ORDER BY LOWER(c.name) ASC LIMIT ?"
+        elif sort_by == "name_desc":
+            query += " ORDER BY LOWER(c.name) DESC LIMIT ?"
+        else:
+            query += " ORDER BY c.created_at DESC LIMIT ?"
         params.append(limit)
         
         cursor.execute(query, params)
@@ -434,12 +464,20 @@ class Database:
         if cursor.fetchone()[0] > 0:
             slug = f"{base_slug}-{str(uuid.uuid4())[:6]}"
 
+        # Determine 4-digit display_id
+        display_id = cake_data.get("display_id")
+        if not display_id:
+            cursor.execute("SELECT MAX(CAST(display_id AS INTEGER)) FROM cakes WHERE display_id GLOB '[0-9][0-9][0-9][0-9]'")
+            max_row = cursor.fetchone()
+            current_max = max_row[0] if max_row and max_row[0] else 1000
+            display_id = str(current_max + 1)
+
         cursor.execute("""
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
-                ai_metadata, created_at, updated_at, published_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ai_metadata, created_at, updated_at, published_at, display_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             cake_id,
             cake_data.get("name", "Untitled Confection"),
@@ -454,7 +492,8 @@ class Database:
             ai_meta_json,
             now,
             now,
-            None
+            None,
+            display_id
         ))
         conn.commit()
         conn.close()
@@ -498,7 +537,7 @@ class Database:
         params = []
         
         for k, v in updates.items():
-            if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status"):
+            if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status", "display_id"):
                 fields.append(f"{k} = ?")
                 params.append(v)
             elif k == "available_sizes":

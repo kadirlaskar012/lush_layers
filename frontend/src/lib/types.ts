@@ -18,6 +18,7 @@ export interface Category {
 
 export interface Cake {
   id: string;
+  display_id?: string;
   name: string;
   slug: string;
   flavour: string;

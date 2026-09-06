@@ -157,16 +157,23 @@ export async function getAdminStats(): Promise<AdminStats> {
   }
 }
 
-export async function getAdminCakes(status?: string, search?: string): Promise<Cake[]> {
+export async function getAdminCakes(
+  status?: string,
+  search?: string,
+  categoryId?: string,
+  sortBy?: string
+): Promise<Cake[]> {
   try {
     const url = new URL(`${BACKEND_BASE_URL}/api/cakes`);
     if (status === "approved") {
       // Approved collection includes both staged approved and published cakes
       url.searchParams.set("status", "approved,published");
-    } else if (status) {
+    } else if (status && status !== "all") {
       url.searchParams.set("status", status);
     }
     if (search) url.searchParams.set("search", search);
+    if (categoryId && categoryId !== "all") url.searchParams.set("category_id", categoryId);
+    if (sortBy) url.searchParams.set("sort_by", sortBy);
 
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) return [];

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   getAdminCakes,
@@ -12,12 +12,15 @@ import {
   updateCakeDetails,
 } from "../../../lib/api";
 import { Cake, Category } from "../../../lib/types";
-import { Zap, Clock, Edit3, X, Plus, CheckCircle2 } from "lucide-react";
+import { getCakeDisplayId } from "../../../lib/cakeHelper";
+import { Zap, Clock, Edit3, X, Plus, CheckCircle2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 
 export default function AdminCakesManagementPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<string>("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -35,7 +38,9 @@ export default function AdminCakesManagementPage() {
       const [data, cats] = await Promise.all([
         getAdminCakes(
           statusFilter === "all" ? undefined : statusFilter,
-          searchQuery || undefined
+          searchQuery || undefined,
+          categoryFilter === "all" ? undefined : categoryFilter,
+          sortOption
         ),
         getCategories(),
       ]);
@@ -50,7 +55,62 @@ export default function AdminCakesManagementPage() {
 
   useEffect(() => {
     fetchCakes();
-  }, [statusFilter]);
+  }, [statusFilter, categoryFilter, sortOption]);
+
+  // Fast, instant filtering & sorting on loaded dataset (including 4-digit ID search)
+  const displayedCakes = useMemo(() => {
+    let result = [...cakes];
+
+    if (statusFilter !== "all") {
+      result = result.filter((c) => c.status === statusFilter);
+    }
+
+    if (categoryFilter !== "all") {
+      result = result.filter((c) => c.category_id === categoryFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const cleanQ = q.replace(/^#/, "");
+      result = result.filter((c) => {
+        const dId = (c.display_id || getCakeDisplayId(c)).toLowerCase();
+        return (
+          dId === cleanQ ||
+          dId.includes(cleanQ) ||
+          c.name.toLowerCase().includes(q) ||
+          (c.flavour && c.flavour.toLowerCase().includes(q)) ||
+          (c.description && c.description.toLowerCase().includes(q)) ||
+          c.slug.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    result.sort((a, b) => {
+      if (sortOption === "oldest") {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      if (sortOption === "id_asc") {
+        const idA = parseInt(a.display_id || getCakeDisplayId(a), 10) || 0;
+        const idB = parseInt(b.display_id || getCakeDisplayId(b), 10) || 0;
+        return idA - idB;
+      }
+      if (sortOption === "id_desc") {
+        const idA = parseInt(a.display_id || getCakeDisplayId(a), 10) || 0;
+        const idB = parseInt(b.display_id || getCakeDisplayId(b), 10) || 0;
+        return idB - idA;
+      }
+      if (sortOption === "name_asc") {
+        return a.name.localeCompare(b.name);
+      }
+      if (sortOption === "name_desc") {
+        return b.name.localeCompare(a.name);
+      }
+      // default: "newest"
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    return result;
+  }, [cakes, statusFilter, categoryFilter, searchQuery, sortOption]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +184,7 @@ export default function AdminCakesManagementPage() {
       available_sizes: cake.available_sizes ? [...cake.available_sizes] : ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"],
       status: cake.status,
       image_url: cake.image_url,
+      display_id: cake.display_id || getCakeDisplayId(cake),
     });
     setNewSizeInput("");
   };
@@ -216,7 +277,7 @@ export default function AdminCakesManagementPage() {
               letterSpacing: "-0.01em",
             }}
           >
-            All Confections ({cakes.length})
+            All Confections ({displayedCakes.length})
           </h1>
         </div>
 
@@ -262,22 +323,23 @@ export default function AdminCakesManagementPage() {
         </div>
       )}
 
-      {/* Filter Toolbar - Clean & Compact */}
+      {/* Filter Toolbar - Clean, Comprehensive & Modern */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           background: "var(--bg-surface)",
-          padding: "0.4rem 0.6rem",
+          padding: "0.5rem 0.75rem",
           borderRadius: "var(--radius-md)",
           border: "1px solid var(--border-subtle)",
           marginBottom: "1rem",
           flexWrap: "wrap",
-          gap: "0.5rem",
+          gap: "0.65rem",
         }}
       >
-        <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+        {/* Status Filter Tabs */}
+        <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", alignItems: "center" }}>
           {["all", "pending", "approved", "published", "rejected"].map((st) => (
             <button
               key={st}
@@ -292,6 +354,7 @@ export default function AdminCakesManagementPage() {
                 fontWeight: statusFilter === st ? 600 : 500,
                 textTransform: "capitalize",
                 cursor: "pointer",
+                transition: "all 0.15s ease",
               }}
             >
               {st === "all" ? "All Status" : st}
@@ -299,19 +362,92 @@ export default function AdminCakesManagementPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.35rem" }}>
-          <input
-            type="text"
-            placeholder="Search by name, flavour..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input"
-            style={{ width: "220px", padding: "0.35rem 0.65rem", fontSize: "0.78rem" }}
-          />
-          <button type="submit" className="btn-outline-gold" style={{ padding: "0.35rem 0.65rem", fontSize: "0.76rem" }}>
-            Search
-          </button>
-        </form>
+        {/* Filter Controls & Search */}
+        <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", alignItems: "center" }}>
+          {/* Category Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Category:
+            </span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="form-input"
+              style={{
+                padding: "0.32rem 0.55rem",
+                fontSize: "0.76rem",
+                borderRadius: "var(--radius-sm)",
+                background: "var(--bg-surface)",
+                cursor: "pointer",
+                minWidth: "130px",
+              }}
+            >
+              <option value="all">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Sort:
+            </span>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="form-input"
+              style={{
+                padding: "0.32rem 0.55rem",
+                fontSize: "0.76rem",
+                borderRadius: "var(--radius-sm)",
+                background: "var(--bg-surface)",
+                cursor: "pointer",
+              }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="id_asc">ID: Low → High (#1001)</option>
+              <option value="id_desc">ID: High → Low</option>
+              <option value="name_asc">Name: A to Z</option>
+              <option value="name_desc">Name: Z to A</option>
+            </select>
+          </div>
+
+          {/* Search by #ID, Name, Flavour */}
+          <form onSubmit={handleSearch} style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
+            <input
+              type="text"
+              placeholder="Search by #ID (e.g. 1001), name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input"
+              style={{ width: "210px", padding: "0.32rem 0.6rem", fontSize: "0.76rem" }}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  padding: "0 2px",
+                }}
+                title="Clear"
+              >
+                <X size={13} />
+              </button>
+            )}
+            <button type="submit" className="btn-outline-gold" style={{ padding: "0.32rem 0.6rem", fontSize: "0.76rem" }}>
+              Search
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Desktop Data Table - Compact Dense Row Height */}
@@ -328,8 +464,11 @@ export default function AdminCakesManagementPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
           <thead>
             <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
-              <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", width: "64px" }}>
+              <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", width: "56px" }}>
                 Photo
+              </th>
+              <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", width: "75px" }}>
+                ID
               </th>
               <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)" }}>
                 Confection
@@ -351,18 +490,18 @@ export default function AdminCakesManagementPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={7} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   Loading cakes...
                 </td>
               </tr>
-            ) : cakes.length === 0 ? (
+            ) : displayedCakes.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={7} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   No confections found matching your criteria.
                 </td>
               </tr>
             ) : (
-              cakes.map((cake) => {
+              displayedCakes.map((cake) => {
                 const isBusy = actionLoading === cake.id;
                 return (
                   <tr
@@ -393,6 +532,24 @@ export default function AdminCakesManagementPage() {
                           style={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
                       </div>
+                    </td>
+                    <td style={{ padding: "0.45rem 0.85rem" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono, monospace)",
+                          fontWeight: 700,
+                          fontSize: "0.76rem",
+                          color: "var(--gold-dark)",
+                          background: "var(--bg-cream)",
+                          border: "1px solid var(--border-subtle)",
+                          padding: "0.15rem 0.45rem",
+                          borderRadius: "4px",
+                          display: "inline-block",
+                          letterSpacing: "0.03em",
+                        }}
+                      >
+                        #{cake.display_id || getCakeDisplayId(cake)}
+                      </span>
                     </td>
                     <td style={{ padding: "0.45rem 0.85rem" }}>
                       <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{cake.name}</div>
@@ -538,7 +695,7 @@ export default function AdminCakesManagementPage() {
           gap: "0.65rem",
         }}
       >
-        {cakes.map((cake) => {
+        {displayedCakes.map((cake) => {
           const isBusy = actionLoading === cake.id;
           return (
             <div
@@ -573,9 +730,25 @@ export default function AdminCakesManagementPage() {
                   />
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <h4 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)", margin: 0 }}>
-                    {cake.name}
-                  </h4>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", marginBottom: "0.15rem" }}>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono, monospace)",
+                        fontWeight: 700,
+                        fontSize: "0.68rem",
+                        color: "var(--gold-dark)",
+                        background: "var(--bg-cream)",
+                        border: "1px solid var(--border-subtle)",
+                        padding: "0.06rem 0.32rem",
+                        borderRadius: "3px",
+                      }}
+                    >
+                      #{cake.display_id || getCakeDisplayId(cake)}
+                    </span>
+                    <h4 style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {cake.name}
+                    </h4>
+                  </div>
                   <p style={{ fontSize: "0.72rem", color: "var(--gold-dark)", fontStyle: "italic", margin: "0.1rem 0" }}>
                     {cake.flavour}
                   </p>
@@ -584,6 +757,7 @@ export default function AdminCakesManagementPage() {
                   </span>
                 </div>
                 <span
+                  style={{ alignSelf: "flex-start", whiteSpace: "nowrap" }}
                   className={`badge ${
                     cake.status === "published"
                       ? "badge-published"
@@ -752,7 +926,20 @@ export default function AdminCakesManagementPage() {
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+              <div className="form-group">
+                <label className="form-label">ID (4-Digit)</label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  value={editForm.display_id || ""}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, display_id: e.target.value.replace(/[^0-9]/g, "").slice(0, 4) }))}
+                  className="form-input"
+                  style={{ padding: "0.5rem 0.65rem", fontSize: "0.84rem", width: "100%", fontFamily: "monospace", fontWeight: 700, textAlign: "center" }}
+                  placeholder="1001"
+                />
+              </div>
+
               <div className="form-group">
                 <label className="form-label">Category</label>
                 <select

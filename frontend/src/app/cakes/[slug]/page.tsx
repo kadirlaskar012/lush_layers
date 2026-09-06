@@ -6,6 +6,7 @@ import CakeDetailClient from "../../../components/CakeDetailClient";
 import CakeCard from "../../../components/CakeCard";
 import { getCakeBySlug, getPublishedCakes } from "../../../lib/api";
 import { getOptimizedImageUrl } from "../../../lib/imageHelper";
+import { getCakeDisplayId } from "../../../lib/cakeHelper";
 import { Sparkles } from "lucide-react";
 
 export const revalidate = 60;
@@ -101,12 +102,27 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                 boxShadow: "var(--shadow-sm)",
                 border: "1px solid var(--border-subtle)",
                 aspectRatio: "1 / 1",
+                position: "relative",
                 minWidth: 0,
                 overflow: "hidden",
                 boxSizing: "border-box",
               }}
               id="cake-photo-container"
             >
+              {/* Unique 4-Digit Confection ID Badge */}
+              <div
+                className="cake-id-badge"
+                style={{
+                  position: "absolute",
+                  top: "12px",
+                  left: "12px",
+                  fontSize: "0.76rem",
+                  padding: "2.5px 7.5px",
+                }}
+              >
+                #{cake.display_id || getCakeDisplayId(cake)}
+              </div>
+
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={getOptimizedImageUrl(cake.image_url, { width: 800 })}
@@ -129,9 +145,28 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
 
             {/* Right: Cake Description & Order Form (STRICTLY ZERO PRICE) */}
             <div>
-              {cake.category_name && (
-                <span className="cake-category-badge">{cake.category_name}</span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
+                {cake.category_name && (
+                  <span className="cake-category-badge" style={{ margin: 0 }}>
+                    {cake.category_name}
+                  </span>
+                )}
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono, monospace)",
+                    fontSize: "0.72rem",
+                    color: "var(--gold-dark)",
+                    fontWeight: 700,
+                    background: "var(--bg-cream)",
+                    padding: "0.1rem 0.45rem",
+                    borderRadius: "3px",
+                    border: "1px solid var(--border-subtle)",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  CONFECTION #{cake.display_id || getCakeDisplayId(cake)}
+                </span>
+              </div>
 
               <h1
                 style={{
