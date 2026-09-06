@@ -293,9 +293,9 @@ def process_single_image(
     except Exception as e:
         raise ValueError(f"Corrupted or invalid image: {e}")
 
-    # Check for potential duplicates before heavy processing
-    file_hash, phash = processor.compute_image_hashes(image_path)
-    duplicate_info = db.find_duplicate_cake(file_hash=file_hash, phash=phash, threshold_distance=6)
+    # Check for potential duplicates before heavy processing via raw byte SHA-256
+    raw_hash = processor.compute_sha256(image_path)
+    duplicate_info = db.find_duplicate_cake(raw_hash=raw_hash, threshold_distance=8)
     is_duplicate = False
     duplicate_matched = None
     duplicate_score = 0.0
@@ -313,7 +313,7 @@ def process_single_image(
 
         if interactive_verbose:
             print()
-            print(Fore.YELLOW + Style.BRIGHT + "   ⚠️  [SUSPECTED DUPLICATE CAKE DETECTED]" + Style.RESET_ALL)
+            print(Fore.YELLOW + Style.BRIGHT + "   ⚠️  [SUSPECTED DUPLICATE CAKE DETECTED - 100% RAW FILE MATCH]" + Style.RESET_ALL)
             print(f"      {Fore.WHITE}Source Photo:    {Fore.YELLOW}{image_path.name}{Style.RESET_ALL}")
             print(f"      {Fore.WHITE}Matches Cake:    {Fore.CYAN}#{duplicate_of_disp} - {duplicate_matched.get('name')}{Style.RESET_ALL}")
             print(f"      {Fore.WHITE}Match Details:   {Fore.MAGENTA}{duplicate_reason}{Style.RESET_ALL}")
@@ -365,7 +365,7 @@ def process_single_image(
     # Upload to Cloudinary CDN if credentials exist
     if storage.is_configured:
         try:
-            cloud_res = storage.upload_image(master_path, public_id=job_base_name)
+            cloud_res = storage.upload_image(master_path, public_id_base=job_base_name)
             if cloud_res and cloud_res.get("secure_url"):
                 image_url = cloud_res["secure_url"]
                 cloudinary_id = cloud_res.get("public_id")
@@ -373,15 +373,16 @@ def process_single_image(
             if interactive_verbose:
                 warning(f"Cloudinary upload note: {e}. Utilizing fast local media URL.")
 
+    # Fetch categories for resolution
+    all_categories = db.get_categories(active_only=True)
+    cat_names = [c["name"] for c in all_categories]
+
     # --- STEP 3: AI SENSORY ANALYSIS ---
     ai_result = {}
     if use_ai:
         if interactive_verbose:
             step(current_step, total_steps, "Running Google Gemini Vision AI (Sensory analysis & storytelling)...")
         current_step += 1
-        
-        all_categories = db.get_categories(active_only=True)
-        cat_names = [c["name"] for c in all_categories]
         
         try:
             ai_result = ai_analyzer.analyze_cake_image(
@@ -420,6 +421,36 @@ def process_single_image(
         step(current_step, total_steps, "Writing record to SQLite & replicating to Supabase PostgreSQL...")
     current_step += 1
     
+    # Compute compound studio master fingerprints
+    master_fingerprints = processor.compute_compound_fingerprints(master_path)
+    file_hash = master_fingerprints.get("sha256") or raw_hash
+    phash = master_fingerprints.get("phash")
+    color_hist = master_fingerprints.get("color_hist")
+
+    if not is_duplicate:
+        visual_dup_info = db.find_duplicate_cake(
+            file_hash=file_hash,
+            phash=phash,
+            color_hist=color_hist,
+            threshold_distance=8
+        )
+        if visual_dup_info:
+            is_duplicate = True
+            duplicate_matched = visual_dup_info["matched_cake"]
+            duplicate_score = visual_dup_info["similarity"]
+            duplicate_reason = visual_dup_info["reason"]
+            duplicate_of_id = duplicate_matched.get("id")
+            duplicate_of_disp = duplicate_matched.get("display_id")
+
+            if interactive_verbose:
+                print()
+                print(Fore.YELLOW + Style.BRIGHT + f"   ⚠️  [SUSPECTED DUPLICATE CAKE DETECTED - {duplicate_score}% VISUAL MATCH]" + Style.RESET_ALL)
+                print(f"      {Fore.WHITE}Processed Photo: {Fore.YELLOW}{master_path.name}{Style.RESET_ALL}")
+                print(f"      {Fore.WHITE}Matches Cake:    {Fore.CYAN}#{duplicate_of_disp} - {duplicate_matched.get('name')}{Style.RESET_ALL}")
+                print(f"      {Fore.WHITE}Match Details:   {Fore.MAGENTA}{duplicate_reason}{Style.RESET_ALL}")
+                print(f"      {Fore.GREEN}ℹ️  Continuing upload (no auto-skip). Flagged in Admin Panel -> Duplicate Review.{Style.RESET_ALL}")
+                print()
+
     cake_record = {
         "id": cake_id,
         "name": final_name,
@@ -430,8 +461,10 @@ def process_single_image(
         "image_url": image_url,
         "cloudinary_public_id": cloudinary_id,
         "status": "duplicate" if is_duplicate else "pending",
+        "raw_hash": raw_hash,
         "file_hash": file_hash,
         "phash": phash,
+        "color_hist": color_hist,
         "is_duplicate": 1 if is_duplicate else 0,
         "duplicate_of_id": duplicate_of_id,
         "duplicate_of_display_id": duplicate_of_disp,
@@ -494,10 +527,11 @@ def interactive_wizard():
         print(" 13. " + Fore.RED + "🗑️  Delete a Cake Record" + Style.RESET_ALL)
         print(" 14. " + Fore.BLUE + "🔄 Refresh Website Cache (Revalidate)" + Style.RESET_ALL)
         print(" 15. " + Fore.WHITE + "🩺 System Health Diagnostics" + Style.RESET_ALL)
+        print(" 16. " + Fore.MAGENTA + "🔍 Run Multi-Tier Duplicate Fingerprint Backfill" + Style.RESET_ALL)
         print("  0. " + Fore.WHITE + "❌ Exit" + Style.RESET_ALL)
         print()
         
-        choice = input(Fore.YELLOW + "Enter choice [0-15]: " + Style.RESET_ALL).strip()
+        choice = input(Fore.YELLOW + "Enter choice [0-16]: " + Style.RESET_ALL).strip()
         
         if choice == "0":
             print(Fore.CYAN + "\nExiting Lush Layers Master Control. Happy Baking!\n")
@@ -588,8 +622,12 @@ def interactive_wizard():
             action_diagnostics()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
+        elif choice == "16":
+            action_backfill_fingerprints()
+            input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
+            
         else:
-            warning("Invalid choice. Please enter a number from 0 to 15.")
+            warning("Invalid choice. Please enter a number from 0 to 16.")
             time.sleep(1)
 
 def action_interactive_add():
@@ -807,6 +845,18 @@ def action_delete(cake_id: str):
             error("Failed to delete cake record.")
     except Exception as e:
         error(f"Delete operation failed: {e}")
+
+def action_backfill_fingerprints():
+    banner()
+    print(Fore.MAGENTA + Style.BRIGHT + "\n=== 🔍 MULTI-TIER DUPLICATE FINGERPRINT BACKFILL ===" + Style.RESET_ALL)
+    info("Scanning all cakes in SQLite & Supabase PostgreSQL...")
+    info("Computing Raw SHA-256, Studio DCT pHash, and HSV Color Histograms...")
+    res = db.backfill_cake_fingerprints()
+    print()
+    success(f"Backfill Complete! Processed {res['total_cakes']} cakes, updated {res['updated']} cakes with compound fingerprints.")
+    for d in res.get("details", []):
+        print(f"  • #{d['display_id']} {Fore.WHITE}{d['name']}{Style.RESET_ALL}: raw={d['raw_hash']}... pHash={d['phash']}")
+    print()
 
 def action_revalidate():
     info("Triggering on-demand Next.js ISR cache revalidation...")

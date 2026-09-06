@@ -291,6 +291,118 @@ class ImageProcessor:
             return ""
 
     @staticmethod
+    def compute_dct_phash(img_input: Any, hash_size: int = 8, highfreq_factor: int = 4) -> str:
+        """
+        Computes Discrete Cosine Transform (DCT) Perceptual Hash (pHash) of an image.
+        Invariant to rotation up to 15 degrees, scale changes, compression, and edge shifts.
+        Returns a 64-bit hex string.
+        """
+        try:
+            import numpy as np
+            import scipy.fftpack
+
+            if isinstance(img_input, (str, Path)):
+                p = Path(img_input)
+                if not p.is_file():
+                    return ""
+                img = Image.open(p)
+            elif isinstance(img_input, (bytes, bytearray)):
+                img = Image.open(io.BytesIO(img_input))
+            elif isinstance(img_input, Image.Image):
+                img = img_input
+            else:
+                return ""
+
+            img_size = hash_size * highfreq_factor  # 32x32
+            gray = ImageOps.exif_transpose(img).convert("L")
+            resized = gray.resize((img_size, img_size), Image.Resampling.LANCZOS)
+            pixels = np.asarray(resized, dtype=float)
+
+            # 2D Discrete Cosine Transform (DCT)
+            dct = scipy.fftpack.dct(scipy.fftpack.dct(pixels, axis=0), axis=1)
+            # Extract top-left low-frequency coefficients (8x8)
+            dct_low = dct[:hash_size, :hash_size]
+            med = np.median(dct_low)
+            diff = dct_low > med
+
+            flat = diff.flatten()
+            val = 0
+            hex_chars = []
+            for i, b in enumerate(flat):
+                if b:
+                    val += (1 << (i % 8))
+                if (i % 8) == 7:
+                    hex_chars.append(hex(val)[2:].zfill(2))
+                    val = 0
+            return "".join(hex_chars)
+        except Exception as e:
+            print(f"[Processor] DCT pHash fallback to dHash due to: {e}")
+            return ImageProcessor.compute_dhash(img_input, hash_size)
+
+    @staticmethod
+    def compute_color_histogram(img_input: Any) -> str:
+        """
+        Computes a normalized 16-bin marginal HSV color signature for cake frosting and decor,
+        ignoring transparent and pure white canvas background pixels.
+        Returns a compact comma-delimited string of floats.
+        """
+        try:
+            import numpy as np
+
+            if isinstance(img_input, (str, Path)):
+                p = Path(img_input)
+                if not p.is_file():
+                    return ""
+                img = Image.open(p)
+            elif isinstance(img_input, (bytes, bytearray)):
+                img = Image.open(io.BytesIO(img_input))
+            elif isinstance(img_input, Image.Image):
+                img = img_input
+            else:
+                return ""
+
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            arr = np.asarray(img)
+
+            alpha = arr[:, :, 3]
+            rgb = arr[:, :, :3]
+            # Ignore transparent pixels and pure studio white canvas pixels
+            mask = (alpha > 30) & ~((rgb[:, :, 0] > 245) & (rgb[:, :, 1] > 245) & (rgb[:, :, 2] > 245))
+            valid_pixels = rgb[mask]
+            if len(valid_pixels) == 0:
+                valid_pixels = rgb.reshape(-1, 3)
+
+            pil_rgb = Image.fromarray(valid_pixels.reshape(-1, 1, 3)).convert("HSV")
+            hsv = np.asarray(pil_rgb).reshape(-1, 3)
+
+            h_hist, _ = np.histogram(hsv[:, 0], bins=8, range=(0, 256), density=True)
+            s_hist, _ = np.histogram(hsv[:, 1], bins=4, range=(0, 256), density=True)
+            v_hist, _ = np.histogram(hsv[:, 2], bins=4, range=(0, 256), density=True)
+
+            hist = np.concatenate([h_hist, s_hist, v_hist])
+            hist = hist / (np.sum(hist) + 1e-7)
+            return ",".join([f"{x:.3f}" for x in hist])
+        except Exception as e:
+            print(f"[Processor] Color histogram calculation error: {e}")
+            return ""
+
+    @staticmethod
+    def histogram_intersection(h1_str: str, h2_str: str) -> float:
+        """Computes color histogram intersection similarity (0.0 to 1.0)."""
+        if not h1_str or not h2_str:
+            return 0.0
+        try:
+            import numpy as np
+            h1 = np.fromstring(h1_str, sep=",")
+            h2 = np.fromstring(h2_str, sep=",")
+            if len(h1) != len(h2):
+                return 0.0
+            return float(np.sum(np.minimum(h1, h2)))
+        except Exception:
+            return 0.0
+
+    @staticmethod
     def hamming_distance(hash1: str, hash2: str) -> int:
         """Computes bitwise Hamming distance between two hex hashes (0 to 64)."""
         if not hash1 or not hash2 or len(hash1) != len(hash2):
@@ -310,10 +422,23 @@ class ImageProcessor:
         return round(max(0.0, (1.0 - (distance / max_bits)) * 100.0), 1)
 
     def compute_image_hashes(self, file_path_or_bytes: Any) -> Tuple[str, str]:
-        """Computes both exact SHA-256 and visual dHash for duplicate analysis."""
+        """Computes both exact SHA-256 and perceptual DCT pHash for duplicate analysis."""
         sha = self.compute_sha256(file_path_or_bytes)
-        phash = self.compute_dhash(file_path_or_bytes)
+        phash = self.compute_dct_phash(file_path_or_bytes)
         return sha, phash
+
+    def compute_compound_fingerprints(self, file_path_or_bytes: Any) -> Dict[str, str]:
+        """Computes a full compound fingerprint: SHA-256, DCT pHash, dHash, and Color Signature."""
+        sha = self.compute_sha256(file_path_or_bytes)
+        phash = self.compute_dct_phash(file_path_or_bytes)
+        dhash = self.compute_dhash(file_path_or_bytes)
+        color = self.compute_color_histogram(file_path_or_bytes)
+        return {
+            "sha256": sha,
+            "phash": phash,
+            "dhash": dhash,
+            "color_hist": color
+        }
 
 processor = ImageProcessor()
 

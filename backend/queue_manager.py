@@ -176,12 +176,20 @@ class BackgroundJobQueue:
 
             sizes = (ai_data.get("available_sizes") if ai_data else None) or ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]
 
-            # Compute image hashes and check for duplicates
-            file_hash, phash = processor.compute_image_hashes(master_file_path)
-            if not file_hash:
-                file_hash, phash = processor.compute_image_hashes(file_path)
+            # Compute image hashes and fingerprints (both raw upload and studio master)
+            raw_hash = processor.compute_sha256(file_path)
+            master_fingerprints = processor.compute_compound_fingerprints(master_file_path)
+            file_hash = master_fingerprints.get("sha256") or raw_hash
+            phash = master_fingerprints.get("phash")
+            color_hist = master_fingerprints.get("color_hist")
 
-            dup_info = db.find_duplicate_cake(file_hash=file_hash, phash=phash, threshold_distance=6)
+            dup_info = db.find_duplicate_cake(
+                raw_hash=raw_hash,
+                file_hash=file_hash,
+                phash=phash,
+                color_hist=color_hist,
+                threshold_distance=8
+            )
             is_duplicate = False
             duplicate_score = 0.0
             duplicate_reason = None
@@ -195,7 +203,7 @@ class BackgroundJobQueue:
                 duplicate_reason = dup_info["reason"]
                 duplicate_of_id = matched.get("id")
                 duplicate_of_disp = matched.get("display_id")
-                print(f"[Queue][{worker_name}] ⚠️ Suspected duplicate detected: Matches #{duplicate_of_disp} ('{matched.get('name')}') - {duplicate_reason}")
+                print(f"[Queue][{worker_name}] [DUPLICATE DETECTED] Matches #{duplicate_of_disp} ('{matched.get('name')}') - {duplicate_reason}")
 
             cake_record = {
                 "name": clean_title,
@@ -206,8 +214,10 @@ class BackgroundJobQueue:
                 "image_url": upload_res["image_url"],
                 "cloudinary_public_id": upload_res.get("cloudinary_public_id"),
                 "status": "duplicate" if is_duplicate else "pending",
+                "raw_hash": raw_hash,
                 "file_hash": file_hash,
                 "phash": phash,
+                "color_hist": color_hist,
                 "is_duplicate": 1 if is_duplicate else 0,
                 "duplicate_of_id": duplicate_of_id,
                 "duplicate_of_display_id": duplicate_of_disp,

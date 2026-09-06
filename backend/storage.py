@@ -15,6 +15,10 @@ class StorageManager:
         self.is_cloudinary_configured = False
         self._init_cloudinary()
 
+    @property
+    def is_configured(self) -> bool:
+        return self.is_cloudinary_configured
+
     def _init_cloudinary(self):
         if (
             HAS_CLOUDINARY_LIB

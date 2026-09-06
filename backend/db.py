@@ -162,8 +162,10 @@ class Database:
 
         # Ensure duplicate detection columns exist
         for col_name, col_type in [
+            ("raw_hash", "TEXT"),
             ("file_hash", "TEXT"),
             ("phash", "TEXT"),
+            ("color_hist", "TEXT"),
             ("is_duplicate", "INTEGER DEFAULT 0"),
             ("duplicate_of_id", "TEXT"),
             ("duplicate_of_display_id", "TEXT"),
@@ -176,6 +178,7 @@ class Database:
                 pass
 
         try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_raw_hash ON cakes(raw_hash)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_file_hash ON cakes(file_hash)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_phash ON cakes(phash)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_is_duplicate ON cakes(is_duplicate)")
@@ -553,8 +556,10 @@ class Database:
         is_inspiration = 1 if cake_data.get("is_inspiration") else 0
 
         status = cake_data.get("status", "pending")
+        raw_hash = cake_data.get("raw_hash")
         file_hash = cake_data.get("file_hash")
         phash = cake_data.get("phash")
+        color_hist = cake_data.get("color_hist")
         is_duplicate = 1 if cake_data.get("is_duplicate") else 0
         duplicate_of_id = cake_data.get("duplicate_of_id")
         duplicate_of_display_id = cake_data.get("duplicate_of_display_id")
@@ -567,9 +572,9 @@ class Database:
                 available_sizes, image_url, cloudinary_public_id, status,
                 ai_metadata, created_at, updated_at, published_at, display_id,
                 is_hero, is_trending, is_inspiration,
-                file_hash, phash, is_duplicate, duplicate_of_id, duplicate_of_display_id,
+                raw_hash, file_hash, phash, color_hist, is_duplicate, duplicate_of_id, duplicate_of_display_id,
                 duplicate_score, duplicate_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             cake_id,
             cake_data.get("name", "Untitled Confection"),
@@ -589,8 +594,10 @@ class Database:
             is_hero,
             is_trending,
             is_inspiration,
+            raw_hash,
             file_hash,
             phash,
+            color_hist,
             is_duplicate,
             duplicate_of_id,
             duplicate_of_display_id,
@@ -643,7 +650,7 @@ class Database:
                 "name", "slug", "flavour", "category_id", "description",
                 "image_url", "cloudinary_public_id", "status", "display_id",
                 "duplicate_of_id", "duplicate_of_display_id", "duplicate_reason",
-                "file_hash", "phash"
+                "raw_hash", "file_hash", "phash", "color_hist"
             ):
                 fields.append(f"{k} = ?")
                 params.append(v)
@@ -707,23 +714,34 @@ class Database:
 
     def find_duplicate_cake(
         self,
+        raw_hash: Optional[str] = None,
         file_hash: Optional[str] = None,
         phash: Optional[str] = None,
-        threshold_distance: int = 6,
+        color_hist: Optional[str] = None,
+        threshold_distance: int = 8,
         exclude_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """
-        Scans existing active cakes for exact SHA-256 match or visual dHash similarity (Hamming distance <= threshold_distance).
-        Returns a dict with matched_cake, similarity percentage, reason, and distance, or None if unique.
+        Scans existing active cakes for:
+        - Tier 1: Exact byte match (100% duplicate) via raw_hash or file_hash.
+        - Tier 2: Perceptual DCT pHash visual similarity (Hamming dist <= threshold_distance, default 8).
+        - Tier 3: Color-corroborated visual match (borderline dist 9-12 bits + color correlation >= 88%).
+        Returns a dict with matched_cake, similarity percentage, reason, tier, and distance, or None if unique.
         """
         from backend.processor import processor
         conn = self._get_conn()
         cursor = conn.cursor()
 
-        # 1. Exact SHA-256 hash match (100% duplicate)
-        if file_hash:
-            query = "SELECT * FROM cakes WHERE file_hash = ? AND status != 'rejected'"
-            params = [file_hash]
+        # 1. Tier 1: Exact byte match (100% duplicate) via raw_hash or file_hash
+        hash_candidates = [h for h in (raw_hash, file_hash) if h]
+        if hash_candidates:
+            placeholders = ", ".join(["?"] * len(hash_candidates))
+            query = f"""
+                SELECT * FROM cakes
+                WHERE (raw_hash IN ({placeholders}) OR file_hash IN ({placeholders}))
+                  AND status != 'rejected'
+            """
+            params = hash_candidates + hash_candidates
             if exclude_id:
                 query += " AND id != ?"
                 params.append(exclude_id)
@@ -738,14 +756,15 @@ class Database:
                     "matched_cake": matched,
                     "similarity": 100.0,
                     "distance": 0,
+                    "tier": "exact",
                     "reason": f"Exact byte match (100%) with #{d_id} - {matched.get('name', '')}"
                 }
 
-        # 2. Perceptual dHash visual similarity match
+        # 2. Tier 2: Perceptual DCT pHash visual similarity match
         if phash:
             query = """
                 SELECT id, name, slug, flavour, category_id, image_url, display_id,
-                       phash, file_hash, status, created_at
+                       phash, file_hash, raw_hash, color_hist, status, created_at
                 FROM cakes
                 WHERE phash IS NOT NULL AND phash != '' AND status != 'rejected'
             """
@@ -765,20 +784,138 @@ class Database:
                     min_distance = dist
                     best_match = cand
 
+            # Tier 2: High Visual Similarity (Hamming dist <= threshold_distance, default 8 bits = >=87.5%)
             if best_match and min_distance <= threshold_distance:
                 sim_pct = processor.similarity_percentage(min_distance)
                 matched = self._format_cake_dict(best_match)
                 conn.close()
                 d_id = matched.get("display_id") or ""
+
+                # Cross-check color histogram if available
+                col_sim = 0.0
+                cand_color = best_match.get("color_hist") if isinstance(best_match, dict) else dict(best_match).get("color_hist")
+                if color_hist and cand_color:
+                    col_sim = processor.histogram_intersection(color_hist, cand_color)
+
+                if col_sim >= 0.85:
+                    reason = f"Visual match ({sim_pct}%) & color match ({round(col_sim*100, 1)}%) with #{d_id} - {matched.get('name', '')}"
+                else:
+                    reason = f"Visual similarity ({sim_pct}%) with #{d_id} - {matched.get('name', '')}"
+
                 return {
                     "matched_cake": matched,
                     "similarity": sim_pct,
                     "distance": min_distance,
-                    "reason": f"Visual similarity ({sim_pct}%) with #{d_id} - {matched.get('name', '')}"
+                    "tier": "visual",
+                    "reason": reason
                 }
+
+            # Tier 3: Borderline visual match (dist 9 to 12 bits) corroborated by strong color similarity (>= 88%)
+            if best_match and min_distance <= 12 and color_hist:
+                cand_color = best_match.get("color_hist") if isinstance(best_match, dict) else dict(best_match).get("color_hist")
+                if cand_color:
+                    col_sim = processor.histogram_intersection(color_hist, cand_color)
+                    if col_sim >= 0.88:
+                        vis_sim = processor.similarity_percentage(min_distance)
+                        combined_sim = round((vis_sim + col_sim * 100.0) / 2.0, 1)
+                        matched = self._format_cake_dict(best_match)
+                        conn.close()
+                        d_id = matched.get("display_id") or ""
+                        return {
+                            "matched_cake": matched,
+                            "similarity": combined_sim,
+                            "distance": min_distance,
+                            "tier": "color_corroborated",
+                            "reason": f"Visual & color palette match ({combined_sim}%) with #{d_id} - {matched.get('name', '')}"
+                        }
 
         conn.close()
         return None
+
+    def backfill_cake_fingerprints(self) -> Dict[str, Any]:
+        """
+        Scans all cakes in the database and computes missing or upgraded fingerprints
+        (raw_hash, file_hash, DCT pHash, color_hist) from local media files.
+        Syncs updates to both SQLite and Supabase PostgreSQL.
+        """
+        from backend.processor import processor
+        from backend.config import settings
+
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, display_id, name, image_url, ai_metadata, raw_hash, file_hash, phash, color_hist FROM cakes")
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+
+        updated_count = 0
+        details = []
+
+        for row in rows:
+            cake_id = row["id"]
+            d_id = row.get("display_id") or "N/A"
+            name = row.get("name") or "Cake"
+            img_url = row.get("image_url") or ""
+
+            # 1. Locate processed local file
+            local_processed_path = None
+            if img_url:
+                fname = img_url.split("/")[-1]
+                p = settings.PROCESSED_DIR / fname
+                if p.is_file():
+                    local_processed_path = p
+
+            # 2. Locate raw original file from ai_metadata or upload dir
+            local_raw_path = None
+            ai_meta = {}
+            if row.get("ai_metadata"):
+                try:
+                    ai_meta = json.loads(row["ai_metadata"]) if isinstance(row["ai_metadata"], str) else row["ai_metadata"]
+                except Exception:
+                    ai_meta = {}
+
+            orig_filename = ai_meta.get("original_file") or ai_meta.get("source_file")
+            if orig_filename and settings.UPLOAD_DIR.exists():
+                for upload_file in settings.UPLOAD_DIR.iterdir():
+                    if upload_file.is_file() and orig_filename in upload_file.name:
+                        local_raw_path = upload_file
+                        break
+
+            updates = {}
+            if local_raw_path and local_raw_path.is_file():
+                raw_hash = processor.compute_sha256(local_raw_path)
+                if raw_hash:
+                    updates["raw_hash"] = raw_hash
+
+            if local_processed_path and local_processed_path.is_file():
+                file_hash = processor.compute_sha256(local_processed_path)
+                phash = processor.compute_dct_phash(local_processed_path)
+                color_hist = processor.compute_color_histogram(local_processed_path)
+                if file_hash:
+                    updates["file_hash"] = file_hash
+                if phash:
+                    updates["phash"] = phash
+                if color_hist:
+                    updates["color_hist"] = color_hist
+
+            # If no processed local file, but raw local file exists, compute from raw
+            if not updates.get("phash") and local_raw_path and local_raw_path.is_file():
+                updates["file_hash"] = processor.compute_sha256(local_raw_path)
+                updates["phash"] = processor.compute_dct_phash(local_raw_path)
+                updates["color_hist"] = processor.compute_color_histogram(local_raw_path)
+
+            if updates:
+                self.update_cake(cake_id, updates)
+                updated_count += 1
+                details.append({
+                    "display_id": d_id,
+                    "name": name,
+                    "raw_hash": updates.get("raw_hash", "")[:12],
+                    "file_hash": updates.get("file_hash", "")[:12],
+                    "phash": updates.get("phash", "")
+                })
+                print(f"[DB][Backfill] Cake #{d_id} ('{name}'): raw={updates.get('raw_hash', '')[:8]}... pHash={updates.get('phash')}")
+
+        return {"total_cakes": len(rows), "updated": updated_count, "details": details}
 
     def get_duplicate_cakes(self) -> List[Dict[str, Any]]:
         """Retrieves all cakes flagged as duplicates enriched with the matched original cake metadata."""
