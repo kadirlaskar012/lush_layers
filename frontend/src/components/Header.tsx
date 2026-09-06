@@ -85,7 +85,6 @@ export default function Header() {
             <Link href="/#categories" className="header-nav-link">Categories</Link>
             <Link href="/about" className="header-nav-link">Our Story</Link>
             <Link href="/reviews" className="header-nav-link">Guest Reviews</Link>
-            <Link href="/track" className="header-nav-link" id="nav-track-order-link">Track Order</Link>
             <Link href="/contact" className="header-nav-link">Contact</Link>
             <Link
               href="/admin"
@@ -153,10 +152,29 @@ export default function Header() {
             </button>
           </form>
 
+          {/* Desktop Track Order CTA Button */}
+          <div className="desktop-actions">
+            <Link
+              href="/track"
+              className="header-track-cta icon-hover-slide"
+              id="header-track-order-cta"
+            >
+              <PackageCheck size={15} />
+              <span>Track Order</span>
+            </Link>
+          </div>
 
-
-          {/* Mobile Right Controls: Search Toggle + Hamburger */}
+          {/* Mobile Right Controls: Track Order CTA + Search Toggle + Hamburger */}
           <div className="mobile-controls">
+            <Link
+              href="/track"
+              className="mobile-track-cta icon-hover-slide"
+              id="mobile-header-track-cta"
+              aria-label="Track your order"
+            >
+              <PackageCheck size={13} />
+              <span>Track</span>
+            </Link>
             <button
               onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
               className="icon-hover-rotate"

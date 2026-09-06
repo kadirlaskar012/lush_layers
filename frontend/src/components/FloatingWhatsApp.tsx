@@ -188,56 +188,19 @@ export default function FloatingWhatsApp() {
   return (
     <>
       {/* Floating Trigger Button */}
-      <aside aria-label="WhatsApp floating contact" style={{ position: "fixed", bottom: "24px", right: "24px", zIndex: 9999 }}>
+      <aside className="floating-wa-aside" aria-label="WhatsApp floating contact">
         <button
           id="floating-whatsapp-trigger"
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Close WhatsApp enquiry" : "Open WhatsApp enquiry"}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.6rem",
-            padding: "0.6rem 1.1rem 0.6rem 0.8rem",
-            background: "linear-gradient(135deg, #1C5A37 0%, #0F3B22 100%)",
-            color: "#FAF8F5",
-            border: "1.5px solid var(--gold)",
-            borderRadius: "9999px",
-            cursor: "pointer",
-            boxShadow: "0 8px 24px rgba(28, 90, 55, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15)",
-            transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-            fontFamily: "var(--font-heading)",
-            fontSize: "0.86rem",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
-            e.currentTarget.style.boxShadow = "0 12px 30px rgba(28, 90, 55, 0.45), 0 4px 12px rgba(191, 154, 62, 0.25)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0) scale(1)";
-            e.currentTarget.style.boxShadow = "0 8px 24px rgba(28, 90, 55, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15)";
-          }}
+          className="floating-wa-btn"
         >
-          <div
-            style={{
-              width: "38px",
-              height: "38px",
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#FFFFFF",
-              flexShrink: 0,
-              boxShadow: "0 2px 8px rgba(37, 211, 102, 0.4)",
-            }}
-          >
+          <div className="floating-wa-icon-box">
             {isOpen ? <X size={20} /> : <WhatsAppIcon size={22} />}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }}>
+          <div className="floating-wa-label">
             <span style={{ fontSize: "0.84rem", fontWeight: 700, lineHeight: 1.15, color: "#FFFFFF" }}>
               {isOpen ? "Close Enquiry" : "Order on WhatsApp"}
             </span>

@@ -16,9 +16,19 @@ import {
   Copy,
   Check,
   Calendar,
+  Clock,
+  Sparkles,
   X,
 } from "lucide-react";
 import WhatsAppIcon from "../../../components/WhatsAppIcon";
+
+const STANDARD_SIZES = [
+  { label: "0.5 kg (Small)", val: "0.5 kg" },
+  { label: "1.0 kg (Medium)", val: "1.0 kg" },
+  { label: "1.5 kg (Celebration)", val: "1.5 kg" },
+  { label: "2.0 kg (Grand)", val: "2.0 kg" },
+  { label: "3.0 kg (Heirloom)", val: "3.0 kg" },
+];
 
 export default function AdminOrdersPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
@@ -82,13 +92,49 @@ export default function AdminOrdersPage() {
 
   const handleOpenEditModal = (enq: Enquiry) => {
     setEditingEnquiry(enq);
+    let dt = enq.delivery_date || "";
+    if (dt) {
+      const d = new Date(dt);
+      if (!isNaN(d.getTime())) {
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        dt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+    }
     setEditForm({
       selected_size: enq.selected_size || "1.0 kg",
-      delivery_date: enq.delivery_date || "",
+      delivery_date: dt,
       admin_notes: enq.admin_notes || "",
       status: enq.status,
       flavour: enq.flavour || "",
     });
+  };
+
+  const setQuickDate = (daysAhead: number, hour: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysAhead);
+    d.setHours(hour, 0, 0, 0);
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const formatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setEditForm((prev) => ({ ...prev, delivery_date: formatted }));
+  };
+
+  const formatReadableDate = (dtStr: string) => {
+    if (!dtStr) return null;
+    try {
+      const d = new Date(dtStr);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-IN", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    } catch {}
+    return dtStr;
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -624,31 +670,140 @@ export default function AdminOrdersPage() {
             </div>
 
             <form onSubmit={handleSaveEdit}>
-              {/* Portion / Size */}
-              <div className="form-group" style={{ marginBottom: "0.85rem" }}>
-                <label className="form-label">Order Portion / Size (koto size order):</label>
+              {/* Portion / Size with standard pills */}
+              <div className="form-group" style={{ marginBottom: "0.95rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <label className="form-label" style={{ margin: 0 }}>Order Portion / Size (koto size order):</label>
+                  <span style={{ fontSize: "0.7rem", color: "var(--gold-dark)", display: "flex", alignItems: "center", gap: "0.25rem", fontWeight: 600 }}>
+                    <Sparkles size={11} />
+                    <span>Auto-adds to cake catalog</span>
+                  </span>
+                </div>
+
+                {/* Size quick pills */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "0.4rem" }}>
+                  {STANDARD_SIZES.map((s) => {
+                    const isSelected = editForm.selected_size.toLowerCase().includes(s.val.toLowerCase());
+                    return (
+                      <button
+                        key={s.val}
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, selected_size: s.val })}
+                        style={{
+                          fontSize: "0.74rem",
+                          padding: "0.22rem 0.6rem",
+                          borderRadius: "var(--radius-full)",
+                          background: isSelected ? "var(--gold-gloss)" : "var(--bg-cream)",
+                          color: isSelected ? "#FFFFFF" : "var(--text-secondary)",
+                          border: `1px solid ${isSelected ? "var(--gold)" : "var(--border-subtle)"}`,
+                          cursor: "pointer",
+                          fontWeight: isSelected ? 700 : 500,
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {s.val}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <input
                   type="text"
                   value={editForm.selected_size}
                   onChange={(e) => setEditForm({ ...editForm, selected_size: e.target.value })}
-                  placeholder="e.g. 1.0 kg, 2.0 kg, 2 Tier Petite, 3 Tier Grand..."
+                  placeholder="e.g. 0.5 kg, 1.0 kg, 1.5 kg, 2.0 kg, 3.0 kg..."
                   className="form-input"
                   style={{ padding: "0.45rem 0.75rem", fontSize: "0.84rem" }}
                   required
                 />
+                <p style={{ margin: "0.25rem 0 0", fontSize: "0.71rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+                  Tip: If customer ordered 1.5 kg or 3 kg, saving this will automatically add this size option to the cake on the website!
+                </p>
               </div>
 
-              {/* Delivery Date */}
-              <div className="form-group" style={{ marginBottom: "0.85rem" }}>
-                <label className="form-label">Estimated Delivery / Celebration Date:</label>
+              {/* Delivery Date & Time Picker */}
+              <div className="form-group" style={{ marginBottom: "0.95rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                  <label className="form-label" style={{ margin: 0 }}>Estimated Delivery / Celebration Date & Time:</label>
+                  <Clock size={13} style={{ color: "var(--gold-dark)" }} />
+                </div>
+
                 <input
-                  type="text"
+                  type="datetime-local"
                   value={editForm.delivery_date}
                   onChange={(e) => setEditForm({ ...editForm, delivery_date: e.target.value })}
-                  placeholder="e.g. 2026-09-18, Next Saturday 5 PM..."
                   className="form-input"
-                  style={{ padding: "0.45rem 0.75rem", fontSize: "0.84rem" }}
+                  style={{ padding: "0.48rem 0.75rem", fontSize: "0.84rem" }}
                 />
+
+                {/* Quick Date Shortcuts */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem", marginTop: "0.35rem" }}>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate(1, 16)}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "0.15rem 0.45rem",
+                      borderRadius: "var(--radius-xs)",
+                      background: "var(--bg-cream)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Tomorrow 4 PM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate(2, 17)}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "0.15rem 0.45rem",
+                      borderRadius: "var(--radius-xs)",
+                      background: "var(--bg-cream)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    In 2 Days 5 PM
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate(3, 18)}
+                    style={{
+                      fontSize: "0.7rem",
+                      padding: "0.15rem 0.45rem",
+                      borderRadius: "var(--radius-xs)",
+                      background: "var(--bg-cream)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    In 3 Days 6 PM
+                  </button>
+                </div>
+
+                {editForm.delivery_date && (
+                  <div
+                    style={{
+                      marginTop: "0.35rem",
+                      padding: "0.3rem 0.6rem",
+                      background: "var(--bg-cream)",
+                      borderRadius: "var(--radius-xs)",
+                      fontSize: "0.75rem",
+                      color: "var(--gold-dark)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.35rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Calendar size={12} />
+                    <span>Scheduled: {formatReadableDate(editForm.delivery_date)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Status */}

@@ -503,13 +503,33 @@ class EnquiryUpdateRequest(BaseModel):
     cake_name: Optional[str] = None
     custom_message: Optional[str] = None
 
+class SyncCakeSizeRequest(BaseModel):
+    cake_id_or_name: str
+    size: str
+
+@app.post("/api/cakes/sync-size")
+async def sync_cake_size(payload: SyncCakeSizeRequest):
+    """
+    Directly ensures a specific size is available on a cake in the database.
+    """
+    cake = db.auto_sync_cake_size(payload.cake_id_or_name, payload.size)
+    if not cake:
+        raise HTTPException(status_code=404, detail="Cake not found to sync size.")
+    return {"message": f"Size '{payload.size}' synced successfully.", "cake": cake}
+
 @app.post("/api/enquiries")
 async def create_enquiry(payload: EnquiryCreateRequest):
     """
     Registers customer WhatsApp order/enquiry. ZERO PRICE.
     Generates a unique random enquiry number (e.g. LL-7492).
+    Automatically adds new cake size to the cake in database if not present.
     """
     enquiry = db.create_enquiry(payload.dict())
+    if payload.selected_size and payload.cake_name:
+        try:
+            db.auto_sync_cake_size(payload.cake_name, payload.selected_size)
+        except Exception as e:
+            print(f"[Cake Size Sync Error on Create]: {e}")
     return {
         "message": "Enquiry registered successfully.",
         "enquiry": enquiry,
@@ -548,10 +568,18 @@ async def track_enquiry(enquiry_number: str):
 async def update_enquiry_details(enquiry_id: str, payload: EnquiryUpdateRequest):
     """
     Updates status, portion size, delivery date, or admin notes for an enquiry.
+    Automatically adds the selected portion size to the cake's available sizes on the website if not present.
     """
     updated = db.update_enquiry(enquiry_id, payload.dict(exclude_unset=True))
     if not updated:
         raise HTTPException(status_code=404, detail="Enquiry not found.")
+    
+    if payload.selected_size and updated.get("cake_name"):
+        try:
+            db.auto_sync_cake_size(updated["cake_name"], payload.selected_size)
+        except Exception as e:
+            print(f"[Cake Size Sync Error on Update]: {e}")
+
     return {"message": "Enquiry updated successfully.", "enquiry": updated}
 
 @app.delete("/api/enquiries/{enquiry_id}")

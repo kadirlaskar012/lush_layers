@@ -703,6 +703,82 @@ class Database:
         self._sync_to_postgres("DELETE FROM cakes WHERE id = %s", (cake_id,))
         return rows > 0
 
+    def auto_sync_cake_size(self, cake_identifier: str, new_size: str) -> Optional[Dict[str, Any]]:
+        """
+        Ensures that new_size (e.g. '1.5 kg') is included in the cake's available_sizes list.
+        If not present, appends it and updates the database.
+        Matches cake by ID, exact name, or partial name.
+        """
+        if not cake_identifier or not new_size or not new_size.strip():
+            return None
+
+        size_clean = new_size.strip()
+        conn = self._get_conn()
+        cursor = conn.cursor()
+
+        # 1. Try finding by ID
+        cursor.execute("SELECT * FROM cakes WHERE id = ?", (cake_identifier,))
+        row = cursor.fetchone()
+
+        # 2. Try finding by exact name
+        if not row:
+            cursor.execute("SELECT * FROM cakes WHERE LOWER(name) = LOWER(?)", (cake_identifier.strip(),))
+            row = cursor.fetchone()
+
+        # 3. Try finding by matching substring
+        if not row:
+            cursor.execute(
+                "SELECT * FROM cakes WHERE LOWER(?) LIKE '%' || LOWER(name) || '%' OR LOWER(name) LIKE '%' || LOWER(?) || '%'",
+                (cake_identifier.strip(), cake_identifier.strip())
+            )
+            row = cursor.fetchone()
+
+        conn.close()
+        if not row:
+            return None
+
+        cake = dict(row)
+        cake_id = cake["id"]
+
+        # Parse existing sizes
+        sizes: List[str] = []
+        raw_sizes = cake.get("available_sizes")
+        if isinstance(raw_sizes, str):
+            try:
+                sizes = json.loads(raw_sizes)
+            except Exception:
+                sizes = ["0.5 kg", "1.0 kg"]
+        elif isinstance(raw_sizes, list):
+            sizes = list(raw_sizes)
+        else:
+            sizes = ["0.5 kg", "1.0 kg"]
+
+        # Check if size already exists
+        clean_lower = size_clean.lower()
+        exists = any(
+            clean_lower == s.lower() or
+            (clean_lower.split()[0] in s.lower() and "kg" in clean_lower and "kg" in s.lower() and clean_lower.split()[0] == s.lower().split()[0])
+            for s in sizes
+        )
+
+        if not exists:
+            sizes.append(size_clean)
+
+            def extract_weight(s: str) -> float:
+                try:
+                    import re
+                    m = re.search(r"(\d+(?:\.\d+)?)", s)
+                    return float(m.group(1)) if m else 999.0
+                except Exception:
+                    return 999.0
+
+            sizes.sort(key=extract_weight)
+            self.update_cake(cake_id, {"available_sizes": sizes})
+            print(f"[Cake Size Auto-Sync] Added size '{size_clean}' to cake '{cake.get('name')}' (ID: {cake_id}). Available sizes now: {sizes}")
+            return self.get_cake_by_id(cake_id)
+
+        return cake
+
     # --- JOBS ---
     def create_job(self, file_name: str, original_size_bytes: int = 0) -> Dict[str, Any]:
         job_id = str(uuid.uuid4())

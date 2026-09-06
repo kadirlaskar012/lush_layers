@@ -2294,3 +2294,150 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   contain-intrinsic-size: 1px 700px;
 }
 
+/* ==========================================================================
+   FLOATING WHATSAPP BUTTON - DYNAMIC & RESPONSIVE
+   ========================================================================== */
+@keyframes waFloatingPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7), 0 8px 20px rgba(28, 90, 55, 0.4);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(37, 211, 102, 0), 0 12px 26px rgba(28, 90, 55, 0.5);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0), 0 8px 20px rgba(28, 90, 55, 0.4);
+    transform: scale(1);
+  }
+}
+
+@keyframes waFloatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.floating-wa-aside {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+}
+
+.floating-wa-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.1rem 0.55rem 0.75rem;
+  background: linear-gradient(135deg, #1C5A37 0%, #0F3B22 100%);
+  color: #FAF8F5;
+  border: 1.5px solid var(--gold);
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(28, 90, 55, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-heading);
+  animation: waFloatGentle 4s ease-in-out infinite;
+}
+
+.floating-wa-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(28, 90, 55, 0.45), 0 4px 12px rgba(191, 154, 62, 0.25);
+}
+
+.floating-wa-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.4);
+}
+
+.floating-wa-label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+/* Mobile Screen Adaptation: Just circular icon with dynamic animated glow */
+@media (max-width: 640px) {
+  .floating-wa-aside {
+    bottom: 18px !important;
+    right: 18px !important;
+  }
+  .floating-wa-btn {
+    padding: 0 !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+    animation: waFloatingPulse 2.4s infinite ease-in-out !important;
+    border: 2px solid var(--gold) !important;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%) !important;
+  }
+  .floating-wa-icon-box {
+    width: 100% !important;
+    height: 100% !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  .floating-wa-label {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   HEADER TRACK ORDER CTA BUTTON
+   ========================================================================== */
+.header-track-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--gold-gloss);
+  color: #FFFFFF;
+  border: 1px solid var(--gold-border-gloss);
+  border-radius: var(--radius-sm);
+  padding: 0.38rem 0.85rem;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-track-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  color: #FFFFFF;
+}
+
+.mobile-track-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  background: var(--gold-gloss);
+  color: #FFFFFF;
+  border: 1px solid var(--gold-border-gloss);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.6rem;
+  font-family: var(--font-heading);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+}
+
