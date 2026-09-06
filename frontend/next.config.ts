@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -22,11 +24,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/media/:path*",
-        destination: "http://127.0.0.1:8000/media/:path*",
+        destination: `${backendUrl}/media/:path*`,
       },
       {
         source: "/api/backend/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },
