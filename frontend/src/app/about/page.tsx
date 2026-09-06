@@ -156,7 +156,7 @@ export default function AboutPage() {
             </p>
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem", background: "var(--bg-cream)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", border: "1px solid var(--border-subtle)" }}>
               <MapPin size={14} color="var(--gold-dark)" />
-              <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 600 }}>Atelier Location: PD Road, Kolkata-41, India</span>
+              <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 600 }}>Atelier Location: PB Road, Kolkata-41, India</span>
             </div>
             <div style={{ fontSize: "0.82rem", color: "var(--whatsapp)", fontWeight: 600, marginBottom: "1.25rem" }}>
               Direct Line & WhatsApp: +91 8768388868

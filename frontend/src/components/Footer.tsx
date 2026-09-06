@@ -69,7 +69,7 @@ export default function Footer() {
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
                 <MapPin size={14} color="var(--gold-dark)" />
                 <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500 }}>
-                  PD Road, Kolkata-41, India
+                  PB Road, Kolkata-41, India
                 </span>
               </div>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
@@ -199,7 +199,7 @@ export default function Footer() {
           }}
         >
           <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-            © {currentYear} LUSH LAYERS • Made with Love • PD Road, Kolkata-41, India
+            © {currentYear} LUSH LAYERS • Made with Love • PB Road, Kolkata-41, India
           </div>
           <div style={{ display: "flex", gap: "1rem", fontSize: "0.76rem" }}>
             <Link href="/cakes" style={{ color: "var(--text-muted)", textDecoration: "none" }}>

@@ -48,7 +48,7 @@ export default async function HomePage() {
               <div style={{ display: "inline-flex", alignItems: "center", marginBottom: "0.25rem" }}>
                 <span className="hero-atelier-badge">
                   <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
-                  <span>LUSH LAYERS • PD Road, Kolkata-41, India</span>
+                  <span>LUSH LAYERS • PB Road, Kolkata-41, India</span>
                 </span>
               </div>
 
@@ -275,7 +275,7 @@ export default async function HomePage() {
                 Direct WhatsApp: +91 8768388868
               </div>
               <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: "0.85rem" }}>
-                Atelier: PD Road, Kolkata-41, India
+                Atelier: PB Road, Kolkata-41, India
               </div>
               <a
                 href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake%20for%20my%20event.`}

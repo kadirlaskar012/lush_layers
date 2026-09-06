@@ -5,7 +5,7 @@ import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
   title: "Contact & Atelier Consultations • LUSH LAYERS",
-  description: "Connect directly with our master bakers on WhatsApp or visit LUSH LAYERS studio at PD Road, Kolkata-41, India.",
+  description: "Connect directly with our master bakers on WhatsApp or visit LUSH LAYERS studio at PB Road, Kolkata-41, India.",
 };
 
 export default function ContactPage() {
@@ -67,7 +67,7 @@ export default function ContactPage() {
                     Location:
                   </div>
                   <p style={{ color: "var(--text-primary)", fontSize: "0.86rem", lineHeight: "1.5" }}>
-                    PD Road, Kolkata-41, India<br />
+                    PB Road, Kolkata-41, India<br />
                     LUSH LAYERS Confectionery Atelier
                   </p>
                 </div>
