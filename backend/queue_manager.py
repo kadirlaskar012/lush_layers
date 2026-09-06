@@ -16,6 +16,7 @@ class BackgroundJobQueue:
         self.workers: list = []
         self.is_running = False
         self._file_paths: Dict[str, Path] = {}
+        self._job_options: Dict[str, Dict[str, Any]] = {}
 
     def start(self):
         """Starts the background worker tasks."""
@@ -34,11 +35,18 @@ class BackgroundJobQueue:
         await asyncio.gather(*self.workers, return_exceptions=True)
         self.workers.clear()
 
-    async def enqueue(self, file_path: Path, file_name: str, original_size_bytes: int = 0) -> str:
-        """Creates a job in DB and adds to queue."""
+    async def enqueue(
+        self,
+        file_path: Path,
+        file_name: str,
+        original_size_bytes: int = 0,
+        options: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Creates a job in DB and adds to queue with configurable options."""
         job = db.create_job(file_name, original_size_bytes)
         job_id = job["id"]
         self._file_paths[job_id] = file_path
+        self._job_options[job_id] = options or {}
         await self.queue.put(job_id)
         return job_id
 
@@ -93,20 +101,29 @@ class BackgroundJobQueue:
                 return
 
         print(f"[Queue][{worker_name}] Starting processing for job {job_id} ({job['file_name']})")
+        options = self._job_options.get(job_id, {})
+        opt_compress = options.get("compress", True)
+        opt_white_bg = options.get("white_background", True)
+        opt_auto_focus = options.get("auto_focus", True)
+        opt_ai_metadata = options.get("ai_metadata", True)
+        opt_category_id = options.get("category_id")
         
         try:
             # 1. State: PROCESSING (Progress 15%)
             db.update_job(job_id, status="processing", progress=15)
             await asyncio.sleep(0.05)
 
-            # 2. Image Processing: Background removal + White Studio + Auto Crop/Resize
+            # 2. Image Processing: Background removal + White Studio + Auto Crop/Resize with configurable toggles
             # Run CPU-bound image operations in default threadpool executor
             loop = asyncio.get_event_loop()
             proc_result = await loop.run_in_executor(
                 None,
                 processor.process_cake_image,
                 file_path,
-                f"cake_{job_id[:8]}"
+                f"cake_{job_id[:8]}",
+                opt_compress,
+                opt_white_bg,
+                opt_auto_focus
             )
             
             # State: IMAGE_PROCESSED (Progress 50%)
@@ -125,20 +142,21 @@ class BackgroundJobQueue:
                 f"cake_{job_id[:8]}"
             )
 
-            # 4. AI Sensory Copywriting & Categorization
+            # 4. AI Sensory Copywriting & Categorization (or Clean Manual Fallback)
             all_categories = db.get_categories(active_only=False)
             cat_names = [c["name"] for c in all_categories]
             ai_data = {}
-            try:
-                ai_data = await loop.run_in_executor(
-                    None,
-                    ai_analyzer.analyze_cake_image,
-                    master_file_path,
-                    None,
-                    cat_names
-                )
-            except Exception as e:
-                print(f"[Queue][{worker_name}] AI sensory analysis note: {e}")
+            if opt_ai_metadata:
+                try:
+                    ai_data = await loop.run_in_executor(
+                        None,
+                        ai_analyzer.analyze_cake_image,
+                        master_file_path,
+                        None,
+                        cat_names
+                    )
+                except Exception as e:
+                    print(f"[Queue][{worker_name}] AI sensory analysis note: {e}")
 
             # Resolve Cake Attributes
             clean_title = (ai_data.get("name") if ai_data else None) or Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
@@ -148,8 +166,8 @@ class BackgroundJobQueue:
             flavour = (ai_data.get("flavour") if ai_data else None) or "Chef's Signature Vanilla & Cocoa"
             description = (ai_data.get("description") if ai_data else None) or "An exquisite handcrafted luxury confection prepared with pure artisanal ingredients."
 
-            category_id = None
-            if ai_data and ai_data.get("category"):
+            category_id = opt_category_id
+            if not category_id and ai_data and ai_data.get("category"):
                 cat_match = next((c for c in all_categories if c["name"].lower() == ai_data["category"].lower()), None)
                 if cat_match:
                     category_id = cat_match["id"]
@@ -170,6 +188,12 @@ class BackgroundJobQueue:
                 "ai_metadata": {
                     "ai_status": "generated" if ai_data else "manual",
                     "original_file": job["file_name"],
+                    "options_used": {
+                        "compress": opt_compress,
+                        "white_background": opt_white_bg,
+                        "auto_focus": opt_auto_focus,
+                        "ai_metadata": opt_ai_metadata
+                    },
                     "tags": ai_data.get("tags", []) if ai_data else [],
                     "local_preview_url": proc_result["relative_master_url"],
                     "local_thumb_url": proc_result["relative_thumb_url"]

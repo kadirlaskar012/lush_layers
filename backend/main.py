@@ -100,16 +100,33 @@ async def get_admin_stats_endpoint():
 @app.post("/api/upload/bulk")
 async def upload_bulk_images(
     files: List[UploadFile] = File(...),
+    compress: bool = Form(True),
+    white_background: bool = Form(True),
+    auto_focus: bool = Form(True),
+    ai_metadata: bool = Form(True),
+    category_id: Optional[str] = Form(None),
     background_tasks: BackgroundTasks = None
 ):
     """
-    Accepts multiple cake images.
-    Creates background jobs and enqueues them for parallel processing.
+    Accepts multiple cake images with configurable processing options:
+    - compress: WebP high-efficiency optimization
+    - white_background: RemBG background removal & studio white shadow
+    - auto_focus: subject detection, auto-crop & 1:1 square centering
+    - ai_metadata: Gemini AI sensory copywriting
+    - category_id: optional pre-assigned category
     """
     if not files:
         raise HTTPException(status_code=400, detail="No files provided.")
 
     created_jobs = []
+    
+    options = {
+        "compress": compress,
+        "white_background": white_background,
+        "auto_focus": auto_focus,
+        "ai_metadata": ai_metadata,
+        "category_id": category_id.strip() if category_id and category_id.strip() else None
+    }
     
     for file in files:
         ext = Path(file.filename).suffix.lower()
@@ -125,17 +142,19 @@ async def upload_bulk_images(
 
         file_size = dest_path.stat().st_size
         
-        # Enqueue job
+        # Enqueue job with custom options
         job_id = await job_queue.enqueue(
             file_path=dest_path,
             file_name=file.filename,
-            original_size_bytes=file_size
+            original_size_bytes=file_size,
+            options=options
         )
         created_jobs.append({
             "job_id": job_id,
             "filename": file.filename,
             "size_bytes": file_size,
-            "status": "queued"
+            "status": "queued",
+            "options": options
         })
 
     return {
@@ -147,6 +166,17 @@ async def upload_bulk_images(
 @app.get("/api/jobs")
 async def list_jobs(limit: int = Query(50, ge=1, le=200)):
     return db.get_jobs(limit=limit)
+
+@app.post("/api/jobs/clear")
+@app.delete("/api/jobs/clear")
+async def clear_job_history():
+    """Clears completed and failed job records from the queue."""
+    conn = db._get_conn()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM processing_jobs WHERE status IN ('completed', 'failed')")
+    conn.commit()
+    conn.close()
+    return {"message": "Job history cleared successfully."}
 
 @app.get("/api/jobs/{job_id}")
 async def get_job_detail(job_id: str):
@@ -633,397 +663,1045 @@ async def delete_review(review_id: str, background_tasks: BackgroundTasks):
     return {"message": "Review deleted."}
 
 # ==========================================
-# BUILT-IN LAN UPLOAD PORTAL
+# ADVANCED IMAGE PROCESSING PORTAL (STUDIO SUITE)
 # ==========================================
 @app.get("/portal", response_class=HTMLResponse)
 @app.get("/", response_class=HTMLResponse)
 async def serve_lan_portal():
     lan_ip = settings.get_lan_ip()
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>LUSH LAYERS • Local LAN Processing Center</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        <style>
-            :root {{
-                --bg: #141110;
-                --surface: #1E1918;
-                --surface-card: #27211F;
-                --gold: #D4AF37;
-                --gold-light: #F6E7B9;
-                --cream: #FBF8F3;
-                --muted: #A39691;
-                --border: rgba(212, 175, 55, 0.2);
-                --success: #10B981;
-                --warn: #F59E0B;
-                --error: #EF4444;
-            }}
-            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-            body {{
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                background-color: var(--bg);
-                color: var(--cream);
-                min-height: 100vh;
-                padding: 2rem 1.5rem;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }}
-            header {{
-                text-align: center;
-                max-width: 800px;
-                margin-bottom: 2.5rem;
-            }}
-            .brand {{
-                font-family: 'Playfair Display', serif;
-                font-size: 2.5rem;
-                letter-spacing: 0.15em;
-                color: var(--gold-light);
-                margin-bottom: 0.35rem;
-                text-transform: uppercase;
-            }}
-            .tagline {{
-                font-size: 0.95rem;
-                letter-spacing: 0.25em;
-                color: var(--gold);
-                text-transform: uppercase;
-                margin-bottom: 1.25rem;
-            }}
-            .lan-badge {{
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                background: rgba(212, 175, 55, 0.1);
-                border: 1px solid var(--border);
-                padding: 0.5rem 1.25rem;
-                border-radius: 9999px;
-                font-size: 0.85rem;
-                color: var(--gold-light);
-            }}
-            .pulse-dot {{
-                width: 8px;
-                height: 8px;
-                background: var(--success);
-                border-radius: 50%;
-                box-shadow: 0 0 10px var(--success);
-            }}
-            .container {{
-                width: 100%;
-                max-width: 1100px;
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }}
-            @media (min-width: 900px) {{
-                .container {{ grid-template-columns: 1fr 1fr; }}
-            }}
-            .card {{
-                background: var(--surface);
-                border: 1px solid var(--border);
-                border-radius: 16px;
-                padding: 2rem;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            }}
-            .card-title {{
-                font-family: 'Playfair Display', serif;
-                font-size: 1.4rem;
-                color: var(--gold-light);
-                margin-bottom: 1.25rem;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }}
-            .upload-zone {{
-                border: 2px dashed var(--border);
-                border-radius: 12px;
-                padding: 3rem 1.5rem;
-                text-align: center;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                background: rgba(255,255,255,0.01);
-            }}
-            .upload-zone:hover, .upload-zone.dragover {{
-                border-color: var(--gold);
-                background: rgba(212, 175, 55, 0.05);
-            }}
-            .upload-btn {{
-                background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
-                color: #000;
-                font-weight: 600;
-                border: none;
-                padding: 0.85rem 2rem;
-                border-radius: 9999px;
-                font-size: 0.95rem;
-                cursor: pointer;
-                margin-top: 1.5rem;
-                display: inline-block;
-                transition: transform 0.2s, box-shadow 0.2s;
-            }}
-            .upload-btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(212, 175, 55, 0.35);
-            }}
-            .stats-grid {{
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 1rem;
-                margin-bottom: 1.5rem;
-            }}
-            .stat-box {{
-                background: var(--surface-card);
-                border: 1px solid rgba(255,255,255,0.05);
-                border-radius: 10px;
-                padding: 1rem;
-                text-align: center;
-            }}
-            .stat-num {{
-                font-size: 1.75rem;
-                font-weight: 700;
-                color: var(--gold-light);
-            }}
-            .stat-label {{
-                font-size: 0.75rem;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: var(--muted);
-                margin-top: 0.25rem;
-            }}
-            .job-list {{
-                display: flex;
-                flex-direction: column;
-                gap: 0.75rem;
-                max-height: 480px;
-                overflow-y: auto;
-            }}
-            .job-item {{
-                background: var(--surface-card);
-                border: 1px solid rgba(255,255,255,0.05);
-                border-radius: 8px;
-                padding: 0.9rem 1rem;
-            }}
-            .job-header {{
-                display: flex;
-                justify-content: space-between;
-                font-size: 0.85rem;
-                margin-bottom: 0.5rem;
-            }}
-            .job-name {{
-                font-weight: 600;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 220px;
-            }}
-            .status-pill {{
-                padding: 0.2rem 0.6rem;
-                border-radius: 9999px;
-                font-size: 0.7rem;
-                text-transform: uppercase;
-                font-weight: 600;
-                letter-spacing: 0.05em;
-            }}
-            .status-completed {{ background: rgba(16,185,129,0.15); color: #34D399; }}
-            .status-processing, .status-image_processed, .status-ai_processing, .status-uploading {{ background: rgba(245,158,11,0.15); color: #FBBF24; }}
-            .status-queued {{ background: rgba(163,150,145,0.15); color: #D1D5DB; }}
-            .status-failed {{ background: rgba(239,68,68,0.15); color: #F87171; }}
-            .progress-bar-bg {{
-                height: 5px;
-                background: rgba(255,255,255,0.08);
-                border-radius: 9999px;
-                overflow: hidden;
-            }}
-            .progress-bar-fill {{
-                height: 100%;
-                background: linear-gradient(90deg, #D4AF37, #F6E7B9);
-                transition: width 0.3s ease;
-            }}
-            .quick-links {{
-                margin-top: 2rem;
-                display: flex;
-                gap: 1rem;
-                flex-wrap: wrap;
-                justify-content: center;
-            }}
-            .link-pill {{
-                color: var(--cream);
-                text-decoration: none;
-                background: rgba(255,255,255,0.04);
-                border: 1px solid var(--border);
-                padding: 0.6rem 1.25rem;
-                border-radius: 9999px;
-                font-size: 0.85rem;
-                transition: all 0.2s;
-            }}
-            .link-pill:hover {{
-                border-color: var(--gold);
-                color: var(--gold-light);
-            }}
-        </style>
-    </head>
-    <body>
-        <header>
-            <div class="brand">LUSH LAYERS</div>
-            <div class="tagline">Made with Love • Processing Center</div>
-            <div class="lan-badge">
-                <span class="pulse-dot"></span>
-                <span>LAN Address: <strong>http://{lan_ip}:{settings.PORT}</strong></span>
-            </div>
-        </header>
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUSH LAYERS • Python AI Image Processing Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg: #0C0A09;
+            --surface: rgba(24, 18, 15, 0.85);
+            --surface-card: rgba(36, 28, 23, 0.7);
+            --surface-card-hover: rgba(48, 38, 32, 0.85);
+            --gold: #D4AF37;
+            --gold-light: #F6E7B9;
+            --gold-dark: #997A1E;
+            --cream: #FAF6F0;
+            --muted: #A89B92;
+            --border: rgba(212, 175, 55, 0.22);
+            --border-hover: rgba(212, 175, 55, 0.45);
+            --success: #10B981;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --warn: #F59E0B;
+            --error: #EF4444;
+        }}
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(212, 175, 55, 0.05) 0%, transparent 45%);
+            color: var(--cream);
+            min-height: 100vh;
+            padding: 2.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+        header {{
+            text-align: center;
+            max-width: 900px;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }}
+        .brand-title {{
+            font-family: 'Playfair Display', serif;
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F6E7B9 40%, #D4AF37 80%, #AA820A 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+        }}
+        .brand-tagline {{
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+            font-weight: 500;
+            margin-bottom: 1.25rem;
+        }}
+        .status-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(212, 175, 55, 0.08);
+            border: 1px solid var(--border);
+            padding: 0.45rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            color: var(--gold-light);
+            backdrop-filter: blur(10px);
+        }}
+        .pulse-dot {{
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse-glow 2s infinite;
+        }}
+        @keyframes pulse-glow {{
+            0%, 100% {{ transform: scale(1); opacity: 1; }}
+            50% {{ transform: scale(1.3); opacity: 0.6; }}
+        }}
 
-        <div class="container">
-            <!-- Left: Bulk Upload -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Bulk Cake Upload</span>
-                    <span style="font-size: 0.8rem; color: var(--muted); font-family: sans-serif;">Parallel Engine</span>
+        .main-container {{
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }}
+        @media (min-width: 960px) {{
+            .main-container {{ grid-template-columns: 1.05fr 1fr; }}
+        }}
+
+        .suite-card {{
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.3s ease;
+        }}
+        .suite-card:hover {{
+            border-color: var(--border-hover);
+        }}
+        .card-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+        }}
+        .card-header-title {{
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            color: var(--gold-light);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }}
+        .card-header-badge {{
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            background: rgba(212, 175, 55, 0.12);
+            color: var(--gold);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }}
+
+        /* Drag & Drop Zone */
+        .dropzone {{
+            border: 2px dashed rgba(212, 175, 55, 0.3);
+            border-radius: 16px;
+            padding: 3.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.015);
+            position: relative;
+            overflow: hidden;
+        }}
+        .dropzone:hover, .dropzone.dragover {{
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.06);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(212, 175, 55, 0.2);
+        }}
+        .dropzone-icon {{
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 1.25rem;
+            color: var(--gold);
+            stroke-width: 1.5;
+            transition: transform 0.3s ease;
+        }}
+        .dropzone:hover .dropzone-icon {{
+            transform: scale(1.1) translateY(-4px);
+        }}
+        .dropzone-title {{
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--cream);
+            margin-bottom: 0.4rem;
+        }}
+        .dropzone-desc {{
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 1.25rem;
+        }}
+        .dropzone-btn {{
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+            color: #000;
+            font-weight: 600;
+            padding: 0.75rem 1.75rem;
+            border-radius: 9999px;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }}
+        .dropzone:hover .dropzone-btn {{
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45);
+        }}
+
+        /* Stats Grid */
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.85rem;
+            margin-bottom: 1.25rem;
+        }}
+        .stat-item {{
+            background: var(--surface-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 0.85rem 0.65rem;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }}
+        .stat-item:hover {{
+            transform: translateY(-2px);
+            border-color: rgba(212, 175, 55, 0.25);
+        }}
+        .stat-number {{
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gold-light);
+            font-family: 'Playfair Display', serif;
+        }}
+        .stat-name {{
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-top: 0.2rem;
+        }}
+
+        /* Jobs Queue */
+        .queue-header-actions {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+        .icon-btn {{
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        .icon-btn:hover {{
+            color: var(--gold-light);
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }}
+        .jobs-container {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }}
+        .jobs-container::-webkit-scrollbar {{
+            width: 4px;
+        }}
+        .jobs-container::-webkit-scrollbar-thumb {{
+            background: rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+        }}
+        .job-card {{
+            background: var(--surface-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.2s ease;
+        }}
+        .job-card:hover {{
+            border-color: rgba(212, 175, 55, 0.3);
+            background: var(--surface-card-hover);
+        }}
+        .job-card-top {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.65rem;
+        }}
+        .job-info {{
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }}
+        .job-thumb {{
+            width: 46px;
+            height: 46px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            background: #fff;
+        }}
+        .job-text-title {{
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }}
+        .job-text-sub {{
+            font-size: 0.75rem;
+            color: var(--muted);
+        }}
+        .status-pill {{
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+        }}
+        .status-completed {{ background: var(--success-bg); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }}
+        .status-processing, .status-uploading, .status-image_processed {{ background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }}
+        .status-queued {{ background: rgba(163,150,145,0.15); color: #D1D5DB; border: 1px solid rgba(163,150,145,0.3); }}
+        .status-failed {{ background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }}
+
+        .progress-track {{
+            height: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 0.4rem;
+        }}
+        .progress-fill {{
+            height: 100%;
+            background: linear-gradient(90deg, #D4AF37, #10B981);
+            transition: width 0.4s ease;
+        }}
+
+        .job-actions {{
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.65rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }}
+        .action-link {{
+            font-size: 0.78rem;
+            color: var(--gold-light);
+            text-decoration: none;
+            padding: 0.35rem 0.85rem;
+            border-radius: 6px;
+            background: rgba(212, 175, 55, 0.12);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }}
+        .action-link:hover {{
+            background: rgba(212, 175, 55, 0.25);
+            border-color: var(--gold);
+            transform: translateY(-1px);
+        }}
+
+        /* MODAL POPUP */
+        .modal-overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(12px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1.5rem;
+            animation: fadeIn 0.25s ease forwards;
+        }}
+        @keyframes fadeIn {{
+            from {{ opacity: 0; }}
+            to {{ opacity: 1; }}
+        }}
+        .modal-content {{
+            background: #181311;
+            border: 1px solid var(--gold);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 620px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(212, 175, 55, 0.15);
+            padding: 2rem;
+            position: relative;
+            animation: modalScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }}
+        @keyframes modalScale {{
+            from {{ transform: scale(0.92) translateY(20px); opacity: 0; }}
+            to {{ transform: scale(1) translateY(0); opacity: 1; }}
+        }}
+        .modal-close {{
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }}
+        .modal-close:hover {{
+            color: #fff;
+        }}
+        .modal-title {{
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            color: var(--gold-light);
+            margin-bottom: 0.35rem;
+        }}
+        .modal-subtitle {{
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+        }}
+
+        /* Preview inside modal */
+        .modal-preview-bar {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 0.85rem;
+            margin-bottom: 1.5rem;
+        }}
+        .modal-preview-thumb {{
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }}
+        .modal-preview-info {{
+            flex: 1;
+        }}
+        .modal-preview-name {{
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--cream);
+            margin-bottom: 0.25rem;
+        }}
+        .modal-preview-meta {{
+            font-size: 0.75rem;
+            color: var(--gold);
+        }}
+
+        /* Option Checkbox Cards */
+        .options-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-bottom: 1.5rem;
+        }}
+        .option-item {{
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }}
+        .option-item:hover {{
+            background: rgba(212, 175, 55, 0.05);
+            border-color: rgba(212, 175, 55, 0.35);
+        }}
+        .option-item.checked {{
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.08);
+        }}
+        .custom-checkbox {{
+            width: 22px;
+            height: 22px;
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: all 0.2s ease;
+        }}
+        .option-item.checked .custom-checkbox {{
+            background: var(--gold);
+            border-color: var(--gold);
+        }}
+        .custom-checkbox svg {{
+            width: 14px;
+            height: 14px;
+            stroke: #000;
+            stroke-width: 3;
+            fill: none;
+            display: none;
+        }}
+        .option-item.checked .custom-checkbox svg {{
+            display: block;
+        }}
+        .option-content {{
+            flex: 1;
+        }}
+        .option-label-row {{
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }}
+        .option-label {{
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--cream);
+        }}
+        .option-badge {{
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--gold-light);
+            font-weight: 600;
+        }}
+        .option-desc {{
+            font-size: 0.8rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }}
+
+        /* Category Select in Modal */
+        .category-picker {{
+            margin-bottom: 1.75rem;
+        }}
+        .category-picker label {{
+            display: block;
+            font-size: 0.82rem;
+            color: var(--gold-light);
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+        }}
+        .category-select {{
+            width: 100%;
+            background: #100C0A;
+            border: 1px solid var(--border);
+            color: var(--cream);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }}
+        .category-select:focus {{
+            border-color: var(--gold);
+        }}
+
+        /* Modal Footer Buttons */
+        .modal-actions {{
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 1rem;
+        }}
+        .btn-cancel {{
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        .btn-cancel:hover {{
+            color: var(--cream);
+            border-color: rgba(255, 255, 255, 0.3);
+        }}
+        .btn-submit {{
+            background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+            color: #000;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 9999px;
+            font-size: 0.92rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }}
+        .btn-submit:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(212, 175, 55, 0.55);
+        }}
+
+        /* Quick Links Footer */
+        .quick-nav {{
+            display: flex;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 2.5rem 0 1rem 0;
+        }}
+        .nav-pill {{
+            color: var(--cream);
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.35rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }}
+        .nav-pill:hover {{
+            border-color: var(--gold);
+            color: var(--gold-light);
+            background: rgba(212, 175, 55, 0.1);
+            transform: translateY(-1px);
+        }}
+        .nav-pill-highlight {{
+            border-color: var(--gold);
+            color: var(--gold-light);
+            background: rgba(212, 175, 55, 0.15);
+        }}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand-title">LUSH LAYERS</div>
+        <div class="brand-tagline">Artisan Confectionery • Python Image Processing Suite</div>
+        <div class="status-badge">
+            <span class="pulse-dot"></span>
+            <span>Local Engine Active • Port {settings.PORT}</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- LEFT: Upload Suite -->
+        <div class="suite-card">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <span>✨ Ingest & Studio Suite</span>
                 </div>
-                <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem; color: var(--gold);">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p style="font-size: 1rem; font-weight: 500; margin-bottom: 0.35rem;">Drag & drop 20+ cake images</p>
-                    <p style="font-size: 0.8rem; color: var(--muted);">Supports JPG, PNG, WEBP, AVIF (Max 25MB each)</p>
-                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFilesSelected(this.files)">
-                </div>
-                <div style="text-align: center;">
-                    <button class="upload-btn" id="uploadBtn" style="display: none;" onclick="startUpload()">Upload & Process Selected Files</button>
-                    <div id="fileCountText" style="margin-top: 1rem; font-size: 0.85rem; color: var(--gold-light);"></div>
-                </div>
+                <span class="card-header-badge">AI Engine v2.0</span>
             </div>
 
-            <!-- Right: Queue & Stats -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Queue & Activity</span>
-                    <button onclick="fetchJobs()" style="background: none; border: 1px solid var(--border); color: var(--muted); padding: 0.25rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
-                </div>
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-box"><div class="stat-num" id="statPending">-</div><div class="stat-label">Pending Approval</div></div>
-                    <div class="stat-box"><div class="stat-num" id="statProcessing">-</div><div class="stat-label">In Processing</div></div>
-                    <div class="stat-box"><div class="stat-num" id="statPublished">-</div><div class="stat-label">Published Live</div></div>
-                </div>
-                <div class="job-list" id="jobList">
-                    <p style="color: var(--muted); font-size: 0.85rem; text-align: center; padding: 2rem;">No active processing jobs.</p>
-                </div>
+            <div class="dropzone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <div class="dropzone-title">Drag & drop cake photos here</div>
+                <div class="dropzone-desc">Supports JPG, PNG, WEBP, AVIF (Single or Bulk 20+)</div>
+                <button type="button" class="dropzone-btn">
+                    <span>Choose from Device</span>
+                    <span>↗</span>
+                </button>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" onchange="handleFilesSelected(this.files)">
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--muted); line-height: 1.6;">
+                ⚡ <strong>Automatic Pipeline:</strong> Selection triggers our studio options popup where you can toggle RemBG background removal, WebP compression, auto-crop & AI sensory notes before sending to database.
             </div>
         </div>
 
-        <div class="quick-links" style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin: 1.5rem 0 2rem 0;">
-            <a href="http://localhost:3000" class="link-pill" target="_blank">🌐 Public Website (Port 3000) ↗</a>
-            <a href="http://localhost:3000/admin" class="link-pill" target="_blank">👑 Admin Dashboard ↗</a>
-            <a href="http://localhost:3000/admin/cakes/pending" class="link-pill" target="_blank" style="border-color: var(--gold); color: var(--gold-light); background: rgba(212,175,55,0.12);">⏳ Pending Approval Queue ↗</a>
-            <a href="/docs" class="link-pill" target="_blank">📖 Backend API Docs ↗</a>
+        <!-- RIGHT: Queue & Activity -->
+        <div class="suite-card">
+            <div class="card-header">
+                <div class="card-header-title">
+                    <span>Queue & Live Activity</span>
+                </div>
+                <div class="queue-header-actions">
+                    <button class="icon-btn" onclick="clearJobHistory()" title="Clear finished jobs">Clear History</button>
+                    <button class="icon-btn" onclick="fetchJobs()" title="Refresh now">Refresh ⟳</button>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number" id="statPending">0</div>
+                    <div class="stat-name">Pending Review</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="statProcessing">0</div>
+                    <div class="stat-name">In Processing</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="statPublished">0</div>
+                    <div class="stat-name">Published Live</div>
+                </div>
+            </div>
+
+            <div class="jobs-container" id="jobsList">
+                <p style="color: var(--muted); font-size: 0.85rem; text-align: center; padding: 3rem 1rem;">
+                    ✨ No active processing jobs.<br>
+                    <span style="font-size: 0.78rem;">Select or drop cake photos on the left to start!</span>
+                </p>
+            </div>
         </div>
+    </div>
 
-        <script>
-            let selectedFiles = [];
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const fileCountText = document.getElementById('fileCountText');
+    <!-- CONFIG MODAL POPUP -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-title">✨ Configure Image Processing</div>
+            <div class="modal-subtitle">Customize AI & studio enhancement options before uploading to database</div>
 
-            ['dragenter', 'dragover'].forEach(name => {{
-                dropZone.addEventListener(name, (e) => {{ e.preventDefault(); dropZone.classList.add('dragover'); }});
-            }});
-            ['dragleave', 'drop'].forEach(name => {{
-                dropZone.addEventListener(name, (e) => {{ e.preventDefault(); dropZone.classList.remove('dragover'); }});
-            }});
+            <div class="modal-preview-bar">
+                <img id="modalThumb" src="" class="modal-preview-thumb" alt="Preview">
+                <div class="modal-preview-info">
+                    <div class="modal-preview-name" id="modalFileName">cake_sample.jpg</div>
+                    <div class="modal-preview-meta" id="modalFileMeta">1 file selected • Ready</div>
+                </div>
+            </div>
 
-            dropZone.addEventListener('drop', (e) => {{
-                if (e.dataTransfer.files.length) handleFilesSelected(e.dataTransfer.files);
-            }});
-
-            function handleFilesSelected(files) {{
-                selectedFiles = Array.from(files);
-                if (selectedFiles.length > 0) {{
-                    fileCountText.innerText = selectedFiles.length + " cake image(s) selected ready to process.";
-                    uploadBtn.style.display = "inline-block";
-                }}
-            }}
-
-            async function startUpload() {{
-                if (!selectedFiles.length) return;
-                uploadBtn.disabled = true;
-                uploadBtn.innerText = "Enqueuing Images...";
-
-                const formData = new FormData();
-                selectedFiles.forEach(file => formData.append("files", file));
-
-                try {{
-                    const resp = await fetch("/api/upload/bulk", {{ method: "POST", body: formData }});
-                    const res = await resp.json();
-                    fileCountText.innerText = "Enqueued " + res.total_queued + " images for parallel processing!";
-                    uploadBtn.style.display = "none";
-                    selectedFiles = [];
-                    fetchJobs();
-                }} catch (err) {{
-                    alert("Upload failed: " + err.message);
-                }} finally {{
-                    uploadBtn.disabled = false;
-                    uploadBtn.innerText = "Upload & Process Selected Files";
-                }}
-            }}
-
-            async function fetchJobs() {{
-                try {{
-                    const [jobsResp, statusResp] = await Promise.all([
-                        fetch("/api/jobs?limit=25"),
-                        fetch("/api/system/status")
-                    ]);
-                    const jobs = await jobsResp.json();
-                    const status = await statusResp.json();
-
-                    document.getElementById('statPending').innerText = status.stats.pending;
-                    document.getElementById('statProcessing').innerText = status.stats.processing;
-                    document.getElementById('statPublished').innerText = status.stats.published;
-
-                    const listEl = document.getElementById('jobList');
-                    if (!jobs.length) {{
-                        listEl.innerHTML = '<p style="color: var(--muted); font-size: 0.85rem; text-align: center; padding: 2rem;">No processing jobs yet.</p>';
-                        return;
-                    }}
-
-                    listEl.innerHTML = jobs.map(j => `
-                        <div class="job-item" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.85rem; margin-bottom: 0.75rem;">
-                            <div class="job-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    ${{j.cake_image_url ? `<img src="${{j.cake_image_url}}" style="width: 42px; height: 42px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(212,175,55,0.4);" />` : ''}}
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 0.9rem; color: ${{j.cake_name ? '#F6E7B9' : 'var(--cream)'}};">${{j.cake_name || j.file_name}}</div>
-                                        ${{j.cake_name ? `<div style="font-size: 0.75rem; color: var(--muted);">${{j.file_name}}</div>` : ''}}
-                                    </div>
-                                </div>
-                                <span class="status-pill status-${{j.status}}" style="font-size: 0.75rem; text-transform: uppercase; padding: 0.25rem 0.65rem; border-radius: 9999px; background: ${{j.status === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(212,175,55,0.15)'}}; color: ${{j.status === 'completed' ? '#34D399' : '#F6E7B9'}};">${{j.status.replace('_', ' ')}}</span>
-                            </div>
-                            <div class="progress-bar-bg" style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden;">
-                                <div class="progress-bar-fill" style="width: ${{j.progress}}%; height: 100%; background: linear-gradient(90deg, #D4AF37, #10B981); transition: width 0.3s ease;"></div>
-                            </div>
-                            ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.35rem;">${{j.error_message}}</div>` : ''}}
-                            ${{j.status === 'completed' ? `
-                                <div style="margin-top: 0.65rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-                                    <a href="http://localhost:3000/admin/cakes/pending" target="_blank" style="font-size: 0.75rem; color: #F6E7B9; text-decoration: none; padding: 0.25rem 0.65rem; background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.4); border-radius: 6px;">👉 Review & Approve ↗</a>
-                                    ${{j.cake_slug ? `<a href="http://localhost:3000/cakes/${{j.cake_slug}}" target="_blank" style="font-size: 0.75rem; color: #34D399; text-decoration: none; padding: 0.25rem 0.65rem; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px;">Storefront ↗</a>` : ''}}
-                                </div>
-                            ` : ''}}
+            <div class="options-list">
+                <!-- Option 1: Compression -->
+                <div class="option-item checked" id="optCompressCard" onclick="toggleOption('optCompress')">
+                    <div class="custom-checkbox">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <input type="checkbox" id="optCompress" checked style="display: none;">
+                    <div class="option-content">
+                        <div class="option-label-row">
+                            <span class="option-label">Smart WebP Compression</span>
+                            <span class="option-badge">Speed Optimizer</span>
                         </div>
-                    `).join('');
-                }} catch (e) {{
-                    console.error("Fetch jobs error", e);
-                }}
+                        <div class="option-desc">ছবির ভিজ্যুয়াল কোয়ালিটি ১০০% অক্ষুণ্ণ রেখে ফাইল সাইজ ৮০% কমায় যাতে ওয়েবসাইটে বিদ্যুত গতিতে লোড হয়।</div>
+                    </div>
+                </div>
+
+                <!-- Option 2: White Studio Background -->
+                <div class="option-item checked" id="optWhiteBgCard" onclick="toggleOption('optWhiteBg')">
+                    <div class="custom-checkbox">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <input type="checkbox" id="optWhiteBg" checked style="display: none;">
+                    <div class="option-content">
+                        <div class="option-label-row">
+                            <span class="option-label">Pure Studio White Background</span>
+                            <span class="option-badge">RemBG Studio</span>
+                        </div>
+                        <div class="option-desc">AI রিমুভার দিয়ে মূল ব্যাকগ্রাউন্ড মুছে লাক্সারি পিওর হোয়াইট ব্যাকগ্রাউন্ড ও সফট কন্ট্যাক্ট শ্যাডো তৈরি করে।</div>
+                    </div>
+                </div>
+
+                <!-- Option 3: Auto Focus -->
+                <div class="option-item checked" id="optAutoFocusCard" onclick="toggleOption('optAutoFocus')">
+                    <div class="custom-checkbox">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <input type="checkbox" id="optAutoFocus" checked style="display: none;">
+                    <div class="option-content">
+                        <div class="option-label-row">
+                            <span class="option-label">Auto Focus & Subject Centering</span>
+                            <span class="option-badge">1:1 Framing</span>
+                        </div>
+                        <div class="option-desc">কেকের প্রধান অংশ নিখুঁতভাবে ডিটেক্ট করে অপ্রয়োজনীয় ফাঁকা জায়গা ট্রিম করে ১:১ স্কয়ার রেশিওতে পারফেক্ট সেন্টারিং করে।</div>
+                    </div>
+                </div>
+
+                <!-- Option 4: AI Copywriting -->
+                <div class="option-item checked" id="optAiCard" onclick="toggleOption('optAi')">
+                    <div class="custom-checkbox">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <input type="checkbox" id="optAi" checked style="display: none;">
+                    <div class="option-content">
+                        <div class="option-label-row">
+                            <span class="option-label">Gemini AI Title & Tasting Notes</span>
+                            <span class="option-badge">Sensory AI</span>
+                        </div>
+                        <div class="option-desc">কেকের টেক্সচার ও ডিজাইন বিশ্লেষণ করে স্বয়ংক্রিয়ভাবে আর্টিসানাল নাম, স্বাদ (Flavour) এবং মিষ্টি কাব্যিক বিবরণ তৈরি করে।</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-picker">
+                <label for="categorySelect">Assign Category (ক্যাটাগরি নির্বাচন করুন):</label>
+                <select id="categorySelect" class="category-select">
+                    <option value="">✨ Auto-Detect Category with AI (স্মার্ট অটো ডিটেক্ট)</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel / Re-select</button>
+                <button type="button" class="btn-submit" id="submitProcessBtn" onclick="submitProcessing()">
+                    <span>🚀 Upload & Process to Database</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK LINKS -->
+    <div class="quick-nav">
+        <a href="http://localhost:3000" class="nav-pill" target="_blank">🌐 Public Website (Port 3000) ↗</a>
+        <a href="http://localhost:3000/admin" class="nav-pill" target="_blank">👑 Admin Dashboard ↗</a>
+        <a href="http://localhost:3000/admin/cakes/pending" class="nav-pill nav-pill-highlight" target="_blank">⏳ Pending Approval Queue ↗</a>
+        <a href="/docs" class="nav-pill" target="_blank">📖 Backend API Docs ↗</a>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const configModal = document.getElementById('configModal');
+        const submitProcessBtn = document.getElementById('submitProcessBtn');
+
+        // Drag & Drop handlers
+        ['dragenter', 'dragover'].forEach(name => {{
+            dropZone.addEventListener(name, (e) => {{ e.preventDefault(); dropZone.classList.add('dragover'); }});
+        }});
+        ['dragleave', 'drop'].forEach(name => {{
+            dropZone.addEventListener(name, (e) => {{ e.preventDefault(); dropZone.classList.remove('dragover'); }});
+        }});
+
+        dropZone.addEventListener('drop', (e) => {{
+            if (e.dataTransfer.files && e.dataTransfer.files.length) {{
+                handleFilesSelected(e.dataTransfer.files);
+            }}
+        }});
+
+        function handleFilesSelected(files) {{
+            selectedFiles = Array.from(files);
+            if (!selectedFiles.length) return;
+
+            // Open Modal
+            openModalWithFiles(selectedFiles);
+        }}
+
+        function openModalWithFiles(files) {{
+            const first = files[0];
+            const nameEl = document.getElementById('modalFileName');
+            const metaEl = document.getElementById('modalFileMeta');
+            const thumbEl = document.getElementById('modalThumb');
+
+            if (files.length === 1) {{
+                nameEl.innerText = first.name;
+                const sizeKb = (first.size / 1024).toFixed(1);
+                metaEl.innerText = `${{sizeKb}} KB • Ready to configure`;
+            }} else {{
+                nameEl.innerText = `${{files.length}} Cake Images Selected`;
+                const totalMb = (files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2);
+                metaEl.innerText = `Bulk Ingestion • ${{totalMb}} MB total`;
             }}
 
-            // Poll every 2 seconds
-            setInterval(fetchJobs, 2000);
-            fetchJobs();
-        </script>
-    </body>
-    </html>
+            // Thumbnail preview
+            const reader = new FileReader();
+            reader.onload = function(e) {{
+                thumbEl.src = e.target.result;
+            }};
+            reader.readAsDataURL(first);
+
+            // Load Categories if not already loaded
+            loadCategoriesDropdown();
+
+            configModal.style.display = 'flex';
+        }}
+
+        function closeModal() {{
+            configModal.style.display = 'none';
+            fileInput.value = '';
+            selectedFiles = [];
+        }}
+
+        function toggleOption(checkboxId) {{
+            const cb = document.getElementById(checkboxId);
+            cb.checked = !cb.checked;
+            const card = document.getElementById(checkboxId + 'Card');
+            if (cb.checked) {{
+                card.classList.add('checked');
+            }} else {{
+                card.classList.remove('checked');
+            }}
+        }}
+
+        async function loadCategoriesDropdown() {{
+            const selectEl = document.getElementById('categorySelect');
+            if (selectEl.options.length > 1) return; // already populated
+
+            try {{
+                const resp = await fetch('/api/categories');
+                if (resp.ok) {{
+                    const categories = await resp.json();
+                    categories.forEach(cat => {{
+                        const opt = document.createElement('option');
+                        opt.value = cat.id;
+                        opt.textContent = `${{cat.name}}`;
+                        selectEl.appendChild(opt);
+                    }});
+                }}
+            }} catch (e) {{
+                console.error("Categories load note", e);
+            }}
+        }}
+
+        async function submitProcessing() {{
+            if (!selectedFiles.length) return;
+
+            const optCompress = document.getElementById('optCompress').checked;
+            const optWhiteBg = document.getElementById('optWhiteBg').checked;
+            const optAutoFocus = document.getElementById('optAutoFocus').checked;
+            const optAi = document.getElementById('optAi').checked;
+            const categoryId = document.getElementById('categorySelect').value;
+
+            submitProcessBtn.disabled = true;
+            submitProcessBtn.innerHTML = "<span>Enqueuing Images...</span>";
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => formData.append("files", file));
+            formData.append("compress", optCompress);
+            formData.append("white_background", optWhiteBg);
+            formData.append("auto_focus", optAutoFocus);
+            formData.append("ai_metadata", optAi);
+            if (categoryId) {{
+                formData.append("category_id", categoryId);
+            }}
+
+            try {{
+                const resp = await fetch("/api/upload/bulk", {{
+                    method: "POST",
+                    body: formData
+                }});
+                const res = await resp.json();
+
+                closeModal();
+                fetchJobs();
+            }} catch (err) {{
+                alert("Upload failed: " + err.message);
+            }} finally {{
+                submitProcessBtn.disabled = false;
+                submitProcessBtn.innerHTML = "<span>🚀 Upload & Process to Database</span>";
+            }}
+        }}
+
+        async function clearJobHistory() {{
+            if (!confirm("Are you sure you want to clear finished and failed jobs from queue history?")) return;
+            try {{
+                await fetch("/api/jobs/clear", {{ method: "POST" }});
+                fetchJobs();
+            }} catch (e) {{
+                console.error("Clear error", e);
+            }}
+        }}
+
+        async function fetchJobs() {{
+            try {{
+                const [jobsResp, statusResp] = await Promise.all([
+                    fetch("/api/jobs?limit=30"),
+                    fetch("/api/system/status")
+                ]);
+                const jobs = await jobsResp.json();
+                const status = await statusResp.json();
+
+                if (status.stats) {{
+                    document.getElementById('statPending').innerText = status.stats.pending || 0;
+                    document.getElementById('statProcessing').innerText = status.stats.processing || 0;
+                    document.getElementById('statPublished').innerText = status.stats.published || 0;
+                }}
+
+                const listEl = document.getElementById('jobsList');
+                if (!jobs.length) {{
+                    listEl.innerHTML = `
+                        <p style="color: var(--muted); font-size: 0.85rem; text-align: center; padding: 3rem 1rem;">
+                            ✨ No active processing jobs.<br>
+                            <span style="font-size: 0.78rem;">Select or drop cake photos on the left to start!</span>
+                        </p>
+                    `;
+                    return;
+                }}
+
+                listEl.innerHTML = jobs.map(j => `
+                    <div class="job-card">
+                        <div class="job-card-top">
+                            <div class="job-info">
+                                ${{j.cake_image_url ? `<img src="${{j.cake_image_url}}" class="job-thumb" />` : ''}}
+                                <div>
+                                    <div class="job-text-title">${{j.cake_name || j.file_name}}</div>
+                                    <div class="job-text-sub">${{j.file_name}} • ${{Math.round(j.original_size_bytes / 1024)}} KB</div>
+                                </div>
+                            </div>
+                            <span class="status-pill status-${{j.status}}">${{j.status.replace('_', ' ')}}</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: ${{j.progress}}%;"></div>
+                        </div>
+                        ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.4rem;">${{j.error_message}}</div>` : ''}}
+                        ${{j.status === 'completed' ? `
+                            <div class="job-actions">
+                                <a href="http://localhost:3000/admin/cakes/pending" target="_blank" class="action-link" style="color: #F6E7B9; font-weight: 600;">
+                                    👉 Review in Admin (Pending) ↗
+                                </a>
+                                <a href="http://localhost:3000/admin" target="_blank" class="action-link">
+                                    👑 Admin Dashboard ↗
+                                </a>
+                            </div>
+                        ` : ''}}
+                    </div>
+                `).join('');
+            }} catch (e) {{
+                console.error("Fetch jobs error", e);
+            }}
+        }}
+
+        // Poll jobs every 2.5 seconds
+        setInterval(fetchJobs, 2500);
+        fetchJobs();
+    </script>
+</body>
+</html>
     """
     return HTMLResponse(content=html_content)

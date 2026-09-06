@@ -81,8 +81,8 @@ def spawn_backend():
     log_file = open(LOGS_DIR / "backend.log", "a", encoding="utf-8")
     
     if sys.platform == "win32":
-        # DETACHED_PROCESS = 0x00000008, CREATE_NEW_PROCESS_GROUP = 0x00000200
-        flags = 0x00000008 | 0x00000200
+        # CREATE_NO_WINDOW = 0x08000000, CREATE_NEW_PROCESS_GROUP = 0x00000200
+        flags = 0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP
         subprocess.Popen(
             cmd,
             cwd=str(PROJECT_ROOT),
@@ -110,7 +110,7 @@ def spawn_frontend():
     log_file = open(LOGS_DIR / "frontend.log", "a", encoding="utf-8")
     
     if sys.platform == "win32":
-        flags = 0x00000008 | 0x00000200
+        flags = 0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP
         subprocess.Popen(
             cmd,
             cwd=str(frontend_dir),

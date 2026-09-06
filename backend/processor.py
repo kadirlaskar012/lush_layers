@@ -97,25 +97,26 @@ class ImageProcessor:
         rgba.putdata(new_data)
         return rgba
 
-    def composite_on_white_studio(self, cake_rgba: Image.Image, canvas_size: int = 1200) -> Image.Image:
+    def composite_on_white_studio(self, cake_rgba: Image.Image, canvas_size: int = 1200, auto_focus: bool = True) -> Image.Image:
         """
         Composites cake cutout onto pristine studio white canvas
         with a soft ambient drop-shadow under the cake base for a photorealistic luxury feel.
         """
-        # 1. Trim transparency bounding box
-        bbox = cake_rgba.getbbox()
-        if bbox:
-            cake_cropped = cake_rgba.crop(bbox)
+        # 1. Trim transparency bounding box if auto_focus is enabled
+        if auto_focus:
+            bbox = cake_rgba.getbbox()
+            cake_cropped = cake_rgba.crop(bbox) if bbox else cake_rgba
         else:
             cake_cropped = cake_rgba
 
         cw, ch = cake_cropped.size
         
-        # 2. Compute proportional scale to fit within 84% of canvas size (leaving luxury margin)
-        target_max_dimension = int(canvas_size * 0.84)
-        scale = min(target_max_dimension / cw, target_max_dimension / ch)
-        new_w = int(cw * scale)
-        new_h = int(ch * scale)
+        # 2. Compute proportional scale to fit within canvas (84% for auto_focus, 88% for standard)
+        margin_factor = 0.84 if auto_focus else 0.88
+        target_max_dimension = int(canvas_size * margin_factor)
+        scale = min(target_max_dimension / max(1, cw), target_max_dimension / max(1, ch))
+        new_w = max(1, int(cw * scale))
+        new_h = max(1, int(ch * scale))
         
         cake_resized = cake_cropped.resize((new_w, new_h), Image.Resampling.LANCZOS)
         
@@ -128,7 +129,7 @@ class ImageProcessor:
         
         # 5. Create subtle studio soft shadow under the cake base
         shadow_canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
-        shadow_ellipse = Image.new("RGBA", (int(new_w * 0.75), int(new_h * 0.12)), (0, 0, 0, 0))
+        shadow_ellipse = Image.new("RGBA", (max(10, int(new_w * 0.75)), max(6, int(new_h * 0.12))), (0, 0, 0, 0))
         
         # Render a soft black shadow oval
         from PIL import ImageDraw
@@ -146,10 +147,19 @@ class ImageProcessor:
         
         return canvas.convert("RGB")
 
-    def process_cake_image(self, input_path: Path, output_filename_base: Optional[str] = None) -> Dict[str, Any]:
+    def process_cake_image(
+        self,
+        input_path: Path,
+        output_filename_base: Optional[str] = None,
+        compress: bool = True,
+        white_background: bool = True,
+        auto_focus: bool = True
+    ) -> Dict[str, Any]:
         """
-        Complete processing workflow:
-        Validate -> Background removal -> Clean white studio compositing -> Auto-crop/resize -> WebP master & thumbnail
+        Configurable processing workflow:
+        - white_background: AI background removal + luxury studio white compositing with contact shadow
+        - auto_focus: subject detection, auto-crop and 1:1 square centered framing
+        - compress: WebP high-efficiency optimization (80%+ size reduction) vs master high-fidelity
         """
         valid, msg = self.validate_image(input_path)
         if not valid:
@@ -158,22 +168,48 @@ class ImageProcessor:
         if not output_filename_base:
             output_filename_base = f"cake_{uuid.uuid4().hex[:10]}"
 
-        with Image.open(input_path) as orig_img:
-            # 1. Background removal
-            rgba_cutout = self.remove_background(orig_img)
-            
-            # 2. Studio white background compositing
-            master_rgb = self.composite_on_white_studio(rgba_cutout, canvas_size=1200)
+        with Image.open(input_path) as raw_img:
+            orig_img = ImageOps.exif_transpose(raw_img)
+
+            if white_background:
+                # 1. AI Background removal
+                rgba_cutout = self.remove_background(orig_img)
+                # 2. Studio white background compositing with contact shadow
+                master_rgb = self.composite_on_white_studio(rgba_cutout, canvas_size=1200, auto_focus=auto_focus)
+            else:
+                # Retain original background
+                rgb_img = orig_img.convert("RGB")
+                w, h = rgb_img.size
+                if auto_focus:
+                    # Smart center-crop to 1:1 square framing
+                    min_dim = min(w, h)
+                    left = (w - min_dim) // 2
+                    top = (h - min_dim) // 2
+                    cropped = rgb_img.crop((left, top, left + min_dim, top + min_dim))
+                    master_rgb = cropped.resize((1200, 1200), Image.Resampling.LANCZOS)
+                else:
+                    # Fit onto 1200x1200 canvas maintaining aspect ratio
+                    scale = min(1200 / max(1, w), 1200 / max(1, h))
+                    nw, nh = max(1, int(w * scale)), max(1, int(h * scale))
+                    resized = rgb_img.resize((nw, nh), Image.Resampling.LANCZOS)
+                    master_canvas = Image.new("RGB", (1200, 1200), (250, 246, 240))
+                    px = (1200 - nw) // 2
+                    py = (1200 - nh) // 2
+                    master_canvas.paste(resized, (px, py))
+                    master_rgb = master_canvas
             
             # 3. Generate thumbnail (600x600)
             thumb_rgb = master_rgb.resize((600, 600), Image.Resampling.LANCZOS)
             
-            # 4. Save WebP files
+            # 4. Save WebP files with calibrated compression settings
             master_path = settings.PROCESSED_DIR / f"{output_filename_base}.webp"
             thumb_path = settings.THUMBNAIL_DIR / f"{output_filename_base}_thumb.webp"
             
-            master_rgb.save(master_path, format="WEBP", quality=90, method=6)
-            thumb_rgb.save(thumb_path, format="WEBP", quality=85, method=6)
+            master_quality = 86 if compress else 98
+            thumb_quality = 78 if compress else 90
+            
+            master_rgb.save(master_path, format="WEBP", quality=master_quality, method=6)
+            thumb_rgb.save(thumb_path, format="WEBP", quality=thumb_quality, method=6)
 
             file_hash = hashlib.md5(master_path.read_bytes()).hexdigest()
 
@@ -191,3 +227,4 @@ class ImageProcessor:
             }
 
 processor = ImageProcessor()
+

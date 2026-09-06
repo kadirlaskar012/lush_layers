@@ -30,6 +30,8 @@ venv/
 .venv/
 ENV/
 env/
+logs/
+*.log
 
 # SQLite databases
 *.db
