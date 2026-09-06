@@ -321,25 +321,30 @@ button:hover .icon-hover-pulse {
   will-change: transform;
 }
 
-/* Buttons - Specular Gloss & 120Hz Fluid Motion */
+/* ============================================================
+   GILDED SERIF BUTTON SYSTEM — Luxury Editorial Style
+   Primary: Gold gradient rectangle + Playfair Display
+   Secondary: Italic serif underline with long arrow
+   ============================================================ */
+
 .btn-gold {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  background: var(--gold-gloss);
-  color: #FFFFFF;
-  font-family: var(--font-sans);
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #DFC27A 0%, #BF9A3E 50%, #8A6416 100%);
+  color: var(--charcoal, #1A2018);
+  font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 0.84rem;
-  letter-spacing: 0.02em;
-  padding: 0.55rem 1.25rem;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(197, 152, 58, 0.5);
+  font-size: 0.92rem;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(122, 92, 20, 0.3);
   cursor: pointer;
   text-decoration: none;
-  transition: var(--transition-transform-120hz), filter 0.2s ease;
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.5), 0 3px 10px rgba(184, 142, 62, 0.25);
+  transition: var(--transition-transform-120hz), filter 0.2s ease, box-shadow 0.25s ease;
+  box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.45), 0 4px 14px rgba(191,154,62,0.32);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -347,32 +352,34 @@ button:hover .icon-hover-pulse {
 }
 
 .btn-gold:hover {
-  transform: translateY(-1.5px) scale(1.01) translate3d(0, 0, 0);
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7), 0 6px 18px rgba(184, 142, 62, 0.35);
-  filter: brightness(1.04);
+  transform: translateY(-2px) translate3d(0, 0, 0);
+  box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.6), 0 8px 24px rgba(191,154,62,0.42);
+  filter: brightness(1.05);
 }
 
 .btn-gold:active {
   transform: translateY(0.5px) translate3d(0, 0, 0);
 }
 
+/* WhatsApp: Gold gradient with serif, diamond ornament */
 .btn-whatsapp {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  background: var(--whatsapp-gloss);
-  color: #FFFFFF;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 0.82rem;
-  padding: 0.52rem 1.1rem;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #DFC27A 0%, #BF9A3E 55%, #8A6416 100%);
+  color: #1A2018;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(122, 92, 20, 0.28);
   cursor: pointer;
   text-decoration: none;
-  transition: var(--transition-transform-120hz), filter 0.2s ease;
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.45), 0 3px 10px rgba(34, 197, 94, 0.28);
+  transition: var(--transition-transform-120hz), filter 0.2s ease, box-shadow 0.25s ease;
+  box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.4), 0 4px 14px rgba(191,154,62,0.3);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -380,65 +387,64 @@ button:hover .icon-hover-pulse {
 }
 
 .btn-whatsapp:hover {
-  transform: translateY(-1.5px) scale(1.01) translate3d(0, 0, 0);
-  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.6), 0 6px 18px rgba(34, 197, 94, 0.38);
-  filter: brightness(1.04);
+  transform: translateY(-2px) translate3d(0, 0, 0);
+  box-shadow: inset 0 1px 1px 0 rgba(255,255,255,0.55), 0 8px 22px rgba(191,154,62,0.4);
+  filter: brightness(1.06);
 }
 
 .btn-whatsapp:active {
   transform: translateY(0.5px) translate3d(0, 0, 0);
 }
 
+/* Secondary / Outline: Italic serif underline style */
 .btn-outline-gold {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  gap: 0.5rem;
+  background: transparent;
   color: var(--gold-dark);
-  border: 1px solid var(--gold-border);
-  font-family: var(--font-sans);
-  font-weight: 500;
-  font-size: 0.82rem;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-full);
+  border: none;
+  border-bottom: 1.5px solid var(--gold);
+  border-radius: 0;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 0.96rem;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0;
   cursor: pointer;
   text-decoration: none;
-  transition: var(--transition-transform-120hz), background 0.2s ease, border-color 0.2s ease;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--shadow-xs);
+  transition: color 0.2s ease, border-color 0.2s ease;
   white-space: nowrap;
   will-change: transform;
 }
 
 .btn-outline-gold:hover {
-  background: var(--gold-subtle);
-  border-color: var(--gold);
-  color: var(--gold-dark);
-  transform: translateY(-1px) translate3d(0, 0, 0);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 4px 12px rgba(184, 142, 62, 0.15);
+  color: var(--gold-rich);
+  border-color: var(--gold-rich);
 }
 
-/* Order Now White Button with Crisp Outer Line */
+/* Order Now — Gold outlined serif pill on cards */
 .btn-order-now {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: #FFFFFF;
-  color: var(--text-primary);
-  border: 1.5px solid rgba(197, 152, 58, 0.45);
-  font-family: var(--font-sans);
+  background: transparent;
+  color: var(--gold-dark);
+  border: 1.5px solid var(--gold-border);
+  font-family: var(--font-editorial);
+  font-style: italic;
   font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
   padding: 0.42rem 0.95rem;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-decoration: none;
-  transition: var(--transition-transform-120hz), border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 1px 3px rgba(45, 35, 25, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition: var(--transition-transform-120hz), border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  box-shadow: none;
   white-space: nowrap;
   width: 100%;
   height: 34px;
@@ -446,16 +452,16 @@ button:hover .icon-hover-pulse {
 }
 
 .btn-order-now:hover {
-  background: #FFFDF9;
+  background: var(--gold-subtle);
   border-color: var(--gold);
   color: var(--gold-dark);
-  transform: translateY(-1.5px) translate3d(0, 0, 0);
-  box-shadow: 0 4px 14px rgba(197, 152, 58, 0.2), inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform: translateY(-1px) translate3d(0, 0, 0);
+  box-shadow: 0 4px 12px rgba(191, 154, 62, 0.18);
 }
 
 .btn-order-now:active {
   transform: translateY(0.5px) translate3d(0, 0, 0);
-  background: #F8F5EE;
+  background: var(--gold-subtle);
 }
 
 /* ==========================================================================
@@ -491,18 +497,19 @@ button:hover .icon-hover-pulse {
 }
 
 .hero-atelier-badge {
-  font-size: 0.66rem;
-  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
   color: var(--gold-dark);
-  text-transform: uppercase;
-  font-weight: 700;
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 600;
   background: var(--gold-subtle);
-  padding: 0.16rem 0.5rem;
-  border-radius: var(--radius-full);
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--gold-border);
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .hero-headline {
