@@ -166,6 +166,46 @@ async def start_frontend_endpoint(target_url: Optional[str] = Query(None)):
         "message": "Frontend server is live on port 3000." if is_now_active else "Frontend server spawned in background, compiling..."
     }
 
+class SetGeminiKeyPayload(BaseModel):
+    api_key: str
+
+@app.get("/api/system/ai-status")
+async def get_ai_status():
+    has_gemini = bool(settings.GEMINI_API_KEY)
+    return {
+        "gemini_configured": has_gemini,
+        "engine": "Google Gemini 2.0 Flash Vision AI" if has_gemini else "Intelligent Local Computer Vision & Aesthetic Taxonomy Engine",
+        "models": ["gemini-2.0-flash", "gemini-1.5-flash"] if has_gemini else ["local-visual-cv-v2"],
+        "status": "ready"
+    }
+
+@app.post("/api/system/set-gemini-key")
+async def set_gemini_key_endpoint(payload: SetGeminiKeyPayload):
+    key = payload.api_key.strip()
+    settings.GEMINI_API_KEY = key
+    ai_analyzer.reload_key()
+    
+    # Persist to backend/.env
+    env_path = settings.BASE_DIR / ".env"
+    try:
+        if env_path.exists():
+            content = env_path.read_text(encoding="utf-8")
+            if "GEMINI_API_KEY=" in content:
+                lines = [f"GEMINI_API_KEY={key}" if line.startswith("GEMINI_API_KEY=") else line for line in content.splitlines()]
+                env_path.write_text("\n".join(lines), encoding="utf-8")
+            else:
+                env_path.write_text(content.strip() + f"\nGEMINI_API_KEY={key}\n", encoding="utf-8")
+        else:
+            env_path.write_text(f"GEMINI_API_KEY={key}\n", encoding="utf-8")
+    except Exception as e:
+        print(f"[Main] Note saving .env: {e}")
+        
+    return {
+        "success": True,
+        "gemini_configured": bool(key),
+        "message": "Gemini API key updated and active." if key else "Gemini key cleared. Reverted to Local Computer Vision."
+    }
+
 # ==========================================
 # BULK UPLOAD & JOB QUEUE
 # ==========================================
@@ -519,7 +559,7 @@ async def _execute_ai_generation_for_cake(cake: Dict[str, Any], is_regenerate: b
 
     updated = db.update_cake(cake_id, {
         "name": ai_result.get("name", cake["name"]),
-        "flavour": ai_result.get("flavour", "Not specified"),
+        "flavour": ai_result.get("flavour") or "Madagascar Bourbon Vanilla Bean & Fresh Cream",
         "category_id": matched_category_id,
         "description": ai_result.get("description", cake.get("description", "")),
         "available_sizes": ai_result.get("available_sizes", cake.get("available_sizes")),

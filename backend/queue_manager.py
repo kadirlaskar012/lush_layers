@@ -163,7 +163,7 @@ class BackgroundJobQueue:
             if not clean_title or clean_title.lower().startswith("img"):
                 clean_title = f"Artisan Confection #{job_id[:6].upper()}"
 
-            flavour = (ai_data.get("flavour") if ai_data else None) or "Chef's Signature Vanilla & Cocoa"
+            flavour = (ai_data.get("flavour") if ai_data and ai_data.get("flavour") and ai_data.get("flavour").lower() not in ("not specified", "unknown", "none") else None) or "Madagascar Bourbon Vanilla Bean & Fresh Cream"
             description = (ai_data.get("description") if ai_data else None) or "An exquisite handcrafted luxury confection prepared with pure artisanal ingredients."
 
             category_id = opt_category_id
