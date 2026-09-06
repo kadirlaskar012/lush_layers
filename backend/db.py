@@ -152,6 +152,19 @@ class Database:
                 cursor.execute("UPDATE cakes SET display_id = ? WHERE id = ?", (str(current_id), row["id"]))
             conn.commit()
 
+        # Ensure curation placement columns exist (hero carousel, trending spotlight, inspiration wall)
+        for col_name in ("is_hero", "is_trending", "is_inspiration"):
+            try:
+                cursor.execute(f"ALTER TABLE cakes ADD COLUMN {col_name} INTEGER DEFAULT 0")
+            except Exception:
+                pass
+
+        # If any published cake has 0 for all placements, set default to 1 so current live cakes are shown
+        cursor.execute("SELECT COUNT(*) FROM cakes WHERE is_hero = 1 OR is_trending = 1 OR is_inspiration = 1")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("UPDATE cakes SET is_hero = 1, is_trending = 1, is_inspiration = 1 WHERE status = 'published'")
+            conn.commit()
+
         # Reviews
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS reviews (
@@ -322,7 +335,7 @@ class Database:
         return dict(row) if row else None
 
     # --- CAKES ---
-    def get_cakes(self, status: Optional[str] = None, category_id: Optional[str] = None, flavour: Optional[str] = None, search: Optional[str] = None, sort_by: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_cakes(self, status: Optional[str] = None, category_id: Optional[str] = None, flavour: Optional[str] = None, search: Optional[str] = None, sort_by: Optional[str] = None, placement: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         conn = self._get_conn()
         cursor = conn.cursor()
         
@@ -348,6 +361,15 @@ class Database:
         if flavour:
             query += " AND LOWER(c.flavour) LIKE LOWER(?)"
             params.append(f"%{flavour}%")
+        if placement:
+            if placement == "hero":
+                query += " AND c.is_hero = 1"
+            elif placement == "trending":
+                query += " AND c.is_trending = 1"
+            elif placement == "inspiration":
+                query += " AND c.is_inspiration = 1"
+            elif placement == "none":
+                query += " AND (c.is_hero = 0 OR c.is_hero IS NULL) AND (c.is_trending = 0 OR c.is_trending IS NULL) AND (c.is_inspiration = 0 OR c.is_inspiration IS NULL)"
         if search:
             clean_search = search.strip().lstrip("#")
             query += " AND (c.display_id = ? OR LOWER(c.name) LIKE LOWER(?) OR LOWER(c.flavour) LIKE LOWER(?) OR LOWER(c.description) LIKE LOWER(?))"
@@ -382,6 +404,9 @@ class Database:
                     d["ai_metadata"] = json.loads(d["ai_metadata"])
                 except Exception:
                     d["ai_metadata"] = {}
+            d["is_hero"] = bool(d.get("is_hero"))
+            d["is_trending"] = bool(d.get("is_trending"))
+            d["is_inspiration"] = bool(d.get("is_inspiration"))
             rows.append(d)
         conn.close()
         return rows
@@ -410,6 +435,9 @@ class Database:
                 d["ai_metadata"] = json.loads(d["ai_metadata"])
             except Exception:
                 d["ai_metadata"] = {}
+        d["is_hero"] = bool(d.get("is_hero"))
+        d["is_trending"] = bool(d.get("is_trending"))
+        d["is_inspiration"] = bool(d.get("is_inspiration"))
         return d
 
     def get_cake_by_slug(self, slug: str) -> Optional[Dict[str, Any]]:
@@ -436,6 +464,9 @@ class Database:
                 d["ai_metadata"] = json.loads(d["ai_metadata"])
             except Exception:
                 d["ai_metadata"] = {}
+        d["is_hero"] = bool(d.get("is_hero"))
+        d["is_trending"] = bool(d.get("is_trending"))
+        d["is_inspiration"] = bool(d.get("is_inspiration"))
         return d
 
     def create_cake(self, cake_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -472,12 +503,17 @@ class Database:
             current_max = max_row[0] if max_row and max_row[0] else 1000
             display_id = str(current_max + 1)
 
+        is_hero = 1 if cake_data.get("is_hero") else 0
+        is_trending = 1 if cake_data.get("is_trending") else 0
+        is_inspiration = 1 if cake_data.get("is_inspiration") else 0
+
         cursor.execute("""
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
-                ai_metadata, created_at, updated_at, published_at, display_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ai_metadata, created_at, updated_at, published_at, display_id,
+                is_hero, is_trending, is_inspiration
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             cake_id,
             cake_data.get("name", "Untitled Confection"),
@@ -493,7 +529,10 @@ class Database:
             now,
             now,
             None,
-            display_id
+            display_id,
+            is_hero,
+            is_trending,
+            is_inspiration
         ))
         conn.commit()
         conn.close()
@@ -540,6 +579,9 @@ class Database:
             if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status", "display_id"):
                 fields.append(f"{k} = ?")
                 params.append(v)
+            elif k in ("is_hero", "is_trending", "is_inspiration"):
+                fields.append(f"{k} = ?")
+                params.append(1 if v else 0)
             elif k == "available_sizes":
                 fields.append("available_sizes = ?")
                 params.append(json.dumps(v) if not isinstance(v, str) else v)
@@ -566,6 +608,9 @@ class Database:
                 if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status"):
                     pg_fields.append(f"{k} = %s")
                     pg_params.append(v)
+                elif k in ("is_hero", "is_trending", "is_inspiration"):
+                    pg_fields.append(f"{k} = %s")
+                    pg_params.append(1 if v else 0)
                 elif k == "available_sizes":
                     pg_fields.append("available_sizes = %s")
                     pg_params.append(json.dumps(v) if not isinstance(v, str) else v)
@@ -584,6 +629,15 @@ class Database:
             pass
 
         return self.get_cake_by_id(cake_id)
+
+    def toggle_cake_placement(self, cake_id: str, field: str, value: Optional[bool] = None) -> Optional[Dict[str, Any]]:
+        if field not in ("is_hero", "is_trending", "is_inspiration"):
+            raise ValueError(f"Invalid placement field: {field}")
+        cake = self.get_cake_by_id(cake_id)
+        if not cake:
+            return None
+        new_val = (1 if value else 0) if value is not None else (0 if cake.get(field) else 1)
+        return self.update_cake(cake_id, {field: new_val})
 
     def publish_cake(self, cake_id: str) -> Optional[Dict[str, Any]]:
         cake = self.get_cake_by_id(cake_id)

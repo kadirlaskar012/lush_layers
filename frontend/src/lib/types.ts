@@ -30,6 +30,9 @@ export interface Cake {
   image_url: string; // Mandatory!
   cloudinary_public_id?: string;
   status: "pending" | "approved" | "rejected" | "published";
+  is_hero?: boolean;
+  is_trending?: boolean;
+  is_inspiration?: boolean;
   ai_metadata?: {
     original_file?: string;
     suggested_name?: string;

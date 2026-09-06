@@ -316,6 +316,15 @@ class CakeUpdateRequest(BaseModel):
     available_sizes: Optional[List[str]] = None
     image_url: Optional[str] = None
     status: Optional[str] = None
+    display_id: Optional[str] = None
+    is_hero: Optional[bool] = None
+    is_trending: Optional[bool] = None
+    is_inspiration: Optional[bool] = None
+
+class CakeCurationRequest(BaseModel):
+    is_hero: Optional[bool] = None
+    is_trending: Optional[bool] = None
+    is_inspiration: Optional[bool] = None
 
 @app.get("/api/cakes")
 async def list_cakes(
@@ -324,10 +333,11 @@ async def list_cakes(
     flavour: Optional[str] = None,
     search: Optional[str] = None,
     sort_by: Optional[str] = None,
+    placement: Optional[str] = None,
     limit: int = Query(100, ge=1, le=300)
 ):
     """
-    Returns list of cakes filtered by status, category, flavour, search, or sort_by.
+    Returns list of cakes filtered by status, category, flavour, search, sort_by, or placement.
     STRICT RULE: NO PRICE RETURNED.
     """
     return db.get_cakes(
@@ -336,6 +346,7 @@ async def list_cakes(
         flavour=flavour,
         search=search,
         sort_by=sort_by,
+        placement=placement,
         limit=limit
     )
 
@@ -378,6 +389,26 @@ async def update_cake(cake_id: str, payload: CakeUpdateRequest, background_tasks
             ["/", "/cakes", f"/cakes/{updated.get('slug', '')}"]
         )
     return updated
+
+@app.patch("/api/cakes/{cake_id}/curation")
+async def update_cake_curation(cake_id: str, payload: CakeCurationRequest, background_tasks: BackgroundTasks):
+    """
+    Instantly updates placement toggles:
+    - is_hero: Show on Mobile Hero Carousel
+    - is_trending: Show on Trending & Chef's Spotlight
+    - is_inspiration: Show on The Haute Inspiration Wall
+    """
+    updates = {k: (1 if v else 0) for k, v in payload.dict().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No curation fields provided.")
+    updated = db.update_cake(cake_id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    background_tasks.add_task(
+        trigger_frontend_revalidation,
+        ["/", "/cakes"]
+    )
+    return {"message": "Curation placements updated successfully.", "cake": updated}
 
 @app.post("/api/cakes/{cake_id}/approve")
 async def approve_cake(cake_id: str):

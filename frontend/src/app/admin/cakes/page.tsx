@@ -10,6 +10,7 @@ import {
   rejectCake,
   deleteCake,
   updateCakeDetails,
+  updateCakeCuration,
 } from "../../../lib/api";
 import { Cake, Category } from "../../../lib/types";
 import { getCakeDisplayId } from "../../../lib/cakeHelper";
@@ -20,6 +21,7 @@ export default function AdminCakesManagementPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [placementFilter, setPlacementFilter] = useState<string>("all");
   const [sortOption, setSortOption] = useState<string>("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +42,8 @@ export default function AdminCakesManagementPage() {
           statusFilter === "all" ? undefined : statusFilter,
           searchQuery || undefined,
           categoryFilter === "all" ? undefined : categoryFilter,
-          sortOption
+          sortOption,
+          placementFilter === "all" ? undefined : placementFilter
         ),
         getCategories(),
       ]);
@@ -55,7 +58,7 @@ export default function AdminCakesManagementPage() {
 
   useEffect(() => {
     fetchCakes();
-  }, [statusFilter, categoryFilter, sortOption]);
+  }, [statusFilter, categoryFilter, sortOption, placementFilter]);
 
   // Fast, instant filtering & sorting on loaded dataset (including 4-digit ID search)
   const displayedCakes = useMemo(() => {
@@ -67,6 +70,16 @@ export default function AdminCakesManagementPage() {
 
     if (categoryFilter !== "all") {
       result = result.filter((c) => c.category_id === categoryFilter);
+    }
+
+    if (placementFilter === "hero") {
+      result = result.filter((c) => Boolean(c.is_hero));
+    } else if (placementFilter === "trending") {
+      result = result.filter((c) => Boolean(c.is_trending));
+    } else if (placementFilter === "inspiration") {
+      result = result.filter((c) => Boolean(c.is_inspiration));
+    } else if (placementFilter === "none") {
+      result = result.filter((c) => !c.is_hero && !c.is_trending && !c.is_inspiration);
     }
 
     if (searchQuery.trim()) {
@@ -110,11 +123,44 @@ export default function AdminCakesManagementPage() {
     });
 
     return result;
-  }, [cakes, statusFilter, categoryFilter, searchQuery, sortOption]);
+  }, [cakes, statusFilter, categoryFilter, searchQuery, sortOption, placementFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchCakes();
+  };
+
+  const handleTogglePlacement = async (
+    cakeId: string,
+    field: "is_hero" | "is_trending" | "is_inspiration"
+  ) => {
+    const currentCake = cakes.find((c) => c.id === cakeId);
+    if (!currentCake) return;
+    const currentVal = Boolean(currentCake[field]);
+    const newVal = !currentVal;
+
+    // Instant optimistic update
+    setCakes((prev) =>
+      prev.map((c) => (c.id === cakeId ? { ...c, [field]: newVal } : c))
+    );
+
+    try {
+      await updateCakeCuration(cakeId, { [field]: newVal });
+      const label =
+        field === "is_hero"
+          ? "Mobile Hero Carousel"
+          : field === "is_trending"
+          ? "Trending & Spotlight"
+          : "Haute Inspiration Wall";
+      setFeedback(`${newVal ? "✓ Added to" : "✕ Removed from"} ${label}!`);
+      setTimeout(() => setFeedback(null), 2500);
+    } catch (err: any) {
+      // Rollback on error
+      setCakes((prev) =>
+        prev.map((c) => (c.id === cakeId ? { ...c, [field]: currentVal } : c))
+      );
+      alert(err.message || "Failed to update section placement.");
+    }
   };
 
   const handlePublish = async (cakeId: string) => {
@@ -185,6 +231,9 @@ export default function AdminCakesManagementPage() {
       status: cake.status,
       image_url: cake.image_url,
       display_id: cake.display_id || getCakeDisplayId(cake),
+      is_hero: Boolean(cake.is_hero),
+      is_trending: Boolean(cake.is_trending),
+      is_inspiration: Boolean(cake.is_inspiration),
     });
     setNewSizeInput("");
   };
@@ -391,6 +440,32 @@ export default function AdminCakesManagementPage() {
             </select>
           </div>
 
+          {/* Section / Placement Filter */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500 }}>
+              Section:
+            </span>
+            <select
+              value={placementFilter}
+              onChange={(e) => setPlacementFilter(e.target.value)}
+              className="form-input"
+              style={{
+                padding: "0.32rem 0.55rem",
+                fontSize: "0.76rem",
+                borderRadius: "var(--radius-sm)",
+                background: "var(--bg-surface)",
+                cursor: "pointer",
+                minWidth: "140px",
+              }}
+            >
+              <option value="all">All Placements</option>
+              <option value="hero">🌟 Hero Carousel Only</option>
+              <option value="trending">🔥 Trending & Spotlight Only</option>
+              <option value="inspiration">🎨 Inspiration Wall Only</option>
+              <option value="none">Standard (None)</option>
+            </select>
+          </div>
+
           {/* Sort Filter */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
             <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500 }}>
@@ -477,6 +552,9 @@ export default function AdminCakesManagementPage() {
                 Flavour & Category
               </th>
               <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)" }}>
+                Curated Sections
+              </th>
+              <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)" }}>
                 Sizes
               </th>
               <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)" }}>
@@ -490,13 +568,13 @@ export default function AdminCakesManagementPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={8} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   Loading cakes...
                 </td>
               </tr>
             ) : displayedCakes.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={8} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   No confections found matching your criteria.
                 </td>
               </tr>
@@ -561,6 +639,73 @@ export default function AdminCakesManagementPage() {
                       <div style={{ color: "var(--text-secondary)" }}>{cake.flavour}</div>
                       <div style={{ fontSize: "0.72rem", color: "var(--gold-dark)" }}>
                         {cake.category_name || "Uncategorized"}
+                      </div>
+                    </td>
+                    <td style={{ padding: "0.45rem 0.85rem" }}>
+                      <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", alignItems: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePlacement(cake.id, "is_hero")}
+                          title={cake.is_hero ? "Currently in Mobile Hero Carousel (Click to remove)" : "Click to add to Mobile Hero Carousel"}
+                          style={{
+                            fontSize: "0.68rem",
+                            padding: "0.18rem 0.45rem",
+                            borderRadius: "var(--radius-full)",
+                            border: cake.is_hero ? "1px solid #F59E0B" : "1px dashed var(--border-subtle)",
+                            background: cake.is_hero ? "#FEF3C7" : "transparent",
+                            color: cake.is_hero ? "#92400E" : "var(--text-muted)",
+                            cursor: "pointer",
+                            fontWeight: cake.is_hero ? 600 : 400,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>{cake.is_hero ? "✓ 🌟 Hero" : "— 🌟 Hero"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePlacement(cake.id, "is_trending")}
+                          title={cake.is_trending ? "Currently in Trending Spotlight (Click to remove)" : "Click to add to Trending Spotlight"}
+                          style={{
+                            fontSize: "0.68rem",
+                            padding: "0.18rem 0.45rem",
+                            borderRadius: "var(--radius-full)",
+                            border: cake.is_trending ? "1px solid #EF4444" : "1px dashed var(--border-subtle)",
+                            background: cake.is_trending ? "#FEE2E2" : "transparent",
+                            color: cake.is_trending ? "#991B1B" : "var(--text-muted)",
+                            cursor: "pointer",
+                            fontWeight: cake.is_trending ? 600 : 400,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>{cake.is_trending ? "✓ 🔥 Spotlight" : "— 🔥 Spotlight"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePlacement(cake.id, "is_inspiration")}
+                          title={cake.is_inspiration ? "Currently in Inspiration Wall (Click to remove)" : "Click to add to Inspiration Wall"}
+                          style={{
+                            fontSize: "0.68rem",
+                            padding: "0.18rem 0.45rem",
+                            borderRadius: "var(--radius-full)",
+                            border: cake.is_inspiration ? "1px solid #8B5CF6" : "1px dashed var(--border-subtle)",
+                            background: cake.is_inspiration ? "#EDE9FE" : "transparent",
+                            color: cake.is_inspiration ? "#5B21B6" : "var(--text-muted)",
+                            cursor: "pointer",
+                            fontWeight: cake.is_inspiration ? 600 : 400,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>{cake.is_inspiration ? "✓ 🎨 Wall" : "— 🎨 Wall"}</span>
+                        </button>
                       </div>
                     </td>
                     <td style={{ padding: "0.45rem 0.85rem" }}>
@@ -755,6 +900,58 @@ export default function AdminCakesManagementPage() {
                   <span style={{ fontSize: "0.66rem", color: "var(--text-muted)" }}>
                     {cake.category_name || "Uncategorized"}
                   </span>
+                  
+                  {/* Curated Placement Toggles for Mobile */}
+                  <div style={{ display: "flex", gap: "0.25rem", marginTop: "0.35rem", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlacement(cake.id, "is_hero")}
+                      style={{
+                        fontSize: "0.64rem",
+                        padding: "0.12rem 0.38rem",
+                        borderRadius: "var(--radius-full)",
+                        border: cake.is_hero ? "1px solid #F59E0B" : "1px dashed var(--border-subtle)",
+                        background: cake.is_hero ? "#FEF3C7" : "transparent",
+                        color: cake.is_hero ? "#92400E" : "var(--text-muted)",
+                        cursor: "pointer",
+                        fontWeight: cake.is_hero ? 600 : 400,
+                      }}
+                    >
+                      {cake.is_hero ? "✓ 🌟 Hero" : "— 🌟 Hero"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlacement(cake.id, "is_trending")}
+                      style={{
+                        fontSize: "0.64rem",
+                        padding: "0.12rem 0.38rem",
+                        borderRadius: "var(--radius-full)",
+                        border: cake.is_trending ? "1px solid #EF4444" : "1px dashed var(--border-subtle)",
+                        background: cake.is_trending ? "#FEE2E2" : "transparent",
+                        color: cake.is_trending ? "#991B1B" : "var(--text-muted)",
+                        cursor: "pointer",
+                        fontWeight: cake.is_trending ? 600 : 400,
+                      }}
+                    >
+                      {cake.is_trending ? "✓ 🔥 Spotlight" : "— 🔥 Spotlight"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlacement(cake.id, "is_inspiration")}
+                      style={{
+                        fontSize: "0.64rem",
+                        padding: "0.12rem 0.38rem",
+                        borderRadius: "var(--radius-full)",
+                        border: cake.is_inspiration ? "1px solid #8B5CF6" : "1px dashed var(--border-subtle)",
+                        background: cake.is_inspiration ? "#EDE9FE" : "transparent",
+                        color: cake.is_inspiration ? "#5B21B6" : "var(--text-muted)",
+                        cursor: "pointer",
+                        fontWeight: cake.is_inspiration ? 600 : 400,
+                      }}
+                    >
+                      {cake.is_inspiration ? "✓ 🎨 Wall" : "— 🎨 Wall"}
+                    </button>
+                  </div>
                 </div>
                 <span
                   style={{ alignSelf: "flex-start", whiteSpace: "nowrap" }}
@@ -1038,6 +1235,40 @@ export default function AdminCakesManagementPage() {
                   <Plus size={13} />
                   <span>Add Size</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Curated Section Placements */}
+            <div className="form-group" style={{ marginBottom: "1rem", padding: "0.75rem", background: "var(--bg-cream)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-subtle)" }}>
+              <label className="form-label" style={{ marginBottom: "0.45rem", fontWeight: 600 }}>Storefront Section Placements</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.78rem", cursor: "pointer", color: "var(--text-primary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editForm.is_hero)}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, is_hero: e.target.checked }))}
+                    style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
+                  />
+                  <span>🌟 <strong>Mobile Hero Carousel</strong> (Featured top cards on mobile hero)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.78rem", cursor: "pointer", color: "var(--text-primary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editForm.is_trending)}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, is_trending: e.target.checked }))}
+                    style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
+                  />
+                  <span>🔥 <strong>Trending &amp; Chef&apos;s Spotlight</strong> (Featured spotlight slider)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.78rem", cursor: "pointer", color: "var(--text-primary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editForm.is_inspiration)}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, is_inspiration: e.target.checked }))}
+                    style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
+                  />
+                  <span>🎨 <strong>The Haute Inspiration Wall</strong> (Artistic inspiration grid)</span>
+                </label>
               </div>
             </div>
 

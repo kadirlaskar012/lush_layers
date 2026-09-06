@@ -11,6 +11,7 @@ import {
   DualEditorialPosters,
 } from "../components/AnimatedPosters";
 import WhatsAppIcon from "../components/WhatsAppIcon";
+import HeroMobileCarousel from "../components/HeroMobileCarousel";
 import { getPublishedCakes, getCategories } from "../lib/api";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
@@ -23,8 +24,18 @@ export default async function HomePage() {
   ]);
 
   const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
-  const heroCake = cakes && cakes.length > 0 ? cakes[0] : null;
-  const featuredCakes = cakes ? cakes.slice(0, 8) : [];
+  
+  // Section Placements with Graceful Fallbacks (Never leaving sections blank)
+  const heroCakes = cakes?.filter((c) => Boolean(c.is_hero)) || [];
+  const finalHeroCakes = heroCakes.length > 0 ? heroCakes : (cakes ? cakes.slice(0, 6) : []);
+
+  const trendingCakes = cakes?.filter((c) => Boolean(c.is_trending)) || [];
+  const finalTrendingCakes = trendingCakes.length > 0 ? trendingCakes : (cakes ? cakes.slice(0, 8) : []);
+
+  const inspirationCakes = cakes?.filter((c) => Boolean(c.is_inspiration)) || [];
+  const finalInspirationCakes = inspirationCakes.length > 0 ? inspirationCakes : (cakes || []);
+
+  const heroCake = finalHeroCakes && finalHeroCakes.length > 0 ? finalHeroCakes[0] : (cakes && cakes.length > 0 ? cakes[0] : null);
 
   return (
     <PublicLayout>
@@ -87,6 +98,9 @@ export default async function HomePage() {
                   <span>Studio White Clarity</span>
                 </div>
               </div>
+
+              {/* Mobile Only: Height-Compact Hero Carousel with Swipeable Confection Cards */}
+              <HeroMobileCarousel cakes={finalHeroCakes} />
             </div>
 
             {/* Right: Featured Hero Creation Preview (Desktop/Tablet Only to keep mobile sleek & compact) */}
@@ -147,7 +161,7 @@ export default async function HomePage() {
 
       {/* 3. COMPACT HORIZONTAL FEATURED CAKES (Mobile touch-friendly swipeable strip) */}
       <FeaturedCarousel
-        cakes={featuredCakes}
+        cakes={finalTrendingCakes}
         title="Trending & Chef's Spotlight"
         subtitle="Handcrafted tiers and seasonal favourites celebrating life's sweetest milestones"
       />
@@ -203,7 +217,7 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <MasonryGallery cakes={cakes || []} />
+            <MasonryGallery cakes={finalInspirationCakes} />
           </div>
         </section>
       )}

@@ -8,6 +8,7 @@ export async function getPublishedCakes(params?: {
   categoryId?: string;
   flavour?: string;
   search?: string;
+  placement?: string;
 }): Promise<Cake[]> {
   try {
     const url = new URL(`${BACKEND_BASE_URL}/api/cakes`);
@@ -15,6 +16,7 @@ export async function getPublishedCakes(params?: {
     if (params?.categoryId) url.searchParams.set("category_id", params.categoryId);
     if (params?.flavour) url.searchParams.set("flavour", params.flavour);
     if (params?.search) url.searchParams.set("search", params.search);
+    if (params?.placement) url.searchParams.set("placement", params.placement);
 
     const res = await fetch(url.toString(), {
       next: { revalidate: 60, tags: ["cakes"] },
@@ -161,7 +163,8 @@ export async function getAdminCakes(
   status?: string,
   search?: string,
   categoryId?: string,
-  sortBy?: string
+  sortBy?: string,
+  placement?: string
 ): Promise<Cake[]> {
   try {
     const url = new URL(`${BACKEND_BASE_URL}/api/cakes`);
@@ -174,6 +177,7 @@ export async function getAdminCakes(
     if (search) url.searchParams.set("search", search);
     if (categoryId && categoryId !== "all") url.searchParams.set("category_id", categoryId);
     if (sortBy) url.searchParams.set("sort_by", sortBy);
+    if (placement && placement !== "all") url.searchParams.set("placement", placement);
 
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) return [];
@@ -182,6 +186,23 @@ export async function getAdminCakes(
     console.error("Failed to fetch admin cakes:", err);
     return [];
   }
+}
+
+export async function updateCakeCuration(
+  cakeId: string,
+  curation: { is_hero?: boolean; is_trending?: boolean; is_inspiration?: boolean }
+): Promise<Cake> {
+  const res = await fetch(`${BACKEND_BASE_URL}/api/cakes/${cakeId}/curation`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(curation),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update cake curation");
+  }
+  const data = await res.json();
+  return data.cake;
 }
 
 export async function updateCakeDetails(cakeId: string, updates: Partial<Cake>): Promise<Cake> {
