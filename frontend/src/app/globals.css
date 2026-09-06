@@ -2441,3 +2441,69 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: var(--shadow-xs);
 }
 
+/* ==========================================================================
+   HERO MOBILE CAROUSEL - LUXURY SAGE & GOLD ATELIER SPEC
+   ========================================================================== */
+.hero-mobile-carousel-wrapper {
+  display: none;
+  margin-top: 1.15rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .hero-mobile-carousel-wrapper {
+    display: block !important;
+  }
+}
+
+.hero-mobile-carousel-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.65rem !important;
+  padding: 0 0.15rem !important;
+  gap: 0.5rem !important;
+}
+
+.hero-mobile-carousel-viewall,
+.hero-mobile-carousel-viewall:visited {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.28rem !important;
+  font-size: 0.74rem !important;
+  font-weight: 600 !important;
+  color: var(--gold-dark) !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  padding: 0.22rem 0.65rem !important;
+  border-radius: var(--radius-full) !important;
+  background: var(--bg-cream) !important;
+  border: 1px solid var(--gold-border) !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.hero-mobile-carousel-viewall:hover,
+.hero-mobile-carousel-viewall:active,
+.hero-mobile-carousel-viewall:focus {
+  background: var(--gold-subtle) !important;
+  border-color: var(--gold) !important;
+  color: var(--gold-dark) !important;
+  text-decoration: none !important;
+}
+
+.hero-card-title-link,
+.hero-card-title-link:visited {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block !important;
+}
+
+.hero-card-title-link:hover .hero-card-title {
+  color: var(--gold-dark) !important;
+}
+
+

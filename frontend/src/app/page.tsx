@@ -27,7 +27,9 @@ export default async function HomePage() {
   
   // Section Placements with Graceful Fallbacks (Never leaving sections blank)
   const heroCakes = cakes?.filter((c) => Boolean(c.is_hero)) || [];
-  const finalHeroCakes = heroCakes.length > 0 ? heroCakes : (cakes ? cakes.slice(0, 6) : []);
+  const finalHeroCakes = heroCakes.length >= 3
+    ? heroCakes
+    : Array.from(new Map([...heroCakes, ...(cakes || [])].map((c) => [c.id, c])).values()).slice(0, 8);
 
   const trendingCakes = cakes?.filter((c) => Boolean(c.is_trending)) || [];
   const finalTrendingCakes = trendingCakes.length > 0 ? trendingCakes : (cakes ? cakes.slice(0, 8) : []);
