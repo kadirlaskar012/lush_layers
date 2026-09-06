@@ -6,7 +6,7 @@ import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
   title: "Our Story & Artisanal Philosophy • LUSH LAYERS",
-  description: "Learn about the masters, ingredients, and slow craft behind LUSH LAYERS boutique bakery.",
+  description: "Learn about the masters, ingredients, and slow craft behind LUSH LAYERS cake atelier in Kolkata.",
 };
 
 export default function AboutPage() {

@@ -181,7 +181,7 @@ export default function AdminCategoriesPage() {
               marginTop: "0.2rem",
             }}
           >
-            Boutique Collections & Icons ({categories.length})
+            LUSH LAYERS Collections & Icons ({categories.length})
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
             Configure showcase categories, assign modern Lucide visual icons, and tailor luxury pastel palettes.
@@ -479,7 +479,7 @@ export default function AdminCategoriesPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
                 <Sparkles size={16} style={{ color: "var(--gold)" }} />
                 <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>
-                  {isCreatingNew ? "Create New Boutique Category" : `Edit Icon & Details: ${formName}`}
+                  {isCreatingNew ? "Create New Confection Category" : `Edit Icon & Details: ${formName}`}
                 </h3>
               </div>
               <button
@@ -732,7 +732,7 @@ export default function AdminCategoriesPage() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   className="form-textarea"
-                  placeholder="Artisanal description displayed on boutique catalog headers..."
+                  placeholder="Artisanal description displayed on confection catalog headers..."
                   style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
                 />
               </div>

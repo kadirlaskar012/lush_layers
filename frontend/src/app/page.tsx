@@ -48,7 +48,7 @@ export default async function HomePage() {
               <div style={{ display: "inline-flex", alignItems: "center", marginBottom: "0.25rem" }}>
                 <span className="hero-atelier-badge">
                   <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
-                  <span>Boutique Cake Studio • Kolkata</span>
+                  <span>LUSH LAYERS • PD Road, Kolkata-41, India</span>
                 </span>
               </div>
 
@@ -271,8 +271,11 @@ export default async function HomePage() {
               <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.85rem", lineHeight: 1.5 }}>
                 Chat directly with Founder & Chef Pâtissier <strong>Tina Baidya</strong>. Share your date, aesthetic, and guest count for bespoke atelier creations.
               </p>
-              <div style={{ fontSize: "0.78rem", color: "var(--gold-dark)", fontWeight: 600, marginBottom: "0.75rem" }}>
+              <div style={{ fontSize: "0.78rem", color: "var(--gold-dark)", fontWeight: 600, marginBottom: "0.35rem" }}>
                 Direct WhatsApp: +91 8768388868
+              </div>
+              <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: "0.85rem" }}>
+                Atelier: PD Road, Kolkata-41, India
               </div>
               <a
                 href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake%20for%20my%20event.`}

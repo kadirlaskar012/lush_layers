@@ -152,12 +152,12 @@ class CakeAIAnalyzer:
         prompt_context: Optional[str],
         valid_categories: List[str]
     ) -> Optional[Dict[str, Any]]:
-        """Invokes Google Gemini Vision model with boutique bakery guidelines."""
+        """Invokes Google Gemini Vision model with cake atelier guidelines."""
         b64_data = base64.b64encode(img_bytes).decode("utf-8")
         cat_list_str = ", ".join([f"'{c}'" for c in valid_categories])
 
         prompt = f"""
-        You are master pastry chef and luxury creative director for boutique confectionery 'LUSH LAYERS' ('Made with Love') founded by Tina Baidya.
+        You are master pastry chef and luxury creative director for artisanal cake atelier 'LUSH LAYERS' ('Made with Love') founded by Tina Baidya.
         Carefully analyze this cake photograph.
 
         SIGNAL ANALYSIS:

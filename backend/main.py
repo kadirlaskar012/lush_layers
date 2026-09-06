@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LUSH LAYERS - Local Processing Backend",
-    description="LAN-accessible background ingestion & processing system for LUSH LAYERS boutique bakery.",
+    description="LAN-accessible background ingestion & processing system for LUSH LAYERS cake studio.",
     version="1.0.0",
     lifespan=lifespan
 )

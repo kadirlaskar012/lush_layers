@@ -31,7 +31,7 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
         <div className="container-lux">
           {/* Header - Compact & Premium */}
           <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 1.5rem" }}>
-            <span className="cake-category-badge">Boutique Catalog</span>
+            <span className="cake-category-badge">LUSH LAYERS Signature Confections</span>
             <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
               The Artisanal Catalog
             </h1>

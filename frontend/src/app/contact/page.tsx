@@ -5,7 +5,7 @@ import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
   title: "Contact & Atelier Consultations • LUSH LAYERS",
-  description: "Connect directly with our master bakers on WhatsApp or visit our boutique cake atelier.",
+  description: "Connect directly with our master bakers on WhatsApp or visit LUSH LAYERS studio at PD Road, Kolkata-41, India.",
 };
 
 export default function ContactPage() {

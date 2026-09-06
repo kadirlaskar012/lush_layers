@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LUSH LAYERS • Boutique Cake Studio • By Tina Baidya",
+  title: "LUSH LAYERS • Made with Love • PD Road, Kolkata-41, India",
   description:
     "Exquisite bespoke celebration and wedding cakes crafted with passion by Tina Baidya. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp at +91 8768388868.",
   keywords: [

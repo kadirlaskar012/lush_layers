@@ -1,6 +1,6 @@
 -- ==========================================================
 -- LUSH LAYERS - Supabase PostgreSQL Schema
--- Luxury Boutique Cake Catalog & Ingestion System
+-- Luxury Cake Catalog & Ingestion System
 -- STRICT RULE: ZERO PRICE FIELDS, ZERO PAYMENT LOGIC
 -- ==========================================================
 
