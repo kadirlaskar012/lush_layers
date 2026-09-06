@@ -440,8 +440,8 @@ export default function MarketplaceListing({
       {/* 3. Product Grid: Strictly 4 Desktop / 3 Tablet / 2 Mobile */}
       {filteredCakes.length > 0 ? (
         <div className="cake-grid-responsive" id="marketplace-cake-grid">
-          {filteredCakes.map((cake) => (
-            <CakeCard key={cake.id} cake={cake} />
+          {filteredCakes.map((cake, idx) => (
+            <CakeCard key={cake.id} cake={cake} priority={idx < 4} />
           ))}
         </div>
       ) : (

@@ -170,9 +170,10 @@ export default function FeaturedCarousel({
             <Link
               href="/cakes"
               className="spotlight-view-all"
+              id="spotlight-view-all-link"
             >
               <span>View All</span>
-              <ArrowRight size={13} className="icon-hover-slide" />
+              <ArrowRight size={13} className="view-all-arrow" />
             </Link>
           </div>
         </div>
@@ -192,7 +193,7 @@ export default function FeaturedCarousel({
                 key={cake.id || idx}
                 className="featured-carousel-item"
               >
-                <CakeCard cake={cake} />
+                <CakeCard cake={cake} priority={idx < 4} />
               </div>
             ))}
           </div>

@@ -62,9 +62,9 @@ export default function MasonryGallery({
 
   return (
     <div className="masonry-container" id="cake-masonry-gallery">
-      {cakes.map((cake) => (
+      {cakes.map((cake, idx) => (
         <div key={cake.id} className="masonry-item">
-          <CakeCard cake={cake} />
+          <CakeCard cake={cake} priority={idx < 4} />
         </div>
       ))}
     </div>
