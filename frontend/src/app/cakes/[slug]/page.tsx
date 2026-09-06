@@ -100,6 +100,10 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                 justifyContent: "center",
                 boxShadow: "var(--shadow-sm)",
                 border: "1px solid var(--border-subtle)",
+                aspectRatio: "1 / 1",
+                minWidth: 0,
+                overflow: "hidden",
+                boxSizing: "border-box",
               }}
               id="cake-photo-container"
             >
@@ -108,13 +112,16 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
                 src={getOptimizedImageUrl(cake.image_url, { width: 800 })}
                 alt={cake.name}
                 width={500}
-                height={380}
+                height={500}
                 loading="eager"
                 decoding="async"
                 style={{
                   width: "100%",
-                  maxHeight: "380px",
+                  height: "100%",
+                  maxHeight: "100%",
+                  maxWidth: "100%",
                   objectFit: "contain",
+                  display: "block",
                 }}
                 id="cake-detail-image"
               />

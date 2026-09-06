@@ -92,74 +92,35 @@ export default async function HomePage() {
             {/* Right: Featured Hero Creation Preview (Desktop/Tablet Only to keep mobile sleek & compact) */}
             {heroCake && (
               <div className="hero-preview-col">
-                <div
-                  style={{
-                    background: "var(--glass-card-bg)",
-                    border: "1px solid var(--border-subtle)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "0.65rem",
-                    boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 1), var(--shadow-sm)",
-                    maxWidth: "270px",
-                    width: "100%",
-                    position: "relative",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      background: "var(--gold-subtle)",
-                      border: "1px solid var(--gold-border)",
-                      color: "var(--gold-dark)",
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      padding: "0.18rem 0.5rem",
-                      borderRadius: "var(--radius-full)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.25rem",
-                      zIndex: 3,
-                    }}
-                  >
+                <div className="hero-preview-card">
+                  <div className="hero-masterwork-badge">
                     <Sparkles size={10} style={{ color: "var(--gold-dark)" }} />
                     <span>Chef's Masterwork</span>
                   </div>
 
                   <Link href={`/cakes/${heroCake.slug}`} style={{ textDecoration: "none", display: "block" }}>
-                    <div
-                      style={{
-                        width: "100%",
-                        aspectRatio: "1/1",
-                        background: "#FFFFFF",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "0.4rem",
-                        borderRadius: "var(--radius-sm)",
-                      }}
-                    >
+                    <div className="hero-preview-img-wrap">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={getOptimizedImageUrl(heroCake.image_url, { width: 640 })}
+                        src={getOptimizedImageUrl(heroCake.image_url, { width: 540 })}
                         alt={heroCake.name}
-                        width={320}
-                        height={320}
+                        width={270}
+                        height={270}
                         loading="eager"
                         decoding="async"
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        className="hero-preview-img"
                       />
                     </div>
                   </Link>
 
-                  <div style={{ paddingTop: "0.55rem", textAlign: "center" }}>
-                    <span style={{ fontSize: "0.66rem", color: "var(--gold-dark)", textTransform: "uppercase", fontWeight: 600 }}>
+                  <div className="hero-preview-info">
+                    <span className="hero-preview-cat">
                       {heroCake.category_name || "Signature"}
                     </span>
-                    <h3 style={{ fontSize: "0.96rem", color: "var(--text-primary)", margin: "0.15rem 0 0.3rem" }}>
+                    <h3 className="hero-preview-title">
                       {heroCake.name}
                     </h3>
-                    <p style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "0.5rem" }}>
+                    <p className="hero-preview-flavour">
                       {heroCake.flavour}
                     </p>
                     <Link

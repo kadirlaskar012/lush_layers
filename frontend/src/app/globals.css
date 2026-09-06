@@ -86,6 +86,19 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Universal Media & Image Reset - Guarantees zero image blowout or layout flash */
+img, picture, svg, video, canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  box-sizing: border-box;
+}
+
+img[style*="object-fit"] {
+  max-width: 100%;
+  max-height: 100%;
+}
+
 html {
   scroll-behavior: smooth;
   color-scheme: light;
@@ -438,14 +451,15 @@ button:hover .icon-hover-pulse {
 
 .hero-grid-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 0.65rem;
 }
 
 @media (min-width: 768px) {
   .hero-grid-layout {
-    grid-template-columns: 1.25fr 0.75fr;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 270px);
+    justify-content: space-between;
     gap: 1.5rem;
   }
 }
@@ -535,16 +549,98 @@ button:hover .icon-hover-pulse {
   font-weight: 500;
 }
 
-/* Hide bulky standalone hero card preview on mobile (<768px) to keep hero compact */
+/* Hero Cake Masterwork Preview Card (Strictly 270px max, zero blowout) */
 .hero-preview-col {
   display: none;
   justify-content: center;
+  align-items: center;
+  min-width: 0;
 }
 
 @media (min-width: 768px) {
   .hero-preview-col {
     display: flex;
   }
+}
+
+.hero-preview-card {
+  background: var(--glass-card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), var(--shadow-sm);
+  width: 270px;
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.hero-masterwork-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--gold-subtle);
+  border: 1px solid var(--gold-border);
+  color: var(--gold-dark);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 3;
+}
+
+.hero-preview-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.hero-preview-img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.hero-preview-info {
+  padding-top: 0.55rem;
+  text-align: center;
+}
+
+.hero-preview-cat {
+  font-size: 0.66rem;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+  font-weight: 600;
+  display: block;
+}
+
+.hero-preview-title {
+  font-size: 0.96rem;
+  color: var(--text-primary);
+  margin: 0.15rem 0 0.3rem;
+  font-family: var(--font-heading);
+}
+
+.hero-preview-flavour {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 0.5rem;
 }
 
 /* ==========================================================================
@@ -779,6 +875,204 @@ button:hover .icon-hover-pulse {
   }
 }
 
+/* ==========================================================================
+   FEATURED SPOTLIGHT CAROUSEL SYSTEM (Static CSS - Eliminates SSR/Hydration Flash)
+   ========================================================================== */
+.featured-spotlight-section {
+  padding: 1.75rem 0 2rem;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.spotlight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.15rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.spotlight-header-text {
+  flex: 1;
+  min-width: 240px;
+}
+
+.spotlight-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.spotlight-title {
+  font-family: var(--font-heading);
+  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.22;
+  margin-top: 0.15rem;
+  letter-spacing: -0.01em;
+}
+
+.spotlight-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  max-width: 580px;
+}
+
+.spotlight-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.spotlight-arrows-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.carousel-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(45, 35, 25, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.carousel-nav-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+  box-shadow: 0 3px 8px rgba(197, 152, 58, 0.18);
+  transform: translateY(-1px);
+}
+
+.spotlight-view-all {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gold-dark);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s;
+}
+
+.spotlight-view-all:hover {
+  color: var(--gold);
+}
+
+.spotlight-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.featured-carousel-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.35rem 0.1rem 0.85rem;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+}
+
+.featured-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.featured-carousel-item {
+  flex: 0 0 calc((100% - 12px) / 2);
+  width: calc((100% - 12px) / 2);
+  min-width: calc((100% - 12px) / 2);
+  max-width: calc((100% - 12px) / 2);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .featured-carousel-track {
+    gap: 14px;
+  }
+  .featured-carousel-item {
+    flex: 0 0 calc((100% - 2 * 14px) / 3);
+    width: calc((100% - 2 * 14px) / 3);
+    min-width: calc((100% - 2 * 14px) / 3);
+    max-width: calc((100% - 2 * 14px) / 3);
+  }
+}
+
+@media (min-width: 900px) {
+  .featured-carousel-track {
+    gap: 16px;
+  }
+  .featured-carousel-item {
+    flex: 0 0 calc((100% - 3 * 16px) / 4);
+    width: calc((100% - 3 * 16px) / 4);
+    min-width: calc((100% - 3 * 16px) / 4);
+    max-width: calc((100% - 3 * 16px) / 4);
+  }
+}
+
+@media (min-width: 1180px) {
+  .featured-carousel-track {
+    gap: 16px;
+  }
+  .featured-carousel-item {
+    flex: 0 0 calc((100% - 4 * 16px) / 5);
+    width: calc((100% - 4 * 16px) / 5);
+    min-width: calc((100% - 4 * 16px) / 5);
+    max-width: calc((100% - 4 * 16px) / 5);
+  }
+}
+
+.spotlight-dots-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 0.35rem;
+}
+
+.spotlight-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--border-subtle);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spotlight-dot.active {
+  width: 20px;
+  background: var(--gold);
+  box-shadow: 0 1px 4px rgba(197, 152, 58, 0.35);
+}
+
 /* Compact Cake Card Component - Glossy Haute Pâtisserie Spec */
 .cake-card {
   position: relative;
@@ -791,7 +1085,9 @@ button:hover .icon-hover-pulse {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
   will-change: transform;
+  contain: layout paint;
 }
 
 /* Specular gloss top hairline */
@@ -824,6 +1120,9 @@ button:hover .icon-hover-pulse {
   justify-content: center;
   padding: 0.4rem;
   border-bottom: 1px solid var(--border-light);
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 @media (min-width: 480px) {
@@ -841,7 +1140,10 @@ button:hover .icon-hover-pulse {
 .cake-card-img {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  display: block;
   transition: transform 0.38s var(--ease-120hz), opacity 0.3s ease-out;
   will-change: transform, opacity;
 }
