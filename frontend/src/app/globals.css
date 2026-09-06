@@ -1,63 +1,63 @@
 /* ==========================================================================
-   LUSH LAYERS - LIGHT LUXURY BAKERY DESIGN SYSTEM
-   Theme: Light • Warm Ivory • Elegant Gold • Fresh • Premium • Compact
+   LUSH LAYERS - SAGE & GOLD ATELIER DESIGN SYSTEM
+   Theme: Botanical Sage • Whisper Green • Antique Artisan Gold • Organic • Premium
    STRICT RULE: ZERO PRICE DISPLAY ANYWHERE
    Fonts loaded natively via Next.js next/font/google
    ========================================================================== */
 
 :root {
-  /* Warm Bakery Light Marketplace Palette - Enhanced Luxury Tone */
-  --bg-main: #FAF8F5;          /* Warm Ivory / Alabaster Cream */
+  /* Sage & Gold Atelier Botanical Palette */
+  --bg-main: #F5F8F4;          /* Whisper Sage White */
   --bg-surface: #FFFFFF;       /* Pure Crystalline White Content Areas */
   --bg-card: #FFFFFF;          /* Card Background */
-  --bg-card-hover: #FFFDF9;    /* Subtle Warm Pearl Hover */
-  --bg-cream: #F6EFE5;         /* Cream Section Background */
-  --bg-blush: #FCE7EB;         /* Soft Pastel Blush Pink */
-  --bg-blush-subtle: #FFF5F7;  /* Very Subtle Blush Background */
-  --bg-peach: #FDF2EC;         /* Light Peach / Nude */
-  --blush-accent: #E11D48;     /* Sophisticated Rose Accent */
+  --bg-card-hover: #F8FAF7;    /* Subtle Sage Pearl Hover */
+  --bg-cream: #EEF3EB;         /* Pale Sage Cream Section Background */
+  --bg-blush: #E8F0E5;         /* Sage Mint Blush (replaces pink blush) */
+  --bg-blush-subtle: #F2F7F0;  /* Very Subtle Sage Background */
+  --bg-peach: #EDF4EA;         /* Light Sage / Botanical Tint */
+  --blush-accent: #2D7A4F;     /* Forest Emerald Green Accent */
   
-  /* Liquid Champagne & Imperial Gold Accents (Enriched Glossy Palette) */
-  --gold: #C5983A;             /* Rich Liquid Champagne Gold */
-  --gold-light: #E8CE8B;       /* Radiant Soft Gold Light */
-  --gold-dark: #8F6418;        /* Deep Imperial Bronze Gold */
-  --gold-rich: #B58729;        /* Warm Vibrant Confectioner Gold */
-  --gold-subtle: #F9F4E8;      /* Warm Gold Tint for Badges */
-  --gold-border: rgba(197, 152, 58, 0.32);
-  --gold-border-gloss: rgba(197, 152, 58, 0.65);
-  --gold-gradient: linear-gradient(135deg, #FBF2D8 0%, #D8AB4E 35%, #B68625 70%, #885D0E 100%);
-  --gold-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 48%, rgba(0, 0, 0, 0.06) 100%), linear-gradient(135deg, #E6C57B 0%, #C5983A 60%, #956B1E 100%);
+  /* Antique Artisan Gold Accents (Botanical Heritage Palette) */
+  --gold: #BF9A3E;             /* Antique Artisan Gold */
+  --gold-light: #DFC27A;       /* Soft Botanical Gold Light */
+  --gold-dark: #7A5C14;        /* Deep Aged Bronze-Olive Gold */
+  --gold-rich: #A87D28;        /* Warm Heritage Confectioner Gold */
+  --gold-subtle: #F4F0E2;      /* Warm Sage-Gold Tint for Badges */
+  --gold-border: rgba(191, 154, 62, 0.30);
+  --gold-border-gloss: rgba(191, 154, 62, 0.62);
+  --gold-gradient: linear-gradient(135deg, #F5EDD0 0%, #CFAA44 35%, #A67D22 70%, #6B4C0A 100%);
+  --gold-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 48%, rgba(0, 0, 0, 0.06) 100%), linear-gradient(135deg, #DFC27A 0%, #BF9A3E 60%, #8A6416 100%);
   
-  /* WhatsApp CTA Green - Glossy Enriched */
-  --whatsapp: #22C55E;
-  --whatsapp-hover: #16A34A;
-  --whatsapp-soft: #F0FDF4;
-  --whatsapp-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(0, 0, 0, 0.08) 100%), #22C55E;
+  /* WhatsApp CTA Green - Forest Sage Enriched */
+  --whatsapp: #1EA854;
+  --whatsapp-hover: #157A3E;
+  --whatsapp-soft: #EDFAF3;
+  --whatsapp-gloss: linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.06) 48%, rgba(0, 0, 0, 0.08) 100%), #1EA854;
   
-  /* High-Readability Charcoal Typography */
-  --text-primary: #1F1D1B;     /* Dark Charcoal */
-  --text-secondary: #5A5652;   /* Warm Neutral Charcoal */
-  --text-muted: #807A74;       /* Accessible Muted Text */
-  --text-light: #FAF8F5;
+  /* High-Readability Forest Charcoal Typography */
+  --text-primary: #1A2018;     /* Deep Forest Charcoal */
+  --text-secondary: #4A5648;   /* Sage-tinted Neutral Charcoal */
+  --text-muted: #737D70;       /* Botanical Muted Text */
+  --text-light: #F5F8F4;
   
-  /* Borders & Dividers */
-  --border-subtle: #EDE5D8;    /* Soft Warm Border */
-  --border-light: #F4EFEA;
-  --border-focus: #C5983A;
+  /* Sage-tinted Borders & Dividers */
+  --border-subtle: #D8E5D2;    /* Sage-tinted Border */
+  --border-light: #E8F0E4;     /* Very Light Sage Border */
+  --border-focus: #BF9A3E;     /* Artisan Gold Focus Ring */
   
-  /* Glassmorphism & Glossy Sheen Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.88);
+  /* Glassmorphism & Glossy Sheen Tokens (Sage-adapted) */
+  --glass-bg: rgba(245, 248, 244, 0.90);
   --glass-blur: blur(20px) saturate(180%);
-  --glass-border: rgba(220, 195, 155, 0.36);
-  --glass-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(253, 250, 245, 0.92) 100%);
+  --glass-border: rgba(180, 210, 170, 0.36);
+  --glass-card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 250, 243, 0.92) 100%);
   --gloss-reflection: inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
   
-  /* Multi-Tier Specular Shadows */
-  --shadow-xs: 0 1px 3px rgba(45, 35, 25, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  --shadow-sm: 0 2px 8px rgba(45, 35, 25, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-md: 0 6px 20px rgba(45, 35, 25, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-hover: 0 12px 28px -4px rgba(197, 152, 58, 0.2), 0 3px 8px rgba(45, 35, 25, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
-  --shadow-gloss: 0 8px 32px rgba(184, 142, 62, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  /* Multi-Tier Specular Shadows (Sage-tinted) */
+  --shadow-xs: 0 1px 3px rgba(30, 45, 28, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-sm: 0 2px 8px rgba(30, 45, 28, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-md: 0 6px 20px rgba(30, 45, 28, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-hover: 0 12px 28px -4px rgba(45, 122, 79, 0.16), 0 3px 8px rgba(30, 45, 28, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --shadow-gloss: 0 8px 32px rgba(45, 122, 79, 0.10), inset 0 1px 1px rgba(255, 255, 255, 0.95);
   
   /* Fonts */
   --font-heading: 'Playfair Display', Georgia, serif;
