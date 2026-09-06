@@ -255,6 +255,28 @@ export async function deleteCake(cakeId: string): Promise<boolean> {
   return res.ok;
 }
 
+export async function getDuplicateCakes(): Promise<Cake[]> {
+  try {
+    const res = await fetch(`${BACKEND_BASE_URL}/api/cakes/duplicates`, { cache: "no-store" });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch duplicate cakes:", err);
+    return [];
+  }
+}
+
+export async function dismissCakeDuplicate(cakeId: string): Promise<{ message: string; cake: Cake }> {
+  const res = await fetch(`${BACKEND_BASE_URL}/api/cakes/${cakeId}/dismiss-duplicate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to dismiss duplicate");
+  }
+  return await res.json();
+}
+
 export async function generateCakeAI(cakeId: string): Promise<Cake> {
   const res = await fetch(`${BACKEND_BASE_URL}/api/cakes/${cakeId}/ai-generate`, {
     method: "POST",

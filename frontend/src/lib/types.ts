@@ -29,10 +29,18 @@ export interface Cake {
   available_sizes: string[];
   image_url: string; // Mandatory!
   cloudinary_public_id?: string;
-  status: "pending" | "approved" | "rejected" | "published";
+  status: "pending" | "approved" | "rejected" | "published" | "duplicate";
   is_hero?: boolean;
   is_trending?: boolean;
   is_inspiration?: boolean;
+  file_hash?: string;
+  phash?: string;
+  is_duplicate?: boolean;
+  duplicate_of_id?: string | null;
+  duplicate_of_display_id?: string | null;
+  duplicate_score?: number;
+  duplicate_reason?: string | null;
+  duplicate_of_cake?: Cake | null;
   ai_metadata?: {
     original_file?: string;
     suggested_name?: string;
@@ -48,6 +56,8 @@ export interface Cake {
     regenerated?: boolean;
     ai_status?: "not_generated" | "generating" | "generated" | "failed";
     ai_error?: string | null;
+    duplicate_detected?: boolean;
+    duplicate_warning?: string | null;
     generated_at?: string;
   };
   created_at: string;
@@ -103,6 +113,7 @@ export interface AdminStats {
   published: number;
   total_approved: number;
   rejected: number;
+  duplicates?: number;
   processing: number;
   failed: number;
   pending_reviews: number;

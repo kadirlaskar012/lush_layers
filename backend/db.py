@@ -160,6 +160,28 @@ class Database:
             except Exception:
                 pass
 
+        # Ensure duplicate detection columns exist
+        for col_name, col_type in [
+            ("file_hash", "TEXT"),
+            ("phash", "TEXT"),
+            ("is_duplicate", "INTEGER DEFAULT 0"),
+            ("duplicate_of_id", "TEXT"),
+            ("duplicate_of_display_id", "TEXT"),
+            ("duplicate_score", "REAL DEFAULT 0.0"),
+            ("duplicate_reason", "TEXT"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE cakes ADD COLUMN {col_name} {col_type}")
+            except Exception:
+                pass
+
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_file_hash ON cakes(file_hash)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_phash ON cakes(phash)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_cakes_is_duplicate ON cakes(is_duplicate)")
+        except Exception:
+            pass
+
         # If any published cake has 0 for all placements, set default to 1 so current live cakes are shown
         cursor.execute("SELECT COUNT(*) FROM cakes WHERE is_hero = 1 OR is_trending = 1 OR is_inspiration = 1")
         if cursor.fetchone()[0] == 0:
@@ -445,17 +467,7 @@ class Database:
         conn.close()
         return rows
 
-    def get_cake_by_id(self, cake_id: str) -> Optional[Dict[str, Any]]:
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT c.*, cat.name as category_name, cat.slug as category_slug
-            FROM cakes c
-            LEFT JOIN categories cat ON c.category_id = cat.id
-            WHERE c.id = ?
-        """, (cake_id,))
-        row = cursor.fetchone()
-        conn.close()
+    def _format_cake_dict(self, row: Any) -> Optional[Dict[str, Any]]:
         if not row:
             return None
         d = dict(row)
@@ -472,7 +484,22 @@ class Database:
         d["is_hero"] = bool(d.get("is_hero"))
         d["is_trending"] = bool(d.get("is_trending"))
         d["is_inspiration"] = bool(d.get("is_inspiration"))
+        d["is_duplicate"] = bool(d.get("is_duplicate"))
+        d["duplicate_score"] = float(d.get("duplicate_score", 0.0) or 0.0)
         return d
+
+    def get_cake_by_id(self, cake_id: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.*, cat.name as category_name, cat.slug as category_slug
+            FROM cakes c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            WHERE c.id = ?
+        """, (cake_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return self._format_cake_dict(row)
 
     def get_cake_by_slug(self, slug: str) -> Optional[Dict[str, Any]]:
         conn = self._get_conn()
@@ -485,23 +512,7 @@ class Database:
         """, (slug,))
         row = cursor.fetchone()
         conn.close()
-        if not row:
-            return None
-        d = dict(row)
-        if isinstance(d.get("available_sizes"), str):
-            try:
-                d["available_sizes"] = json.loads(d["available_sizes"])
-            except Exception:
-                d["available_sizes"] = ["0.5 kg", "1.0 kg"]
-        if isinstance(d.get("ai_metadata"), str):
-            try:
-                d["ai_metadata"] = json.loads(d["ai_metadata"])
-            except Exception:
-                d["ai_metadata"] = {}
-        d["is_hero"] = bool(d.get("is_hero"))
-        d["is_trending"] = bool(d.get("is_trending"))
-        d["is_inspiration"] = bool(d.get("is_inspiration"))
-        return d
+        return self._format_cake_dict(row)
 
     def create_cake(self, cake_data: Dict[str, Any]) -> Dict[str, Any]:
         """Creates a pending cake. Mandatory: image_url. Status MUST start as 'pending'."""
@@ -541,13 +552,24 @@ class Database:
         is_trending = 1 if cake_data.get("is_trending") else 0
         is_inspiration = 1 if cake_data.get("is_inspiration") else 0
 
+        status = cake_data.get("status", "pending")
+        file_hash = cake_data.get("file_hash")
+        phash = cake_data.get("phash")
+        is_duplicate = 1 if cake_data.get("is_duplicate") else 0
+        duplicate_of_id = cake_data.get("duplicate_of_id")
+        duplicate_of_display_id = cake_data.get("duplicate_of_display_id")
+        duplicate_score = float(cake_data.get("duplicate_score", 0.0) or 0.0)
+        duplicate_reason = cake_data.get("duplicate_reason")
+
         cursor.execute("""
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
                 ai_metadata, created_at, updated_at, published_at, display_id,
-                is_hero, is_trending, is_inspiration
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                is_hero, is_trending, is_inspiration,
+                file_hash, phash, is_duplicate, duplicate_of_id, duplicate_of_display_id,
+                duplicate_score, duplicate_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             cake_id,
             cake_data.get("name", "Untitled Confection"),
@@ -558,7 +580,7 @@ class Database:
             sizes_json,
             cake_data.get("image_url"),
             cake_data.get("cloudinary_public_id"),
-            "pending",  # STRICT: AI or upload MUST ALWAYS start as pending
+            status,
             ai_meta_json,
             now,
             now,
@@ -566,7 +588,14 @@ class Database:
             display_id,
             is_hero,
             is_trending,
-            is_inspiration
+            is_inspiration,
+            file_hash,
+            phash,
+            is_duplicate,
+            duplicate_of_id,
+            duplicate_of_display_id,
+            duplicate_score,
+            duplicate_reason
         ))
         conn.commit()
         conn.close()
@@ -592,7 +621,7 @@ class Database:
             sizes_json,
             cake_data.get("image_url"),
             cake_data.get("cloudinary_public_id"),
-            "pending",
+            status,
             ai_meta_json,
             now,
             now,
@@ -610,12 +639,20 @@ class Database:
         params = []
         
         for k, v in updates.items():
-            if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status", "display_id"):
+            if k in (
+                "name", "slug", "flavour", "category_id", "description",
+                "image_url", "cloudinary_public_id", "status", "display_id",
+                "duplicate_of_id", "duplicate_of_display_id", "duplicate_reason",
+                "file_hash", "phash"
+            ):
                 fields.append(f"{k} = ?")
                 params.append(v)
-            elif k in ("is_hero", "is_trending", "is_inspiration"):
+            elif k in ("is_hero", "is_trending", "is_inspiration", "is_duplicate"):
                 fields.append(f"{k} = ?")
                 params.append(1 if v else 0)
+            elif k in ("duplicate_score",):
+                fields.append(f"{k} = ?")
+                params.append(float(v) if v is not None else 0.0)
             elif k == "available_sizes":
                 fields.append("available_sizes = ?")
                 params.append(json.dumps(v) if not isinstance(v, str) else v)
@@ -626,6 +663,10 @@ class Database:
                 fields.append("published_at = ?")
                 params.append(v)
                 
+        if not fields:
+            conn.close()
+            return self.get_cake_by_id(cake_id)
+
         fields.append("updated_at = ?")
         params.append(now)
         params.append(cake_id)
@@ -663,6 +704,139 @@ class Database:
             pass
 
         return self.get_cake_by_id(cake_id)
+
+    def find_duplicate_cake(
+        self,
+        file_hash: Optional[str] = None,
+        phash: Optional[str] = None,
+        threshold_distance: int = 6,
+        exclude_id: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Scans existing active cakes for exact SHA-256 match or visual dHash similarity (Hamming distance <= threshold_distance).
+        Returns a dict with matched_cake, similarity percentage, reason, and distance, or None if unique.
+        """
+        from backend.processor import processor
+        conn = self._get_conn()
+        cursor = conn.cursor()
+
+        # 1. Exact SHA-256 hash match (100% duplicate)
+        if file_hash:
+            query = "SELECT * FROM cakes WHERE file_hash = ? AND status != 'rejected'"
+            params = [file_hash]
+            if exclude_id:
+                query += " AND id != ?"
+                params.append(exclude_id)
+            query += " LIMIT 1"
+            cursor.execute(query, tuple(params))
+            row = cursor.fetchone()
+            if row:
+                matched = self._format_cake_dict(row)
+                conn.close()
+                d_id = matched.get("display_id") or ""
+                return {
+                    "matched_cake": matched,
+                    "similarity": 100.0,
+                    "distance": 0,
+                    "reason": f"Exact byte match (100%) with #{d_id} - {matched.get('name', '')}"
+                }
+
+        # 2. Perceptual dHash visual similarity match
+        if phash:
+            query = """
+                SELECT id, name, slug, flavour, category_id, image_url, display_id,
+                       phash, file_hash, status, created_at
+                FROM cakes
+                WHERE phash IS NOT NULL AND phash != '' AND status != 'rejected'
+            """
+            params = []
+            if exclude_id:
+                query += " AND id != ?"
+                params.append(exclude_id)
+            cursor.execute(query, tuple(params))
+            candidates = cursor.fetchall()
+            best_match = None
+            min_distance = 999
+
+            for cand in candidates:
+                cand_phash = cand["phash"]
+                dist = processor.hamming_distance(phash, cand_phash)
+                if dist < min_distance:
+                    min_distance = dist
+                    best_match = cand
+
+            if best_match and min_distance <= threshold_distance:
+                sim_pct = processor.similarity_percentage(min_distance)
+                matched = self._format_cake_dict(best_match)
+                conn.close()
+                d_id = matched.get("display_id") or ""
+                return {
+                    "matched_cake": matched,
+                    "similarity": sim_pct,
+                    "distance": min_distance,
+                    "reason": f"Visual similarity ({sim_pct}%) with #{d_id} - {matched.get('name', '')}"
+                }
+
+        conn.close()
+        return None
+
+    def get_duplicate_cakes(self) -> List[Dict[str, Any]]:
+        """Retrieves all cakes flagged as duplicates enriched with the matched original cake metadata."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.*, cat.name as category_name, cat.slug as category_slug
+            FROM cakes c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            WHERE c.is_duplicate = 1 OR c.status = 'duplicate'
+            ORDER BY c.created_at DESC
+        """)
+        duplicate_rows = [self._format_cake_dict(r) for r in cursor.fetchall() if r]
+
+        # Enrich each with matched original cake details
+        for d in duplicate_rows:
+            orig_id = d.get("duplicate_of_id")
+            orig_disp = d.get("duplicate_of_display_id")
+            orig_cake = None
+            if orig_id:
+                cursor.execute("""
+                    SELECT c.*, cat.name as category_name, cat.slug as category_slug
+                    FROM cakes c
+                    LEFT JOIN categories cat ON c.category_id = cat.id
+                    WHERE c.id = ?
+                """, (orig_id,))
+                row_orig = cursor.fetchone()
+                if row_orig:
+                    orig_cake = self._format_cake_dict(row_orig)
+            if not orig_cake and orig_disp:
+                cursor.execute("""
+                    SELECT c.*, cat.name as category_name, cat.slug as category_slug
+                    FROM cakes c
+                    LEFT JOIN categories cat ON c.category_id = cat.id
+                    WHERE c.display_id = ?
+                """, (orig_disp,))
+                row_orig = cursor.fetchone()
+                if row_orig:
+                    orig_cake = self._format_cake_dict(row_orig)
+            d["duplicate_of_cake"] = orig_cake
+
+        conn.close()
+        return duplicate_rows
+
+    def dismiss_duplicate(self, cake_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Marks a suspected duplicate as 'Not Duplicate' and moves it into the standard
+        pending approval queue for Tina/admin review and AI text generation.
+        """
+        updates = {
+            "is_duplicate": 0,
+            "status": "pending",
+            "duplicate_of_id": None,
+            "duplicate_of_display_id": None,
+            "duplicate_score": 0.0,
+            "duplicate_reason": None,
+        }
+        return self.update_cake(cake_id, updates)
 
     def toggle_cake_placement(self, cake_id: str, field: str, value: Optional[bool] = None) -> Optional[Dict[str, Any]]:
         if field not in ("is_hero", "is_trending", "is_inspiration"):
@@ -1149,6 +1323,9 @@ class Database:
         cursor.execute("SELECT status, COUNT(*) FROM enquiries GROUP BY status")
         enquiry_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
+        cursor.execute("SELECT COUNT(*) FROM cakes WHERE is_duplicate = 1 OR status = 'duplicate'")
+        duplicates_count = cursor.fetchone()[0]
+
         conn.close()
         return {
             "pending": cake_counts.get("pending", 0),
@@ -1156,6 +1333,7 @@ class Database:
             "published": cake_counts.get("published", 0),
             "total_approved": cake_counts.get("approved", 0) + cake_counts.get("published", 0),
             "rejected": cake_counts.get("rejected", 0),
+            "duplicates": duplicates_count,
             "processing": job_counts.get("processing", 0) + job_counts.get("queued", 0) + job_counts.get("image_processed", 0) + job_counts.get("ai_processing", 0) + job_counts.get("uploading", 0),
             "failed": job_counts.get("failed", 0),
             "pending_reviews": pending_reviews,

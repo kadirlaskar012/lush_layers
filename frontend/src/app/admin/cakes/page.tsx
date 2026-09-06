@@ -64,7 +64,9 @@ export default function AdminCakesManagementPage() {
   const displayedCakes = useMemo(() => {
     let result = [...cakes];
 
-    if (statusFilter !== "all") {
+    if (statusFilter === "duplicates") {
+      result = result.filter((c) => c.status === "duplicate" || Boolean(c.is_duplicate));
+    } else if (statusFilter !== "all") {
       result = result.filter((c) => c.status === statusFilter);
     }
 
@@ -389,13 +391,13 @@ export default function AdminCakesManagementPage() {
       >
         {/* Status Filter Tabs */}
         <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", alignItems: "center" }}>
-          {["all", "pending", "approved", "published", "rejected"].map((st) => (
+          {["all", "pending", "duplicates", "approved", "published", "rejected"].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
               style={{
                 padding: "0.35rem 0.75rem",
-                background: statusFilter === st ? "var(--gold)" : "transparent",
+                background: statusFilter === st ? (st === "duplicates" ? "#D97706" : "var(--gold)") : "transparent",
                 color: statusFilter === st ? "#FFFFFF" : "var(--text-secondary)",
                 border: "none",
                 borderRadius: "var(--radius-full)",
@@ -406,7 +408,7 @@ export default function AdminCakesManagementPage() {
                 transition: "all 0.15s ease",
               }}
             >
-              {st === "all" ? "All Status" : st}
+              {st === "all" ? "All Status" : st === "duplicates" ? "Duplicates ⚠️" : st}
             </button>
           ))}
         </div>

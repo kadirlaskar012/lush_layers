@@ -354,6 +354,11 @@ async def list_cakes(
 async def list_pending_cakes():
     return db.get_cakes(status="pending")
 
+@app.get("/api/cakes/duplicates")
+async def list_duplicate_cakes():
+    """Returns all suspected duplicate cakes enriched with original matched cake details."""
+    return db.get_duplicate_cakes()
+
 @app.get("/api/cakes/approved")
 async def list_approved_cakes():
     """
@@ -424,6 +429,20 @@ async def reject_cake(cake_id: str):
         raise HTTPException(status_code=404, detail="Cake not found.")
     return {"message": "Cake rejected.", "cake": rejected}
 
+@app.post("/api/cakes/{cake_id}/dismiss-duplicate")
+async def dismiss_cake_duplicate(cake_id: str):
+    """
+    Dismisses duplicate status: marks cake as not duplicate (is_duplicate=0)
+    and moves it to the standard pending approval queue.
+    """
+    updated = db.dismiss_duplicate(cake_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    return {
+        "message": "Cake cleared of duplicate flag and moved to Pending Approval queue.",
+        "cake": updated
+    }
+
 @app.post("/api/cakes/{cake_id}/publish")
 async def publish_cake(cake_id: str, background_tasks: BackgroundTasks):
     """
@@ -482,6 +501,31 @@ async def restore_cake(cake_id: str):
     
     restored = db.restore_cake(cake_id)
     return {"message": "Cake restored to pending approval.", "cake": restored}
+
+# --- DUPLICATE MANAGEMENT & RESOLUTION ---
+@app.get("/api/cakes/duplicates")
+async def list_duplicate_cakes():
+    """
+    Returns all cakes flagged as suspected duplicates during Python ingestion,
+    enriched with the matched original cake in the catalog.
+    """
+    return db.get_duplicate_cakes()
+
+@app.post("/api/cakes/{cake_id}/dismiss-duplicate")
+async def dismiss_cake_duplicate(cake_id: str):
+    """
+    Dismisses duplicate flag if flagged by mistake or intentional variant.
+    Moves cake directly to Pending Approval queue for AI review and admin signoff.
+    """
+    cake = db.get_cake_by_id(cake_id)
+    if not cake:
+        raise HTTPException(status_code=404, detail="Cake not found.")
+    
+    updated = db.dismiss_duplicate(cake_id)
+    return {
+        "message": "Duplicate flag dismissed. Cake has been safely moved to Pending Approval queue.",
+        "cake": updated
+    }
 
 # --- CUSTOMER ENQUIRIES / ORDERS ---
 class EnquiryCreateRequest(BaseModel):

@@ -293,6 +293,33 @@ def process_single_image(
     except Exception as e:
         raise ValueError(f"Corrupted or invalid image: {e}")
 
+    # Check for potential duplicates before heavy processing
+    file_hash, phash = processor.compute_image_hashes(image_path)
+    duplicate_info = db.find_duplicate_cake(file_hash=file_hash, phash=phash, threshold_distance=6)
+    is_duplicate = False
+    duplicate_matched = None
+    duplicate_score = 0.0
+    duplicate_reason = None
+    duplicate_of_id = None
+    duplicate_of_disp = None
+
+    if duplicate_info:
+        is_duplicate = True
+        duplicate_matched = duplicate_info["matched_cake"]
+        duplicate_score = duplicate_info["similarity"]
+        duplicate_reason = duplicate_info["reason"]
+        duplicate_of_id = duplicate_matched.get("id")
+        duplicate_of_disp = duplicate_matched.get("display_id")
+
+        if interactive_verbose:
+            print()
+            print(Fore.YELLOW + Style.BRIGHT + "   ⚠️  [SUSPECTED DUPLICATE CAKE DETECTED]" + Style.RESET_ALL)
+            print(f"      {Fore.WHITE}Source Photo:    {Fore.YELLOW}{image_path.name}{Style.RESET_ALL}")
+            print(f"      {Fore.WHITE}Matches Cake:    {Fore.CYAN}#{duplicate_of_disp} - {duplicate_matched.get('name')}{Style.RESET_ALL}")
+            print(f"      {Fore.WHITE}Match Details:   {Fore.MAGENTA}{duplicate_reason}{Style.RESET_ALL}")
+            print(f"      {Fore.GREEN}ℹ️  Continuing upload (no auto-skip). Flagged in Admin Panel -> Duplicate Review.{Style.RESET_ALL}")
+            print()
+
     # --- STEP 2: IMAGE PROCESSING (STUDIO COMPOSITING) ---
     if interactive_verbose:
         bg_msg = "Background removal + Studio contact shadow" if remove_bg else "Center-framed on studio canvas"
@@ -324,27 +351,38 @@ def process_single_image(
     # Generate thumbnail
     thumb_rgb = master_rgb.resize((600, 600), Image.Resampling.LANCZOS)
     
+    # Save to local media storage
     master_path = settings.PROCESSED_DIR / f"{job_base_name}.webp"
     thumb_path = settings.THUMBNAIL_DIR / f"{job_base_name}_thumb.webp"
     
-    master_rgb.save(master_path, format="WEBP", quality=90, method=6)
-    thumb_rgb.save(thumb_path, format="WEBP", quality=85, method=6)
+    master_rgb.save(master_path, format="WEBP", quality=88, method=6)
+    thumb_rgb.save(thumb_path, format="WEBP", quality=80, method=6)
     
-    # Upload to storage (Cloudinary or local static serving)
-    upload_res = storage.upload_image(master_path, job_base_name)
-    image_url = upload_res["image_url"]
-    cloudinary_id = upload_res.get("cloudinary_public_id")
+    # Fallback to local media URLs
+    image_url = f"/media/processed/{master_path.name}"
+    cloudinary_id = None
 
-    # --- STEP 3: AI SENSORY ANALYSIS / METADATA ---
-    if interactive_verbose:
-        step(current_step, total_steps, "AI Sensory Analysis & Metadata Extraction...")
-    current_step += 1
-    
-    all_categories = db.get_categories(active_only=False)
-    cat_names = [c["name"] for c in all_categories]
-    
+    # Upload to Cloudinary CDN if credentials exist
+    if storage.is_configured:
+        try:
+            cloud_res = storage.upload_image(master_path, public_id=job_base_name)
+            if cloud_res and cloud_res.get("secure_url"):
+                image_url = cloud_res["secure_url"]
+                cloudinary_id = cloud_res.get("public_id")
+        except Exception as e:
+            if interactive_verbose:
+                warning(f"Cloudinary upload note: {e}. Utilizing fast local media URL.")
+
+    # --- STEP 3: AI SENSORY ANALYSIS ---
     ai_result = {}
     if use_ai:
+        if interactive_verbose:
+            step(current_step, total_steps, "Running Google Gemini Vision AI (Sensory analysis & storytelling)...")
+        current_step += 1
+        
+        all_categories = db.get_categories(active_only=True)
+        cat_names = [c["name"] for c in all_categories]
+        
         try:
             ai_result = ai_analyzer.analyze_cake_image(
                 image_input=master_path,
@@ -391,13 +429,22 @@ def process_single_image(
         "available_sizes": final_sizes,
         "image_url": image_url,
         "cloudinary_public_id": cloudinary_id,
-        "status": "pending",
+        "status": "duplicate" if is_duplicate else "pending",
+        "file_hash": file_hash,
+        "phash": phash,
+        "is_duplicate": 1 if is_duplicate else 0,
+        "duplicate_of_id": duplicate_of_id,
+        "duplicate_of_display_id": duplicate_of_disp,
+        "duplicate_score": duplicate_score,
+        "duplicate_reason": duplicate_reason,
         "ai_metadata": {
             "ai_status": "generated" if ai_result else "manual",
             "source_file": image_path.name,
             "tags": ai_result.get("tags", []),
             "local_master_url": f"/media/processed/{master_path.name}",
-            "local_thumb_url": f"/media/thumbnails/{thumb_path.name}"
+            "local_thumb_url": f"/media/thumbnails/{thumb_path.name}",
+            "duplicate_detected": is_duplicate,
+            "duplicate_warning": duplicate_reason
         }
     }
     
@@ -405,16 +452,20 @@ def process_single_image(
     
     # --- STEP 5: OPTIONAL IMMEDIATE PUBLISH ---
     if publish:
-        if interactive_verbose:
-            step(current_step, total_steps, "Publishing to live catalog & triggering Next.js cache revalidation...")
-        db.publish_cake(cake_id)
-        created_cake["status"] = "published"
-        reval_paths = ["/", "/cakes", f"/cakes/{created_cake['slug']}"]
-        if resolved_category:
-            reval_paths.append(f"/category/{resolved_category['slug']}")
-        revalidated = revalidate_frontend(reval_paths)
-        if interactive_verbose and revalidated:
-            success("Next.js storefront ISR cache revalidated successfully.")
+        if is_duplicate:
+            if interactive_verbose:
+                warning("Suspected duplicate was NOT auto-published. Please review in Admin Panel -> Duplicate Review.")
+        else:
+            if interactive_verbose:
+                step(current_step, total_steps, "Publishing to live catalog & triggering Next.js cache revalidation...")
+            db.publish_cake(cake_id)
+            created_cake["status"] = "published"
+            reval_paths = ["/", "/cakes", f"/cakes/{created_cake['slug']}"]
+            if resolved_category:
+                reval_paths.append(f"/category/{resolved_category['slug']}")
+            revalidated = revalidate_frontend(reval_paths)
+            if interactive_verbose and revalidated:
+                success("Next.js storefront ISR cache revalidated successfully.")
             
     return created_cake
 

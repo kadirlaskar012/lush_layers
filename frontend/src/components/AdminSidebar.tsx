@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Cake,
   Clock,
+  Copy,
   Sparkles,
   ArchiveX,
   Star,
@@ -55,6 +56,13 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
       icon: <Clock size={16} strokeWidth={1.8} />,
       count: stats?.pending,
       highlight: true,
+    },
+    {
+      href: "/admin/cakes/duplicates",
+      label: "Duplicate Review",
+      icon: <Copy size={16} strokeWidth={1.8} />,
+      count: stats?.duplicates,
+      highlight: (stats?.duplicates || 0) > 0,
     },
     {
       href: "/admin/cakes/approved",

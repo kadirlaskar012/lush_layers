@@ -176,6 +176,27 @@ class BackgroundJobQueue:
 
             sizes = (ai_data.get("available_sizes") if ai_data else None) or ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]
 
+            # Compute image hashes and check for duplicates
+            file_hash, phash = processor.compute_image_hashes(master_file_path)
+            if not file_hash:
+                file_hash, phash = processor.compute_image_hashes(file_path)
+
+            dup_info = db.find_duplicate_cake(file_hash=file_hash, phash=phash, threshold_distance=6)
+            is_duplicate = False
+            duplicate_score = 0.0
+            duplicate_reason = None
+            duplicate_of_id = None
+            duplicate_of_disp = None
+
+            if dup_info:
+                is_duplicate = True
+                matched = dup_info["matched_cake"]
+                duplicate_score = dup_info["similarity"]
+                duplicate_reason = dup_info["reason"]
+                duplicate_of_id = matched.get("id")
+                duplicate_of_disp = matched.get("display_id")
+                print(f"[Queue][{worker_name}] ⚠️ Suspected duplicate detected: Matches #{duplicate_of_disp} ('{matched.get('name')}') - {duplicate_reason}")
+
             cake_record = {
                 "name": clean_title,
                 "flavour": flavour,
@@ -184,7 +205,14 @@ class BackgroundJobQueue:
                 "available_sizes": sizes,
                 "image_url": upload_res["image_url"],
                 "cloudinary_public_id": upload_res.get("cloudinary_public_id"),
-                "status": "pending", # MANDATORY: Artisan approval queue
+                "status": "duplicate" if is_duplicate else "pending",
+                "file_hash": file_hash,
+                "phash": phash,
+                "is_duplicate": 1 if is_duplicate else 0,
+                "duplicate_of_id": duplicate_of_id,
+                "duplicate_of_display_id": duplicate_of_disp,
+                "duplicate_score": duplicate_score,
+                "duplicate_reason": duplicate_reason,
                 "ai_metadata": {
                     "ai_status": "generated" if ai_data else "manual",
                     "original_file": job["file_name"],
@@ -196,7 +224,9 @@ class BackgroundJobQueue:
                     },
                     "tags": ai_data.get("tags", []) if ai_data else [],
                     "local_preview_url": proc_result["relative_master_url"],
-                    "local_thumb_url": proc_result["relative_thumb_url"]
+                    "local_thumb_url": proc_result["relative_thumb_url"],
+                    "duplicate_detected": is_duplicate,
+                    "duplicate_warning": duplicate_reason
                 }
             }
 
@@ -209,9 +239,9 @@ class BackgroundJobQueue:
                 progress=100,
                 cake_id=created_cake["id"],
                 processed_size_bytes=proc_result.get("file_size_bytes", 0),
-                error_message=None
+                error_message=f"Suspect duplicate of #{duplicate_of_disp}" if is_duplicate else None
             )
-            print(f"[Queue][{worker_name}] Successfully completed job {job_id} -> Cake '{created_cake['name']}' (PENDING)")
+            print(f"[Queue][{worker_name}] Successfully completed job {job_id} -> Cake '{created_cake['name']}' ({created_cake['status'].upper()})")
 
         except Exception as e:
             err = f"Processing error: {str(e)}"
