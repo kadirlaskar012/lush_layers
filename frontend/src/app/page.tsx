@@ -35,7 +35,9 @@ export default async function HomePage() {
   const finalTrendingCakes = trendingCakes.length > 0 ? trendingCakes : (cakes ? cakes.slice(0, 8) : []);
 
   const inspirationCakes = cakes?.filter((c) => Boolean(c.is_inspiration)) || [];
-  const finalInspirationCakes = inspirationCakes.length > 0 ? inspirationCakes : (cakes || []);
+  const finalInspirationCakes = inspirationCakes.length >= 3
+    ? inspirationCakes
+    : Array.from(new Map([...inspirationCakes, ...(cakes || [])].map((c) => [c.id, c])).values()).slice(0, 8);
 
   const heroCake = finalHeroCakes && finalHeroCakes.length > 0 ? finalHeroCakes[0] : (cakes && cakes.length > 0 ? cakes[0] : null);
 

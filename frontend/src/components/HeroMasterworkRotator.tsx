@@ -43,6 +43,17 @@ export default function HeroMasterworkRotator({
     setProgress(0);
   };
 
+  // Preload all rotator cake images to guarantee zero flicker / flashing during transitions
+  useEffect(() => {
+    if (typeof window === "undefined" || !validCakes.length) return;
+    validCakes.forEach((cake) => {
+      if (cake.image_url) {
+        const img = new Image();
+        img.src = getOptimizedImageUrl(cake.image_url, { width: 540 });
+      }
+    });
+  }, [validCakes]);
+
   // Progress Bar & Auto-Play timer
   useEffect(() => {
     if (totalCakes <= 1 || isPaused) return;

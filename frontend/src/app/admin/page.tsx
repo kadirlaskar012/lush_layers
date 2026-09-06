@@ -24,9 +24,8 @@ export default function AdminOverviewPage() {
       setRecentCakes(c.slice(0, 6));
       setRecentEnquiries(e.slice(0, 5));
 
-      // Fetch LAN info
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
-      const sysResp = await fetch(`${backendUrl}/api/system/status`).catch(() => null);
+      // Fetch system status
+      const sysResp = await fetch("/api/system/status").catch(() => null);
       if (sysResp && sysResp.ok) {
         setSystemInfo(await sysResp.json());
       }
