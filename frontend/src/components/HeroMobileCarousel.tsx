@@ -128,15 +128,47 @@ export default function HeroMobileCarousel({ cakes }: HeroMobileCarouselProps) {
                   href={`/cakes/${cake.slug}`}
                   className="hero-compact-name"
                   title={cake.name}
+                  style={{
+                    display: "block",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    lineHeight: 1.25,
+                  }}
                 >
                   {cake.name}
                 </Link>
-                <span className="hero-compact-flavour">
+                <span
+                  className="hero-compact-flavour"
+                  style={{
+                    display: "block",
+                    fontSize: "0.67rem",
+                    color: "var(--gold-dark)",
+                    fontStyle: "italic",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    lineHeight: 1.2,
+                  }}
+                >
                   {cake.flavour || "Signature"}
                 </span>
                 <Link
                   href={`/cakes/${cake.slug}`}
                   className="btn-order-now hero-compact-order-btn"
+                  style={{
+                    marginTop: "0.35rem",
+                    height: "25px",
+                    fontSize: "0.70rem",
+                    padding: "0 0.5rem",
+                    width: "100%",
+                    justifyContent: "center",
+                    borderRadius: "var(--radius-sm)",
+                  }}
                 >
                   <span>Order Now</span>
                 </Link>

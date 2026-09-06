@@ -18,9 +18,13 @@ export async function generateMetadata({ params }: CategoryPageProps) {
   const category = categories.find((c) => c.slug === slug);
   if (!category) return { title: "Category • LUSH LAYERS" };
 
+  const cleanTitle = category.name.toLowerCase().endsWith("cakes")
+    ? category.name
+    : `${category.name} Cakes`;
+
   return {
-    title: `${category.name} Cakes • LUSH LAYERS`,
-    description: category.description || `Browse handcrafted ${category.name} confections by LUSH LAYERS.`,
+    title: `${cleanTitle} • LUSH LAYERS`,
+    description: category.description || `Browse handcrafted ${cleanTitle} confections by LUSH LAYERS.`,
   };
 }
 
@@ -32,6 +36,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (!category) {
     notFound();
   }
+
+  const cleanTitle = category.name.toLowerCase().endsWith("cakes")
+    ? category.name
+    : `${category.name} Cakes`;
 
   const allCakes = await getPublishedCakes();
 
@@ -65,7 +73,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 1.5rem" }}>
             <span className="cake-category-badge">Curated Collection</span>
             <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
-              {category.name} Cakes
+              {cleanTitle}
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
               {category.description || "Artisanal hand-sculpted bespoke confections."}

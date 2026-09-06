@@ -90,13 +90,39 @@
 img, picture, svg, video, canvas {
   display: block;
   max-width: 100%;
-  height: auto;
   box-sizing: border-box;
 }
 
+/* Strict Image Anti-Flash Rules Across Entire Website */
+img {
+  content-visibility: auto;
+}
+
+/* All cake image wrappers strictly contained to prevent any flash or layout shift */
+.cake-card-image-wrap,
+.hero-preview-img-wrap,
+.hero-compact-img-box,
+#cake-photo-container {
+  contain: layout paint;
+  position: relative;
+  overflow: hidden !important;
+}
+
+/* Any cake image inside wrappers strictly locked to 100% width & height with object-fit: contain */
+.cake-card-img,
+.hero-preview-img,
+.hero-compact-img,
+.cake-card-image-wrap img,
+.hero-preview-img-wrap img,
+.hero-compact-img-box img,
+#cake-photo-container img,
 img[style*="object-fit"] {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
 }
 
 html {
@@ -547,6 +573,19 @@ button:hover .icon-hover-pulse {
   font-size: 0.72rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* Hero Mobile Carousel: strictly mobile-only with zero desktop paint or flash */
+.hero-mobile-carousel-container {
+  display: block;
+  width: 100%;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .hero-mobile-carousel-container {
+    display: none !important;
+  }
 }
 
 /* Hero Cake Masterwork Preview Card (Strictly 270px max, zero blowout) */
