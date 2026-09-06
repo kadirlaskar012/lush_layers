@@ -13,6 +13,7 @@ import {
   Star,
   MapPin,
   ShieldCheck,
+  PackageCheck,
 } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 
@@ -87,6 +88,7 @@ export default function Header() {
             <Link href="/#categories" className="header-nav-link">Categories</Link>
             <Link href="/about" className="header-nav-link">Our Story</Link>
             <Link href="/reviews" className="header-nav-link">Guest Reviews</Link>
+            <Link href="/track" className="header-nav-link" id="nav-track-order-link">Track Order</Link>
             <Link href="/contact" className="header-nav-link">Contact</Link>
             <Link
               href="/admin"
@@ -332,6 +334,15 @@ export default function Header() {
           >
             <Star size={18} style={{ color: "var(--gold-dark)" }} />
             <span>Guest Reviews</span>
+          </Link>
+          <Link
+            href="/track"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="mobile-nav-link"
+            id="mobile-nav-track-order-link"
+          >
+            <PackageCheck size={18} style={{ color: "var(--gold-dark)" }} />
+            <span>Track Order</span>
           </Link>
           <Link
             href="/contact"

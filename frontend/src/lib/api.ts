@@ -382,9 +382,11 @@ export async function createEnquiry(payload: {
   customer_name: string;
   phone: string;
   cake_name: string;
+  cake_image_url?: string;
   flavour?: string;
   selected_size?: string;
   custom_message?: string;
+  delivery_date?: string;
 }): Promise<Enquiry | null> {
   try {
     const res = await fetch(`${BACKEND_BASE_URL}/api/enquiries`, {
@@ -401,10 +403,25 @@ export async function createEnquiry(payload: {
   }
 }
 
-export async function getEnquiries(status?: string, limit?: number): Promise<Enquiry[]> {
+export async function getEnquiries(
+  status?: string,
+  searchOrLimit?: string | number,
+  maybeLimit?: number
+): Promise<Enquiry[]> {
   try {
+    let search: string | undefined;
+    let limit: number | undefined;
+
+    if (typeof searchOrLimit === "number") {
+      limit = searchOrLimit;
+    } else {
+      search = searchOrLimit;
+      limit = maybeLimit;
+    }
+
     const url = new URL(`${BACKEND_BASE_URL}/api/enquiries`);
     if (status && status !== "all") url.searchParams.set("status", status);
+    if (search && search.trim()) url.searchParams.set("search", search.trim());
     if (limit) url.searchParams.set("limit", limit.toString());
     const res = await fetch(url.toString(), { cache: "no-store" });
     if (!res.ok) return [];
@@ -415,15 +432,42 @@ export async function getEnquiries(status?: string, limit?: number): Promise<Enq
   }
 }
 
-export async function updateEnquiryStatus(enquiryId: string, status: string): Promise<Enquiry> {
+export async function trackEnquiry(enquiryNumber: string): Promise<Enquiry | null> {
+  try {
+    const cleaned = encodeURIComponent(enquiryNumber.trim().toUpperCase().replace("#", ""));
+    const res = await fetch(`${BACKEND_BASE_URL}/api/enquiries/track/${cleaned}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.enquiry;
+  } catch (err) {
+    console.error("Failed to track enquiry:", err);
+    return null;
+  }
+}
+
+export async function updateEnquiryDetails(enquiryId: string, payload: {
+  status?: string;
+  selected_size?: string;
+  delivery_date?: string;
+  admin_notes?: string;
+  flavour?: string;
+  cake_name?: string;
+  custom_message?: string;
+}): Promise<Enquiry> {
   const res = await fetch(`${BACKEND_BASE_URL}/api/enquiries/${enquiryId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Failed to update enquiry status");
+  if (!res.ok) throw new Error("Failed to update enquiry details");
   const data = await res.json();
   return data.enquiry;
+}
+
+export async function updateEnquiryStatus(enquiryId: string, status: string): Promise<Enquiry> {
+  return updateEnquiryDetails(enquiryId, { status });
 }
 
 export async function deleteEnquiry(enquiryId: string): Promise<boolean> {

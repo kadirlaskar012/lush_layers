@@ -82,13 +82,17 @@ export interface ProcessingJob {
 
 export interface Enquiry {
   id: string;
+  enquiry_number: string;
   customer_name: string;
   phone: string;
   cake_name: string;
+  cake_image_url?: string;
   flavour?: string;
   selected_size?: string;
   custom_message?: string;
-  status: "New" | "Contacted" | "Confirmed" | "Completed" | "Cancelled";
+  delivery_date?: string;
+  admin_notes?: string;
+  status: "New" | "Contacted" | "Confirmed" | "Baking" | "Ready" | "Delivered" | "Completed" | "Cancelled";
   created_at: string;
   updated_at: string;
 }
@@ -107,6 +111,9 @@ export interface AdminStats {
     new: number;
     contacted: number;
     confirmed: number;
+    baking?: number;
+    ready?: number;
+    delivered?: number;
     completed: number;
     cancelled: number;
   };

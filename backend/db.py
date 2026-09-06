@@ -2,6 +2,7 @@ import json
 import uuid
 import sqlite3
 import datetime
+import random
 from typing import Optional, List, Dict, Any
 from pathlib import Path
 from backend.config import settings
@@ -202,17 +203,50 @@ class Database:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS enquiries (
                 id TEXT PRIMARY KEY,
+                enquiry_number TEXT UNIQUE,
                 customer_name TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 cake_name TEXT NOT NULL,
+                cake_image_url TEXT,
                 flavour TEXT,
                 selected_size TEXT,
                 custom_message TEXT,
+                delivery_date TEXT,
+                admin_notes TEXT,
                 status TEXT NOT NULL DEFAULT 'New',
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
+
+        # Migration: Ensure all columns exist on enquiries table
+        for col_name, col_type in [
+            ("enquiry_number", "TEXT"),
+            ("cake_image_url", "TEXT"),
+            ("delivery_date", "TEXT"),
+            ("admin_notes", "TEXT"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE enquiries ADD COLUMN {col_name} {col_type}")
+                conn.commit()
+            except Exception:
+                pass
+
+        # Backfill any existing enquiries missing an enquiry_number
+        try:
+            cursor.execute("SELECT id FROM enquiries WHERE enquiry_number IS NULL OR enquiry_number = ''")
+            rows_to_backfill = cursor.fetchall()
+            for r in rows_to_backfill:
+                eid = r[0]
+                for _ in range(50):
+                    cand = f"LL-{random.randint(1000, 9999)}"
+                    cursor.execute("SELECT 1 FROM enquiries WHERE enquiry_number = ?", (cand,))
+                    if not cursor.fetchone():
+                        cursor.execute("UPDATE enquiries SET enquiry_number = ? WHERE id = ?", (cand, eid))
+                        conn.commit()
+                        break
+        except Exception:
+            pass
 
 
 
@@ -843,25 +877,55 @@ class Database:
         return self.update_cake(cake_id, {"status": "pending"})
 
     # --- CUSTOMER ENQUIRIES / ORDERS ---
+    def _generate_unique_enquiry_number(self) -> str:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        for _ in range(100):
+            cand = f"LL-{random.randint(1000, 9999)}"
+            cursor.execute("SELECT 1 FROM enquiries WHERE enquiry_number = ?", (cand,))
+            if not cursor.fetchone():
+                conn.close()
+                return cand
+        conn.close()
+        return f"LL-{random.randint(10000, 99999)}"
+
     def create_enquiry(self, data: Dict[str, Any]) -> Dict[str, Any]:
         enquiry_id = data.get("id") or f"enq-{str(uuid.uuid4())[:8]}"
+        enquiry_number = data.get("enquiry_number") or self._generate_unique_enquiry_number()
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
+        cake_image_url = data.get("cake_image_url") or ""
+        if not cake_image_url and data.get("cake_name"):
+            try:
+                conn_tmp = self._get_conn()
+                cur_tmp = conn_tmp.cursor()
+                cur_tmp.execute("SELECT image_url FROM cakes WHERE name = ? LIMIT 1", (data.get("cake_name"),))
+                row_img = cur_tmp.fetchone()
+                if row_img and row_img[0]:
+                    cake_image_url = row_img[0]
+                conn_tmp.close()
+            except Exception:
+                pass
+
         conn = self._get_conn()
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO enquiries (
-                id, customer_name, phone, cake_name, flavour, selected_size,
-                custom_message, status, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                id, enquiry_number, customer_name, phone, cake_name, cake_image_url, flavour, selected_size,
+                custom_message, delivery_date, admin_notes, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             enquiry_id,
+            enquiry_number,
             data.get("customer_name", "Anonymous Patron"),
             data.get("phone", ""),
             data.get("cake_name", "Bespoke Confection"),
+            cake_image_url,
             data.get("flavour", "Chef's Signature"),
             data.get("selected_size", "1.0 kg"),
             data.get("custom_message", ""),
+            data.get("delivery_date", ""),
+            data.get("admin_notes", ""),
             data.get("status", "New"),
             now,
             now
@@ -873,12 +937,16 @@ class Database:
             try:
                 self.supabase.table("enquiries").insert({
                     "id": enquiry_id,
+                    "enquiry_number": enquiry_number,
                     "customer_name": data.get("customer_name"),
                     "phone": data.get("phone"),
                     "cake_name": data.get("cake_name"),
+                    "cake_image_url": cake_image_url,
                     "flavour": data.get("flavour"),
                     "selected_size": data.get("selected_size"),
                     "custom_message": data.get("custom_message"),
+                    "delivery_date": data.get("delivery_date", ""),
+                    "admin_notes": data.get("admin_notes", ""),
                     "status": data.get("status", "New"),
                     "created_at": now,
                     "updated_at": now
@@ -896,14 +964,51 @@ class Database:
         conn.close()
         return dict(row) if row else None
 
-    def get_enquiries(self, status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_enquiry_by_number(self, enquiry_number: str) -> Optional[Dict[str, Any]]:
+        cleaned = enquiry_number.strip().upper().replace("#", "")
+        variants = [cleaned]
+        if not cleaned.startswith("LL-") and cleaned.isdigit():
+            variants.append(f"LL-{cleaned}")
+        elif cleaned.startswith("LL-"):
+            variants.append(cleaned[3:])
+
         conn = self._get_conn()
         cursor = conn.cursor()
-        query = "SELECT * FROM enquiries"
+        row = None
+        for v in variants:
+            cursor.execute("SELECT * FROM enquiries WHERE UPPER(enquiry_number) = ? OR UPPER(id) = ?", (v, v))
+            row = cursor.fetchone()
+            if row:
+                break
+        conn.close()
+        if row:
+            res = dict(row)
+            if not res.get("cake_image_url") and res.get("cake_name"):
+                try:
+                    c = self._get_conn()
+                    cur = c.cursor()
+                    cur.execute("SELECT image_url FROM cakes WHERE name = ? LIMIT 1", (res["cake_name"],))
+                    ci = cur.fetchone()
+                    if ci and ci[0]:
+                        res["cake_image_url"] = ci[0]
+                    c.close()
+                except Exception:
+                    pass
+            return res
+        return None
+
+    def get_enquiries(self, status: Optional[str] = None, search: Optional[str] = None, limit: int = 200) -> List[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        query = "SELECT * FROM enquiries WHERE 1=1"
         params = []
-        if status:
-            query += " WHERE status = ?"
+        if status and status.lower() != "all":
+            query += " AND status = ?"
             params.append(status)
+        if search:
+            query += " AND (enquiry_number LIKE ? OR customer_name LIKE ? OR phone LIKE ? OR cake_name LIKE ?)"
+            s_param = f"%{search.strip()}%"
+            params.extend([s_param, s_param, s_param, s_param])
         query += " ORDER BY created_at DESC LIMIT ?"
         params.append(limit)
         
@@ -912,26 +1017,35 @@ class Database:
         conn.close()
         return rows
 
-    def update_enquiry_status(self, enquiry_id: str, status: str) -> Optional[Dict[str, Any]]:
+    def update_enquiry(self, enquiry_id: str, fields: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        allowed = {"status", "selected_size", "delivery_date", "admin_notes", "flavour", "cake_name", "custom_message"}
+        updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+        if not updates:
+            return self.get_enquiry_by_id(enquiry_id)
+
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        updates["updated_at"] = now
+
+        set_clauses = [f"{k} = ?" for k in updates.keys()]
+        params = list(updates.values())
+        params.append(enquiry_id)
+
         conn = self._get_conn()
         cursor = conn.cursor()
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        cursor.execute("""
-            UPDATE enquiries SET status = ?, updated_at = ? WHERE id = ?
-        """, (status, now, enquiry_id))
+        cursor.execute(f"UPDATE enquiries SET {', '.join(set_clauses)} WHERE id = ?", params)
         conn.commit()
         conn.close()
 
         if self.supabase:
             try:
-                self.supabase.table("enquiries").update({
-                    "status": status,
-                    "updated_at": now
-                }).eq("id", enquiry_id).execute()
+                self.supabase.table("enquiries").update(updates).eq("id", enquiry_id).execute()
             except Exception:
                 pass
 
         return self.get_enquiry_by_id(enquiry_id)
+
+    def update_enquiry_status(self, enquiry_id: str, status: str) -> Optional[Dict[str, Any]]:
+        return self.update_enquiry(enquiry_id, {"status": status})
 
     def delete_enquiry(self, enquiry_id: str) -> bool:
         conn = self._get_conn()
@@ -974,7 +1088,10 @@ class Database:
                 "new": enquiry_counts.get("New", 0),
                 "contacted": enquiry_counts.get("Contacted", 0),
                 "confirmed": enquiry_counts.get("Confirmed", 0),
-                "completed": enquiry_counts.get("Completed", 0),
+                "baking": enquiry_counts.get("Baking", 0),
+                "ready": enquiry_counts.get("Ready", 0),
+                "delivered": enquiry_counts.get("Delivered", 0),
+                "completed": enquiry_counts.get("Completed", 0) + enquiry_counts.get("Delivered", 0),
                 "cancelled": enquiry_counts.get("Cancelled", 0),
             }
         }

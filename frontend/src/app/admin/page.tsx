@@ -18,7 +18,7 @@ export default function AdminOverviewPage() {
       const [s, c, e] = await Promise.all([
         getAdminStats(),
         getAdminCakes(undefined),
-        getEnquiries(undefined, 6),
+        getEnquiries(undefined, undefined, 6),
       ]);
       setStats(s);
       setRecentCakes(c.slice(0, 6));
@@ -50,9 +50,14 @@ export default function AdminOverviewPage() {
       case "contacted":
         return { bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE" };
       case "confirmed":
-        return { bg: "#D1FAE5", text: "#065F46", border: "#A7F3D0" };
+        return { bg: "#EDE9FE", text: "#6D28D9", border: "#DDD6FE" };
+      case "baking":
+        return { bg: "#FFF7ED", text: "#C2410C", border: "#FED7AA" };
+      case "ready":
+        return { bg: "#ECFDF5", text: "#059669", border: "#A7F3D0" };
+      case "delivered":
       case "completed":
-        return { bg: "#ECFDF5", text: "#047857", border: "#6EE7B7" };
+        return { bg: "#F0FDF4", text: "#15803D", border: "#86EFAC" };
       case "cancelled":
         return { bg: "#FEE2E2", text: "#991B1B", border: "#FECACA" };
       default:
@@ -175,8 +180,8 @@ export default function AdminOverviewPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-            gap: "0.55rem",
+            gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+            gap: "0.5rem",
           }}
         >
           {/* New */}
@@ -201,21 +206,41 @@ export default function AdminOverviewPage() {
 
           {/* Confirmed */}
           <Link href="/admin/orders?status=Confirmed" style={{ textDecoration: "none" }}>
-            <div className="admin-stat-card" style={{ borderTop: "3px solid #10B981" }}>
-              <div className="admin-stat-val" style={{ color: "#059669" }}>
+            <div className="admin-stat-card" style={{ borderTop: "3px solid #8B5CF6" }}>
+              <div className="admin-stat-val" style={{ color: "#6D28D9" }}>
                 {stats?.enquiries?.confirmed || 0}
               </div>
               <div className="admin-stat-lbl">Confirmed</div>
             </div>
           </Link>
 
-          {/* Completed */}
-          <Link href="/admin/orders?status=Completed" style={{ textDecoration: "none" }}>
+          {/* Baking */}
+          <Link href="/admin/orders?status=Baking" style={{ textDecoration: "none" }}>
+            <div className="admin-stat-card" style={{ borderTop: "3px solid #EA580C", background: stats?.enquiries?.baking ? "#FFF7ED" : "var(--bg-surface)" }}>
+              <div className="admin-stat-val" style={{ color: "#C2410C" }}>
+                {stats?.enquiries?.baking || 0}
+              </div>
+              <div className="admin-stat-lbl">Baking</div>
+            </div>
+          </Link>
+
+          {/* Ready */}
+          <Link href="/admin/orders?status=Ready" style={{ textDecoration: "none" }}>
+            <div className="admin-stat-card" style={{ borderTop: "3px solid #10B981" }}>
+              <div className="admin-stat-val" style={{ color: "#059669" }}>
+                {stats?.enquiries?.ready || 0}
+              </div>
+              <div className="admin-stat-lbl">Ready</div>
+            </div>
+          </Link>
+
+          {/* Delivered / Completed */}
+          <Link href="/admin/orders?status=Delivered" style={{ textDecoration: "none" }}>
             <div className="admin-stat-card" style={{ borderTop: "3px solid #047857" }}>
               <div className="admin-stat-val" style={{ color: "#047857" }}>
-                {stats?.enquiries?.completed || 0}
+                {stats?.enquiries?.delivered || stats?.enquiries?.completed || 0}
               </div>
-              <div className="admin-stat-lbl">Completed</div>
+              <div className="admin-stat-lbl">Delivered</div>
             </div>
           </Link>
 
@@ -282,10 +307,15 @@ export default function AdminOverviewPage() {
                     }}
                   >
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
                         <span style={{ fontSize: "0.84rem", fontWeight: 600, color: "var(--text-primary)" }}>
                           {enq.customer_name}
                         </span>
+                        {enq.enquiry_number && (
+                          <span style={{ fontFamily: "monospace", fontSize: "0.7rem", fontWeight: 700, color: "var(--gold-dark)", background: "var(--bg-cream)", padding: "0.1rem 0.35rem", borderRadius: "var(--radius-xs)", border: "1px solid var(--gold-border)" }}>
+                            #{enq.enquiry_number}
+                          </span>
+                        )}
                         <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                           • {enq.phone}
                         </span>

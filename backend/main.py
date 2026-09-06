@@ -488,37 +488,71 @@ class EnquiryCreateRequest(BaseModel):
     customer_name: str
     phone: str
     cake_name: str
+    cake_image_url: Optional[str] = None
     flavour: Optional[str] = "Chef's Signature"
     selected_size: Optional[str] = "1.0 kg"
     custom_message: Optional[str] = ""
+    delivery_date: Optional[str] = ""
 
-class EnquiryStatusUpdateRequest(BaseModel):
-    status: str  # New, Contacted, Confirmed, Completed, Cancelled
+class EnquiryUpdateRequest(BaseModel):
+    status: Optional[str] = None  # New, Contacted, Confirmed, Baking, Ready, Delivered, Cancelled
+    selected_size: Optional[str] = None
+    delivery_date: Optional[str] = None
+    admin_notes: Optional[str] = None
+    flavour: Optional[str] = None
+    cake_name: Optional[str] = None
+    custom_message: Optional[str] = None
 
 @app.post("/api/enquiries")
 async def create_enquiry(payload: EnquiryCreateRequest):
     """
     Registers customer WhatsApp order/enquiry. ZERO PRICE.
+    Generates a unique random enquiry number (e.g. LL-7492).
     """
     enquiry = db.create_enquiry(payload.dict())
-    return {"message": "Enquiry registered successfully.", "enquiry": enquiry}
+    return {
+        "message": "Enquiry registered successfully.",
+        "enquiry": enquiry,
+        "enquiry_number": enquiry.get("enquiry_number") if enquiry else None
+    }
 
 @app.get("/api/enquiries")
-async def list_enquiries(status: Optional[str] = None, limit: int = Query(100, ge=1, le=500)):
+async def list_enquiries(
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = Query(200, ge=1, le=500)
+):
     """
     Returns list of customer orders / WhatsApp enquiries for Admin management.
     """
-    return db.get_enquiries(status=status, limit=limit)
+    return db.get_enquiries(status=status, search=search, limit=limit)
+
+@app.get("/api/enquiries/track/{enquiry_number}")
+async def track_enquiry(enquiry_number: str):
+    """
+    Public tracking endpoint for customers to check status by Enquiry Number (e.g. LL-7492).
+    """
+    enquiry = db.get_enquiry_by_number(enquiry_number)
+    if not enquiry:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No order found matching reference '{enquiry_number}'. Please check the reference code provided."
+        )
+    return {
+        "enquiry": enquiry,
+        "enquiry_number": enquiry.get("enquiry_number"),
+        "status": enquiry.get("status", "New"),
+    }
 
 @app.patch("/api/enquiries/{enquiry_id}")
-async def update_enquiry_status(enquiry_id: str, payload: EnquiryStatusUpdateRequest):
+async def update_enquiry_details(enquiry_id: str, payload: EnquiryUpdateRequest):
     """
-    Updates the status of an order/enquiry.
+    Updates status, portion size, delivery date, or admin notes for an enquiry.
     """
-    updated = db.update_enquiry_status(enquiry_id, payload.status)
+    updated = db.update_enquiry(enquiry_id, payload.dict(exclude_unset=True))
     if not updated:
         raise HTTPException(status_code=404, detail="Enquiry not found.")
-    return {"message": "Enquiry status updated.", "enquiry": updated}
+    return {"message": "Enquiry updated successfully.", "enquiry": updated}
 
 @app.delete("/api/enquiries/{enquiry_id}")
 async def delete_enquiry(enquiry_id: str):

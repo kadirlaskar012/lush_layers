@@ -146,6 +146,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/track" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.82rem" }} id="footer-track-order-link">
+                  Track Your Confection
+                </Link>
+              </li>
+              <li>
                 <Link href="/admin" style={{ color: "var(--gold-dark)", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600 }}>
                   Admin Panel
                 </Link>
