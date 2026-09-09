@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { invalidateServerCache } from "@/lib/serverData";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,12 +12,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid revalidation secret" }, { status: 401 });
     }
 
+    // Immediately flush in-memory server cache
+    invalidateServerCache(tag || (path ? path.replace("/", "") : undefined));
+
     if (path) {
       revalidatePath(path);
     } else {
       revalidatePath("/");
       revalidatePath("/cakes");
       revalidatePath("/reviews");
+      revalidatePath("/categories");
     }
 
     if (tag) {

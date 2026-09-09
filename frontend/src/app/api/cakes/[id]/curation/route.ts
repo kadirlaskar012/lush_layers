@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { dbUpdateCakeCuration } from "@/lib/db";
+import { invalidateServerCache } from "@/lib/serverData";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,10 @@ export async function PATCH(
     if (!cake) {
       throw new Error("Failed to update cake curation on database.");
     }
+
+    invalidateServerCache("cakes");
+    revalidatePath("/");
+    revalidatePath("/cakes");
 
     return NextResponse.json({ message: "Curation updated", cake });
   } catch (err: any) {

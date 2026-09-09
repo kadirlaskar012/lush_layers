@@ -4,8 +4,7 @@ import MarketplaceListing from "../../components/MarketplaceListing";
 import MasonryGallery from "../../components/MasonryGallery";
 import { getPublishedCakes, getCategories } from "../../lib/serverData";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface CakesPageProps {
   searchParams: Promise<{

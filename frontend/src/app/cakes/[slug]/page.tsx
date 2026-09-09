@@ -9,8 +9,7 @@ import { getOptimizedImageUrl } from "../../../lib/imageHelper";
 import { getCakeDisplayId } from "../../../lib/cakeHelper";
 import { Sparkles } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 interface CakeDetailPageProps {
   params: Promise<{ slug: string }>;

@@ -15,8 +15,7 @@ import HeroMasterworkRotator from "../components/HeroMasterworkRotator";
 import { getPublishedCakes, getCategories, getActivePromotions } from "../lib/serverData";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [cakes, categories, promotions] = await Promise.all([

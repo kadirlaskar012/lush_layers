@@ -9,8 +9,7 @@ import { getCategoryIconMeta } from "../../lib/categoryIcons";
 import { getOptimizedImageUrl } from "../../lib/imageHelper";
 import CategoryCakeIcon from "../../components/CategoryCakeIcon";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export const metadata = {
   title: "Artisanal Cake Collections • LUSH LAYERS",

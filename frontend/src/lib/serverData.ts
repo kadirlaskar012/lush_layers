@@ -7,10 +7,45 @@ import {
 } from "./db";
 import { Cake, Category, Review, Promotion } from "./types";
 
+// Ultra-fast in-memory cache with 60s TTL to eliminate database latency on storefront
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+const serverMemoryCache = new Map<string, CacheEntry<any>>();
+
+export function invalidateServerCache(pattern?: string) {
+  if (!pattern || pattern === "all") {
+    serverMemoryCache.clear();
+    return;
+  }
+  for (const key of serverMemoryCache.keys()) {
+    if (key.includes(pattern)) {
+      serverMemoryCache.delete(key);
+    }
+  }
+}
+
+function getFromCache<T>(key: string): T | null {
+  const item = serverMemoryCache.get(key);
+  if (item && item.expiry > Date.now()) {
+    return item.data as T;
+  }
+  return null;
+}
+
+function setToCache<T>(key: string, data: T, ttlMs: number = 60000): T {
+  if (data !== undefined && data !== null) {
+    serverMemoryCache.set(key, { data, expiry: Date.now() + ttlMs });
+  }
+  return data;
+}
+
 async function withFastTimeout<T>(
   fn: () => Promise<T>,
   fallbackFn: () => Promise<T>,
-  timeoutMs: number = 1500
+  timeoutMs: number = 800
 ): Promise<T> {
   let timer: NodeJS.Timeout;
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -39,6 +74,10 @@ export async function getPublishedCakes(params?: {
   search?: string;
   placement?: string;
 }): Promise<Cake[]> {
+  const cacheKey = `cakes:${JSON.stringify(params || {})}`;
+  const cached = getFromCache<Cake[]>(cacheKey);
+  if (cached) return cached;
+
   const fetchDb = async () => {
     return await dbGetPublishedCakes(params);
   };
@@ -56,10 +95,18 @@ export async function getPublishedCakes(params?: {
     return [];
   };
 
-  return withFastTimeout(fetchDb, fetchLocal, 1500);
+  const result = await withFastTimeout(fetchDb, fetchLocal, 800);
+  if (result && result.length > 0) {
+    setToCache(cacheKey, result);
+  }
+  return result;
 }
 
 export async function getCakeBySlug(slug: string): Promise<Cake | null> {
+  const cacheKey = `cake:slug:${slug}`;
+  const cached = getFromCache<Cake | null>(cacheKey);
+  if (cached) return cached;
+
   const fetchDb = async () => {
     return await dbGetCakeBySlug(slug);
   };
@@ -72,10 +119,18 @@ export async function getCakeBySlug(slug: string): Promise<Cake | null> {
     return null;
   };
 
-  return withFastTimeout(fetchDb, fetchLocal, 1500);
+  const result = await withFastTimeout(fetchDb, fetchLocal, 800);
+  if (result) {
+    setToCache(cacheKey, result);
+  }
+  return result;
 }
 
 export async function getCategories(all: boolean = false): Promise<Category[]> {
+  const cacheKey = `categories:${all}`;
+  const cached = getFromCache<Category[]>(cacheKey);
+  if (cached) return cached;
+
   const fetchDb = async () => {
     return await dbGetCategories(all);
   };
@@ -88,10 +143,18 @@ export async function getCategories(all: boolean = false): Promise<Category[]> {
     return [];
   };
 
-  return withFastTimeout(fetchDb, fetchLocal, 1500);
+  const result = await withFastTimeout(fetchDb, fetchLocal, 800);
+  if (result && result.length > 0) {
+    setToCache(cacheKey, result);
+  }
+  return result;
 }
 
 export async function getApprovedReviews(): Promise<Review[]> {
+  const cacheKey = "reviews:approved";
+  const cached = getFromCache<Review[]>(cacheKey);
+  if (cached) return cached;
+
   const fetchDb = async () => {
     return await dbGetReviews("approved");
   };
@@ -107,10 +170,18 @@ export async function getApprovedReviews(): Promise<Review[]> {
     return [];
   };
 
-  return withFastTimeout(fetchDb, fetchLocal, 1500);
+  const result = await withFastTimeout(fetchDb, fetchLocal, 800);
+  if (result && result.length > 0) {
+    setToCache(cacheKey, result);
+  }
+  return result;
 }
 
 export async function getActivePromotions(): Promise<Promotion[]> {
+  const cacheKey = "promotions:active";
+  const cached = getFromCache<Promotion[]>(cacheKey);
+  if (cached) return cached;
+
   const fetchDb = async () => {
     return await dbGetPromotions(true);
   };
@@ -123,5 +194,9 @@ export async function getActivePromotions(): Promise<Promotion[]> {
     return [];
   };
 
-  return withFastTimeout(fetchDb, fetchLocal, 1500);
+  const result = await withFastTimeout(fetchDb, fetchLocal, 800);
+  if (result && result.length > 0) {
+    setToCache(cacheKey, result);
+  }
+  return result;
 }
