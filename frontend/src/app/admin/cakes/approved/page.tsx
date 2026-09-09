@@ -2,9 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAdminCakes, getCategories, publishCake, unpublishCake, rejectCake, updateCakeDetails } from "../../../../lib/api";
+import {
+  getAdminCakes,
+  getCategories,
+  publishCake,
+  unpublishCake,
+  rejectCake,
+  updateCakeDetails,
+  bulkUpdateCakeStatus,
+  bulkDeleteCakes,
+} from "../../../../lib/api";
 import { Cake, Category } from "../../../../lib/types";
 import { useBodyScrollLock } from "../../../../lib/useBodyScrollLock";
+import AdminBatchBar from "../../../../components/AdminBatchBar";
 import { RotateCw, ArrowUpRight, CheckCircle2, Sparkles, Undo2, Send, ArchiveX, Edit3, X, Plus } from "lucide-react";
 
 export default function ApprovedCakesPage() {
@@ -21,6 +31,72 @@ export default function ApprovedCakesPage() {
   const [editForm, setEditForm] = useState<Partial<Cake>>({});
   const [newSizeInput, setNewSizeInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Multi-select & Batch Bar state
+  const [selectedCakeIds, setSelectedCakeIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedCakeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCakeIds(new Set(displayedCakes.map((c) => c.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedCakeIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedCakeIds.size === 0) return;
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkUpdateCakeStatus(ids, newStatus);
+      if (newStatus === "rejected") {
+        setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      } else {
+        setCakes((prev) =>
+          prev.map((c) => (selectedCakeIds.has(c.id) ? { ...c, status: newStatus as any } : c))
+        );
+      }
+      const count = ids.length;
+      handleDeselectAll();
+      setFeedback(`Successfully updated ${count} confection(s) to "${newStatus}"!`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to update selected confections");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedCakeIds.size === 0) return;
+    const count = selectedCakeIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected confection(s)? This cannot be undone.`)) {
+      return;
+    }
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkDeleteCakes(ids);
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      handleDeselectAll();
+      setFeedback(`Permanently deleted ${count} confection(s).`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to delete selected confections");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const loadApproved = async () => {
     setLoading(true);
@@ -313,9 +389,34 @@ export default function ApprovedCakesPage() {
           </button>
         </div>
 
-        <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-          Showing {displayedCakes.length} confections
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+          {displayedCakes.length > 0 && (
+            <button
+              onClick={selectedCakeIds.size === displayedCakes.length ? handleDeselectAll : handleSelectAll}
+              className="btn-outline-gold"
+              style={{
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.76rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={displayedCakes.length > 0 && selectedCakeIds.size === displayedCakes.length}
+                readOnly
+                style={{ accentColor: "var(--gold)", cursor: "pointer", width: "14px", height: "14px" }}
+              />
+              <span>{selectedCakeIds.size === displayedCakes.length ? "Deselect All" : "Select All"}</span>
+            </button>
+          )}
+
+          <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+            Showing {displayedCakes.length} confections
+          </span>
+        </div>
       </div>
 
       {/* Grid of Approved Cakes */}
@@ -363,44 +464,64 @@ export default function ApprovedCakesPage() {
           {displayedCakes.map((cake) => {
             const isLive = cake.status === "published";
             const isBusy = actionLoading === cake.id;
+            const isSelected = selectedCakeIds.has(cake.id);
 
             return (
               <div
                 key={cake.id}
                 style={{
-                  background: "var(--bg-surface)",
-                  border: isLive ? "1px solid var(--gold-border)" : "1px solid var(--border-subtle)",
+                  background: isSelected ? "rgba(197, 160, 89, 0.04)" : "var(--bg-surface)",
+                  border: isSelected
+                    ? "1.5px solid var(--gold)"
+                    : isLive
+                    ? "1px solid var(--gold-border)"
+                    : "1px solid var(--border-subtle)",
                   borderRadius: "var(--radius-md)",
                   padding: "0.85rem",
-                  boxShadow: "var(--shadow-xs)",
+                  boxShadow: isSelected ? "0 4px 16px rgba(197, 160, 89, 0.15)" : "var(--shadow-xs)",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
+                  transition: "all 0.15s ease",
                 }}
                 id={`approved-card-${cake.id}`}
               >
                 <div>
-                  {/* Top bar with Status Badge & Category */}
+                  {/* Top bar with Status Badge, Selection Checkbox & Category */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                    <span
-                      style={{
-                        fontSize: "0.66rem",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        padding: "0.15rem 0.5rem",
-                        borderRadius: "var(--radius-full)",
-                        background: isLive ? "#DBEAFE" : "#D1FAE5",
-                        color: isLive ? "#1E40AF" : "#065F46",
-                        border: isLive ? "1px solid #BFDBFE" : "1px solid #A7F3D0",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.3rem",
-                      }}
-                    >
-                      <span>{isLive ? "●" : "○"}</span>
-                      <span>{isLive ? "PUBLISHED LIVE" : "APPROVED (STAGED)"}</span>
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(cake.id)}
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          accentColor: "var(--gold)",
+                          cursor: "pointer",
+                        }}
+                        aria-label={`Select ${cake.name}`}
+                      />
+                      <span
+                        style={{
+                          fontSize: "0.66rem",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.06em",
+                          padding: "0.15rem 0.5rem",
+                          borderRadius: "var(--radius-full)",
+                          background: isLive ? "#DBEAFE" : "#D1FAE5",
+                          color: isLive ? "#1E40AF" : "#065F46",
+                          border: isLive ? "1px solid #BFDBFE" : "1px solid #A7F3D0",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                        }}
+                      >
+                        <span>{isLive ? "●" : "○"}</span>
+                        <span>{isLive ? "PUBLISHED LIVE" : "APPROVED (STAGED)"}</span>
+                      </span>
+                    </div>
 
                     <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 500 }}>
                       {cake.category_name || "Haute Confection"}
@@ -836,6 +957,27 @@ export default function ApprovedCakesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Batch Actions Toolbar */}
+      <AdminBatchBar
+        selectedCount={selectedCakeIds.size}
+        totalCount={displayedCakes.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onStatusChange={handleBatchStatusChange}
+        statusOptions={[
+          { label: "Publish Live to Storefront", value: "published" },
+          { label: "Revert to Staged (Approved)", value: "approved" },
+          { label: "Move to Rejected Archive", value: "rejected" },
+        ]}
+        quickActions={[
+          { label: "Publish Live", value: "published", variant: "primary" },
+          { label: "Revert to Staged", value: "approved", variant: "secondary" },
+          { label: "Reject", value: "rejected", variant: "outline" },
+        ]}
+        onDelete={handleBatchDelete}
+        isLoading={batchLoading}
+      />
     </div>
   );
 }

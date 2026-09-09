@@ -12,9 +12,12 @@ import {
   generateCakeAI,
   regenerateCakeAI,
   reprocessCakeImage,
+  bulkUpdateCakeStatus,
+  bulkDeleteCakes,
 } from "../../../../lib/api";
 import { Cake, Category } from "../../../../lib/types";
 import { useBodyScrollLock } from "../../../../lib/useBodyScrollLock";
+import AdminBatchBar from "../../../../components/AdminBatchBar";
 import {
   Sparkles,
   RotateCw,
@@ -40,6 +43,76 @@ export default function PendingCakesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ id?: string; msg: string; type: "success" | "error" | "info" } | null>(null);
+
+  // Multi-select & Batch Bar state
+  const [selectedCakeIds, setSelectedCakeIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedCakeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCakeIds(new Set(cakes.map((c) => c.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedCakeIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedCakeIds.size === 0) return;
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkUpdateCakeStatus(ids, newStatus);
+      // Remove approved, published, or rejected cakes from pending view
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      const count = ids.length;
+      handleDeselectAll();
+      setFeedback({
+        msg: `Successfully updated ${count} cake(s) to "${newStatus}"!`,
+        type: "success",
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ msg: err.message || "Failed to update selected cakes", type: "error" });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedCakeIds.size === 0) return;
+    const count = selectedCakeIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected cake(s)? This cannot be undone.`)) {
+      return;
+    }
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkDeleteCakes(ids);
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      handleDeselectAll();
+      setFeedback({
+        msg: `Permanently deleted ${count} cake(s).`,
+        type: "info",
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ msg: err.message || "Failed to delete selected cakes", type: "error" });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   // Bulk Generation state
   const [bulkState, setBulkState] = useState<{
@@ -293,6 +366,27 @@ export default function PendingCakesPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", alignItems: "center" }}>
+          {cakes.length > 0 && (
+            <button
+              onClick={selectedCakeIds.size === cakes.length ? handleDeselectAll : handleSelectAll}
+              className="btn-outline-gold"
+              style={{
+                padding: "0.42rem 0.85rem",
+                fontSize: "0.78rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={cakes.length > 0 && selectedCakeIds.size === cakes.length}
+                readOnly
+                style={{ accentColor: "var(--gold)", cursor: "pointer", width: "14px", height: "14px" }}
+              />
+              <span>{selectedCakeIds.size === cakes.length ? "Deselect All" : "Select All"}</span>
+            </button>
+          )}
           <button
             onClick={handleGenerateAllWithAI}
             disabled={bulkState.isRunning || ungeneratedCount === 0}
@@ -428,43 +522,59 @@ export default function PendingCakesPage() {
         {cakes.map((cake) => {
           const isBusy = actionLoading === cake.id;
           const aiStatus = getAiStatus(cake);
+          const isSelected = selectedCakeIds.has(cake.id);
 
           return (
             <div
               key={cake.id}
               style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-subtle)",
+                background: isSelected ? "rgba(197, 160, 89, 0.04)" : "var(--bg-surface)",
+                border: isSelected ? "1.5px solid var(--gold)" : "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
                 padding: "0.85rem",
-                boxShadow: "var(--shadow-xs)",
+                boxShadow: isSelected ? "0 4px 16px rgba(197, 160, 89, 0.15)" : "var(--shadow-xs)",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
+                transition: "all 0.15s ease",
               }}
               id={`pending-card-${cake.id}`}
             >
               <div>
-                {/* Top status pills */}
+                {/* Top status pills & selection checkbox */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                  <span
-                    style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      padding: "0.15rem 0.45rem",
-                      borderRadius: "var(--radius-full)",
-                      background: "#FEF3C7",
-                      color: "#92400E",
-                      border: "1px solid #FCD34D",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.3rem",
-                    }}
-                  >
-                    <Clock size={11} />
-                    <span>PENDING APPROVAL</span>
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(cake.id)}
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        accentColor: "var(--gold)",
+                        cursor: "pointer",
+                      }}
+                      aria-label={`Select ${cake.name}`}
+                    />
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        padding: "0.15rem 0.45rem",
+                        borderRadius: "var(--radius-full)",
+                        background: "#FEF3C7",
+                        color: "#92400E",
+                        border: "1px solid #FCD34D",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.3rem",
+                      }}
+                    >
+                      <Clock size={11} />
+                      <span>PENDING APPROVAL</span>
+                    </span>
+                  </div>
 
                   <span
                     style={{
@@ -910,6 +1020,27 @@ export default function PendingCakesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Batch Actions Toolbar */}
+      <AdminBatchBar
+        selectedCount={selectedCakeIds.size}
+        totalCount={cakes.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onStatusChange={handleBatchStatusChange}
+        statusOptions={[
+          { label: "Approve (Stage)", value: "approved" },
+          { label: "Approve & Publish Live", value: "published" },
+          { label: "Reject (Archive)", value: "rejected" },
+        ]}
+        quickActions={[
+          { label: "Approve & Publish", value: "published", variant: "primary" },
+          { label: "Approve", value: "approved", variant: "secondary" },
+          { label: "Reject", value: "rejected", variant: "outline" },
+        ]}
+        onDelete={handleBatchDelete}
+        isLoading={batchLoading}
+      />
     </div>
   );
 }

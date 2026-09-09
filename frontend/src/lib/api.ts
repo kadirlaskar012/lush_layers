@@ -620,3 +620,103 @@ export async function checkPhoneEligibility(phone: string, code?: string): Promi
     };
   }
 }
+
+// --- BULK BATCH API (Multi-Select Actions) ---
+
+export async function bulkUpdateCakeStatus(
+  ids: string[],
+  status: string
+): Promise<{ success: boolean; count: number; message: string; cakes?: Cake[] }> {
+  const res = await fetch(getApiUrlString("/api/cakes/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, action: "status", status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || "Failed to update cakes status");
+  }
+  return await res.json();
+}
+
+export async function bulkDeleteCakes(
+  ids: string[]
+): Promise<{ success: boolean; count: number; message: string }> {
+  const res = await fetch(getApiUrlString("/api/cakes/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, action: "delete" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || "Failed to delete cakes");
+  }
+  return await res.json();
+}
+
+export async function bulkUpdateEnquiryStatus(
+  ids: string[],
+  status: string
+): Promise<{ success: boolean; count: number; message: string }> {
+  const res = await fetch(getApiUrlString("/api/enquiries/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, action: "status", status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || "Failed to update orders status");
+  }
+  return await res.json();
+}
+
+export async function bulkDeleteEnquiries(
+  ids: string[]
+): Promise<{ success: boolean; count: number; message: string }> {
+  const res = await fetch(getApiUrlString("/api/enquiries/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, action: "delete" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || "Failed to delete orders");
+  }
+  return await res.json();
+}
+
+export async function bulkUpdateReviewStatus(
+  ids: string[],
+  actionOrStatus: string
+): Promise<{ success: boolean; count: number; message: string }> {
+  const isAction = actionOrStatus === "approve" || actionOrStatus === "reject";
+  const body = isAction
+    ? { ids, action: actionOrStatus }
+    : { ids, status: actionOrStatus };
+
+  const res = await fetch(getApiUrlString("/api/reviews/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || `Failed to update reviews`);
+  }
+  return await res.json();
+}
+
+export async function bulkDeleteReviews(
+  ids: string[]
+): Promise<{ success: boolean; count: number; message: string }> {
+  const res = await fetch(getApiUrlString("/api/reviews/bulk"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids, action: "delete" }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || err.error || "Failed to delete reviews");
+  }
+  return await res.json();
+}

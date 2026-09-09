@@ -11,10 +11,13 @@ import {
   deleteCake,
   updateCakeDetails,
   updateCakeCuration,
+  bulkUpdateCakeStatus,
+  bulkDeleteCakes,
 } from "../../../lib/api";
 import { Cake, Category } from "../../../lib/types";
 import { getCakeDisplayId } from "../../../lib/cakeHelper";
 import { Zap, Clock, Edit3, X, Plus, CheckCircle2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import AdminBatchBar from "../../../components/AdminBatchBar";
 
 export default function AdminCakesManagementPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
@@ -27,6 +30,63 @@ export default function AdminCakesManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Multi-Select Batch State
+  const [selectedCakeIds, setSelectedCakeIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelectCake = (cakeId: string) => {
+    setSelectedCakeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cakeId)) next.delete(cakeId);
+      else next.add(cakeId);
+      return next;
+    });
+  };
+
+  const handleSelectAllCakes = () => {
+    setSelectedCakeIds(new Set(displayedCakes.map((c) => c.id)));
+  };
+
+  const handleDeselectAllCakes = () => {
+    setSelectedCakeIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedCakeIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      const ids = Array.from(selectedCakeIds);
+      const res = await bulkUpdateCakeStatus(ids, newStatus);
+      setCakes((prev) =>
+        prev.map((c) => (selectedCakeIds.has(c.id) ? { ...c, status: newStatus as any } : c))
+      );
+      setFeedback(`✓ ${res.message}`);
+      setSelectedCakeIds(new Set());
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to update cakes");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedCakeIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      const ids = Array.from(selectedCakeIds);
+      const res = await bulkDeleteCakes(ids);
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      setFeedback(`✓ ${res.message}`);
+      setSelectedCakeIds(new Set());
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to delete cakes");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   // Edit Modal State
   const [editingCake, setEditingCake] = useState<Cake | null>(null);
@@ -547,6 +607,19 @@ export default function AdminCakesManagementPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
           <thead>
             <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
+              <th style={{ padding: "0.55rem 0.65rem", textAlign: "center", width: "40px" }}>
+                <input
+                  type="checkbox"
+                  checked={displayedCakes.length > 0 && selectedCakeIds.size === displayedCakes.length}
+                  onChange={(e) => {
+                    if (e.target.checked) handleSelectAllCakes();
+                    else handleDeselectAllCakes();
+                  }}
+                  style={{ width: "16px", height: "16px", accentColor: "#B88E3E", cursor: "pointer" }}
+                  title="Select All"
+                  aria-label="Select All Cakes"
+                />
+              </th>
               <th style={{ padding: "0.55rem 0.85rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", width: "56px" }}>
                 Photo
               </th>
@@ -576,25 +649,38 @@ export default function AdminCakesManagementPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={8} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={9} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   Loading cakes...
                 </td>
               </tr>
             ) : displayedCakes.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={9} style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-muted)" }}>
                   No confections found matching your criteria.
                 </td>
               </tr>
             ) : (
               displayedCakes.map((cake) => {
                 const isBusy = actionLoading === cake.id;
+                const isSelected = selectedCakeIds.has(cake.id);
                 return (
                   <tr
                     key={cake.id}
-                    style={{ borderBottom: "1px solid var(--border-light)" }}
+                    style={{
+                      borderBottom: "1px solid var(--border-light)",
+                      background: isSelected ? "rgba(184, 142, 62, 0.08)" : undefined,
+                    }}
                     className="hover:bg-cream"
                   >
+                    <td style={{ padding: "0.45rem 0.65rem", textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectCake(cake.id)}
+                        style={{ width: "16px", height: "16px", accentColor: "#B88E3E", cursor: "pointer" }}
+                        aria-label={`Select ${cake.name}`}
+                      />
+                    </td>
                     <td style={{ padding: "0.45rem 0.85rem" }}>
                       <div
                         style={{
@@ -871,18 +957,28 @@ export default function AdminCakesManagementPage() {
       >
         {displayedCakes.map((cake) => {
           const isBusy = actionLoading === cake.id;
+          const isSelected = selectedCakeIds.has(cake.id);
           return (
             <div
               key={cake.id}
               style={{
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-subtle)",
+                background: isSelected ? "rgba(184, 142, 62, 0.05)" : "var(--bg-surface)",
+                border: isSelected ? "1.5px solid var(--gold)" : "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
                 padding: "0.75rem",
                 boxShadow: "var(--shadow-xs)",
               }}
             >
-              <div style={{ display: "flex", gap: "0.65rem", marginBottom: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "0.65rem", marginBottom: "0.5rem", alignItems: "flex-start" }}>
+                <div style={{ paddingTop: "0.2rem" }}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleSelectCake(cake.id)}
+                    style={{ width: "18px", height: "18px", accentColor: "#B88E3E", cursor: "pointer" }}
+                    aria-label={`Select ${cake.name}`}
+                  />
+                </div>
                 <div
                   style={{
                     width: "50px",
@@ -1389,6 +1485,36 @@ export default function AdminCakesManagementPage() {
           </div>
         </div>
       )}
+
+      <AdminBatchBar
+        selectedCount={selectedCakeIds.size}
+        totalCount={displayedCakes.length}
+        isAllSelected={displayedCakes.length > 0 && selectedCakeIds.size === displayedCakes.length}
+        onSelectAll={handleSelectAllCakes}
+        onDeselectAll={handleDeselectAllCakes}
+        statusOptions={[
+          { label: "Published Live", value: "published" },
+          { label: "Approved (Staged)", value: "approved" },
+          { label: "Pending Review", value: "pending" },
+          { label: "Rejected Archive", value: "rejected" },
+        ]}
+        onApplyStatus={handleBatchStatusChange}
+        onDelete={handleBatchDelete}
+        customActions={[
+          {
+            label: `Approve (${selectedCakeIds.size})`,
+            variant: "gold",
+            onClick: () => handleBatchStatusChange("approved"),
+          },
+          {
+            label: `Publish (${selectedCakeIds.size})`,
+            variant: "outline",
+            onClick: () => handleBatchStatusChange("published"),
+          },
+        ]}
+        isLoading={batchLoading}
+        itemLabel="cakes"
+      />
 
       <style jsx global>{`
         @media (max-width: 768px) {

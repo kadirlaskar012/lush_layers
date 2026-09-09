@@ -982,3 +982,69 @@ export async function dbCheckPhoneEligibility(phone: string, code?: string): Pro
     message: "No active promotions available at this time.",
   };
 }
+
+// ================= BULK BATCH OPERATIONS =================
+
+export async function dbBulkUpdateCakeStatus(cakeIds: string[], status: string): Promise<Cake[]> {
+  if (!cakeIds || cakeIds.length === 0) return [];
+  const p = getPool();
+  let query = `
+    UPDATE cakes
+    SET status = $2,
+        updated_at = NOW()
+  `;
+  const values: any[] = [cakeIds, status];
+
+  if (status === "published") {
+    query += `, published_at = COALESCE(published_at, NOW())`;
+  }
+  if (status === "pending") {
+    query += `, is_duplicate = false, duplicate_reason = NULL, duplicate_score = NULL, duplicate_of_id = NULL, duplicate_of_display_id = NULL`;
+  }
+
+  query += ` WHERE id = ANY($1) RETURNING *`;
+  const res = await p.query(query, values);
+  return res.rows.map(mapCake);
+}
+
+export async function dbBulkDeleteCakes(cakeIds: string[]): Promise<number> {
+  if (!cakeIds || cakeIds.length === 0) return 0;
+  const p = getPool();
+  const res = await p.query(`DELETE FROM cakes WHERE id = ANY($1)`, [cakeIds]);
+  return res.rowCount ?? 0;
+}
+
+export async function dbBulkUpdateEnquiryStatus(enquiryIds: string[], status: string): Promise<Enquiry[]> {
+  if (!enquiryIds || enquiryIds.length === 0) return [];
+  const p = getPool();
+  const res = await p.query(
+    `UPDATE enquiries SET status = $2, updated_at = NOW() WHERE id = ANY($1) RETURNING *`,
+    [enquiryIds, status]
+  );
+  return res.rows.map(mapEnquiry);
+}
+
+export async function dbBulkDeleteEnquiries(enquiryIds: string[]): Promise<number> {
+  if (!enquiryIds || enquiryIds.length === 0) return 0;
+  const p = getPool();
+  const res = await p.query(`DELETE FROM enquiries WHERE id = ANY($1)`, [enquiryIds]);
+  return res.rowCount ?? 0;
+}
+
+export async function dbBulkUpdateReviewStatus(reviewIds: string[], status: string): Promise<number> {
+  if (!reviewIds || reviewIds.length === 0) return 0;
+  const p = getPool();
+  const isApproved = status === "approved";
+  const query = isApproved
+    ? `UPDATE reviews SET status = $2, approved_at = NOW() WHERE id = ANY($1)`
+    : `UPDATE reviews SET status = $2 WHERE id = ANY($1)`;
+  const res = await p.query(query, [reviewIds, status]);
+  return res.rowCount ?? 0;
+}
+
+export async function dbBulkDeleteReviews(reviewIds: string[]): Promise<number> {
+  if (!reviewIds || reviewIds.length === 0) return 0;
+  const p = getPool();
+  const res = await p.query(`DELETE FROM reviews WHERE id = ANY($1)`, [reviewIds]);
+  return res.rowCount ?? 0;
+}

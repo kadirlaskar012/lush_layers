@@ -2,8 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getEnquiries, updateEnquiryStatus, updateEnquiryDetails, deleteEnquiry } from "../../../lib/api";
+import {
+  getEnquiries,
+  updateEnquiryStatus,
+  updateEnquiryDetails,
+  deleteEnquiry,
+  bulkUpdateEnquiryStatus,
+  bulkDeleteEnquiries,
+} from "../../../lib/api";
 import { Enquiry } from "../../../lib/types";
+import AdminBatchBar from "../../../components/AdminBatchBar";
 import {
   RotateCw,
   CheckCircle2,
@@ -56,6 +64,68 @@ export default function AdminOrdersPage() {
     flavour: "",
   });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Multi-select & Batch Bar state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedIds(new Set(filteredEnquiries.map((e) => e.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    setBatchLoading(true);
+    try {
+      await bulkUpdateEnquiryStatus(ids, newStatus);
+      setEnquiries((prev) =>
+        prev.map((e) => (selectedIds.has(e.id) ? { ...e, status: newStatus as any } : e))
+      );
+      const count = ids.length;
+      handleDeselectAll();
+      setFeedback(`Successfully updated ${count} enquiry status(es) to "${newStatus}"!`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to update selected enquiries");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected customer enquiry record(s)? This cannot be undone.`)) {
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    setBatchLoading(true);
+    try {
+      await bulkDeleteEnquiries(ids);
+      setEnquiries((prev) => prev.filter((e) => !selectedIds.has(e.id)));
+      handleDeselectAll();
+      setFeedback(`Permanently deleted ${count} enquiry record(s).`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to delete selected enquiries");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   // Copied Enquiry Number feedback
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -387,6 +457,15 @@ export default function AdminOrdersPage() {
               >
                 <thead>
                   <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
+                    <th style={{ width: "40px", padding: "0.65rem 0.65rem 0.65rem 0.85rem", textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        checked={filteredEnquiries.length > 0 && selectedIds.size === filteredEnquiries.length}
+                        onChange={selectedIds.size === filteredEnquiries.length ? handleDeselectAll : handleSelectAll}
+                        style={{ accentColor: "var(--gold)", cursor: "pointer", width: "15px", height: "15px" }}
+                        aria-label="Select all orders"
+                      />
+                    </th>
                     <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Enquiry Ref #</th>
                     <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Patron & Date</th>
                     <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Contact WhatsApp</th>
@@ -401,16 +480,29 @@ export default function AdminOrdersPage() {
                   {filteredEnquiries.map((enq) => {
                     const badge = getStatusBadge(enq.status);
                     const cleanPhone = enq.phone.replace(/[^0-9]/g, "");
+                    const isSelected = selectedIds.has(enq.id);
 
                     return (
                       <tr
                         key={enq.id}
                         style={{
+                          background: isSelected ? "rgba(197, 160, 89, 0.05)" : undefined,
                           borderBottom: "1px solid var(--border-light)",
                           transition: "background 0.15s",
                         }}
                         className="admin-table-row"
                       >
+                        {/* Selection Checkbox */}
+                        <td style={{ width: "40px", padding: "0.65rem 0.65rem 0.65rem 0.85rem", textAlign: "center" }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(enq.id)}
+                            style={{ accentColor: "var(--gold)", cursor: "pointer", width: "15px", height: "15px" }}
+                            aria-label={`Select order ${enq.enquiry_number || enq.id}`}
+                          />
+                        </td>
+
                         {/* Enquiry Ref Number with Copy & Track link */}
                         <td style={{ padding: "0.65rem 0.85rem" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
@@ -638,12 +730,27 @@ export default function AdminOrdersPage() {
             {filteredEnquiries.map((enq) => {
               const badge = getStatusBadge(enq.status);
               const cleanPhone = enq.phone.replace(/[^0-9]/g, "");
+              const isSelected = selectedIds.has(enq.id);
 
               return (
-                <div key={enq.id} className="admin-order-card">
-                  {/* Top Bar: Ref Number & Status */}
+                <div
+                  key={enq.id}
+                  className="admin-order-card"
+                  style={{
+                    border: isSelected ? "1.5px solid var(--gold)" : undefined,
+                    background: isSelected ? "rgba(197, 160, 89, 0.04)" : undefined,
+                  }}
+                >
+                  {/* Top Bar: Ref Number, Checkbox & Status */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.4rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(enq.id)}
+                        style={{ width: "16px", height: "16px", accentColor: "var(--gold)", cursor: "pointer" }}
+                        aria-label={`Select order ${enq.enquiry_number || enq.id}`}
+                      />
                       <span
                         style={{
                           fontFamily: "monospace",
@@ -1108,6 +1215,31 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Batch Actions Toolbar */}
+      <AdminBatchBar
+        selectedCount={selectedIds.size}
+        totalCount={filteredEnquiries.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onStatusChange={handleBatchStatusChange}
+        statusOptions={[
+          { label: "Mark as New", value: "New" },
+          { label: "Mark as Contacted", value: "Contacted" },
+          { label: "Mark as Confirmed", value: "Confirmed" },
+          { label: "Mark as Baking", value: "Baking" },
+          { label: "Mark as Ready", value: "Ready" },
+          { label: "Mark as Delivered", value: "Delivered" },
+          { label: "Mark as Cancelled", value: "Cancelled" },
+        ]}
+        quickActions={[
+          { label: "Mark Confirmed", value: "Confirmed", variant: "primary" },
+          { label: "Mark Baking", value: "Baking", variant: "secondary" },
+          { label: "Mark Delivered", value: "Delivered", variant: "outline" },
+        ]}
+        onDelete={handleBatchDelete}
+        isLoading={batchLoading}
+      />
     </div>
   );
 }

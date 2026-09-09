@@ -6,8 +6,11 @@ import {
   getDuplicateCakes,
   dismissCakeDuplicate,
   deleteCake,
+  bulkUpdateCakeStatus,
+  bulkDeleteCakes,
 } from "../../../../lib/api";
 import { Cake } from "../../../../lib/types";
+import AdminBatchBar from "../../../../components/AdminBatchBar";
 import { getCakeDisplayId } from "../../../../lib/cakeHelper";
 import { getOptimizedImageUrl } from "../../../../lib/imageHelper";
 import {
@@ -28,6 +31,73 @@ export default function DuplicateCakesPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [feedback, setFeedback] = useState<{ msg: string; type: "success" | "error" | "info" } | null>(null);
+
+  // Multi-select & Batch Bar state
+  const [selectedCakeIds, setSelectedCakeIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedCakeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCakeIds(new Set(filteredDuplicates.map((c) => c.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedCakeIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedCakeIds.size === 0) return;
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkUpdateCakeStatus(ids, newStatus);
+      // Remove from duplicates queue
+      setDuplicateCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      const count = ids.length;
+      handleDeselectAll();
+      setFeedback({
+        msg: `Successfully updated ${count} duplicate cake(s) to "${newStatus}"!`,
+        type: "success",
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ msg: err.message || "Failed to update selected duplicates", type: "error" });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedCakeIds.size === 0) return;
+    const count = selectedCakeIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected duplicate cake(s)? This cannot be undone.`)) {
+      return;
+    }
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkDeleteCakes(ids);
+      setDuplicateCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      handleDeselectAll();
+      setFeedback({
+        msg: `Permanently deleted ${count} duplicate cake(s).`,
+        type: "info",
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ msg: err.message || "Failed to delete selected duplicates", type: "error" });
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const loadDuplicates = async () => {
     setIsLoading(true);
@@ -154,7 +224,29 @@ export default function DuplicateCakesPage() {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          {filteredDuplicates.length > 0 && (
+            <button
+              type="button"
+              onClick={selectedCakeIds.size === filteredDuplicates.length ? handleDeselectAll : handleSelectAll}
+              className="btn-outline-gold"
+              style={{
+                padding: "0.45rem 0.85rem",
+                fontSize: "0.78rem",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.35rem",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={filteredDuplicates.length > 0 && selectedCakeIds.size === filteredDuplicates.length}
+                readOnly
+                style={{ accentColor: "var(--gold)", cursor: "pointer", width: "14px", height: "14px" }}
+              />
+              <span>{selectedCakeIds.size === filteredDuplicates.length ? "Deselect All" : "Select All"}</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={loadDuplicates}
@@ -311,21 +403,24 @@ export default function DuplicateCakesPage() {
             const score = cake.duplicate_score ? Math.round(cake.duplicate_score) : 100;
             const isExact = score >= 99;
 
+            const isSelected = selectedCakeIds.has(cake.id);
+
             return (
               <div
                 key={cake.id}
                 style={{
                   background: "var(--bg-surface)",
-                  border: "1px solid #FDE68A",
+                  border: isSelected ? "2px solid var(--gold)" : "1px solid #FDE68A",
                   borderRadius: "var(--radius-lg)",
-                  boxShadow: "0 4px 16px rgba(245, 158, 11, 0.06)",
+                  boxShadow: isSelected ? "0 4px 20px rgba(197, 160, 89, 0.2)" : "0 4px 16px rgba(245, 158, 11, 0.06)",
                   overflow: "hidden",
+                  transition: "all 0.15s ease",
                 }}
               >
                 {/* Top Comparison Header Banner */}
                 <div
                   style={{
-                    background: "#FFFBEB",
+                    background: isSelected ? "#FEF9C3" : "#FFFBEB",
                     borderBottom: "1px solid #FDE68A",
                     padding: "0.65rem 1.15rem",
                     display: "flex",
@@ -336,6 +431,18 @@ export default function DuplicateCakesPage() {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(cake.id)}
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        accentColor: "var(--gold)",
+                        cursor: "pointer",
+                      }}
+                      aria-label={`Select duplicate cake #${displayId}`}
+                    />
                     <span
                       style={{
                         display: "inline-flex",
@@ -617,6 +724,25 @@ export default function DuplicateCakesPage() {
           })}
         </div>
       )}
+
+      {/* Floating Batch Actions Toolbar */}
+      <AdminBatchBar
+        selectedCount={selectedCakeIds.size}
+        totalCount={filteredDuplicates.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onStatusChange={handleBatchStatusChange}
+        statusOptions={[
+          { label: "Verify Unique (Move to Pending)", value: "pending" },
+          { label: "Reject (Archive Duplicate)", value: "rejected" },
+        ]}
+        quickActions={[
+          { label: "Move to Pending", value: "pending", variant: "primary" },
+          { label: "Reject", value: "rejected", variant: "outline" },
+        ]}
+        onDelete={handleBatchDelete}
+        isLoading={batchLoading}
+      />
     </div>
   );
 }

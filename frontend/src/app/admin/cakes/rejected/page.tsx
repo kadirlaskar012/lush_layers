@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAdminCakes, restoreCake, deleteCake } from "../../../../lib/api";
+import { getAdminCakes, restoreCake, deleteCake, bulkUpdateCakeStatus, bulkDeleteCakes } from "../../../../lib/api";
 import { Cake } from "../../../../lib/types";
+import AdminBatchBar from "../../../../components/AdminBatchBar";
 import { RotateCw, ArrowUpRight, CheckCircle2, ArchiveX, Undo2, Trash2, X } from "lucide-react";
 
 export default function RejectedCakesPage() {
@@ -12,6 +13,67 @@ export default function RejectedCakesPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedCake, setSelectedCake] = useState<Cake | null>(null);
+
+  // Multi-select & Batch Bar state
+  const [selectedCakeIds, setSelectedCakeIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedCakeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCakeIds(new Set(cakes.map((c) => c.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedCakeIds(new Set());
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    if (selectedCakeIds.size === 0) return;
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkUpdateCakeStatus(ids, newStatus);
+      // Remove restored or published cakes from rejected view
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      const count = ids.length;
+      handleDeselectAll();
+      setFeedback(`Successfully moved ${count} cake(s) to "${newStatus}"!`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to update selected cakes");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedCakeIds.size === 0) return;
+    const count = selectedCakeIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected cake(s)? This cannot be undone.`)) {
+      return;
+    }
+    const ids = Array.from(selectedCakeIds);
+    setBatchLoading(true);
+    try {
+      await bulkDeleteCakes(ids);
+      setCakes((prev) => prev.filter((c) => !selectedCakeIds.has(c.id)));
+      handleDeselectAll();
+      setFeedback(`Permanently deleted ${count} cake(s).`);
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      alert(err.message || "Failed to delete selected cakes");
+    } finally {
+      setBatchLoading(false);
+    }
+  };
 
   const loadRejected = async () => {
     setLoading(true);
@@ -171,6 +233,15 @@ export default function RejectedCakesPage() {
             >
               <thead>
                 <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
+                  <th style={{ width: "40px", padding: "0.65rem 0.65rem 0.65rem 0.85rem", textAlign: "center" }}>
+                    <input
+                      type="checkbox"
+                      checked={cakes.length > 0 && selectedCakeIds.size === cakes.length}
+                      onChange={selectedCakeIds.size === cakes.length ? handleDeselectAll : handleSelectAll}
+                      style={{ accentColor: "var(--gold)", cursor: "pointer", width: "15px", height: "15px" }}
+                      aria-label="Select all rejected cakes"
+                    />
+                  </th>
                   <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Thumbnail</th>
                   <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Confection Name</th>
                   <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Flavour Notes</th>
@@ -183,16 +254,29 @@ export default function RejectedCakesPage() {
               <tbody>
                 {cakes.map((cake) => {
                   const isBusy = actionLoading === cake.id;
+                  const isSelected = selectedCakeIds.has(cake.id);
 
                   return (
                     <tr
                       key={cake.id}
                       style={{
+                        background: isSelected ? "rgba(197, 160, 89, 0.05)" : undefined,
                         borderBottom: "1px solid var(--border-light)",
                         transition: "background 0.15s",
                       }}
                       className="admin-table-row"
                     >
+                      {/* Selection Checkbox */}
+                      <td style={{ width: "40px", padding: "0.55rem 0.65rem 0.55rem 0.85rem", textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(cake.id)}
+                          style={{ accentColor: "var(--gold)", cursor: "pointer", width: "15px", height: "15px" }}
+                          aria-label={`Select ${cake.name}`}
+                        />
+                      </td>
+
                       {/* Compact Thumbnail (48x48 max) */}
                       <td style={{ padding: "0.55rem 0.85rem" }}>
                         <div
@@ -420,6 +504,26 @@ export default function RejectedCakesPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Batch Actions Toolbar */}
+      <AdminBatchBar
+        selectedCount={selectedCakeIds.size}
+        totalCount={cakes.length}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onStatusChange={handleBatchStatusChange}
+        statusOptions={[
+          { label: "Restore to Pending Queue", value: "pending" },
+          { label: "Approve (Stage)", value: "approved" },
+          { label: "Approve & Publish Live", value: "published" },
+        ]}
+        quickActions={[
+          { label: "Restore to Pending", value: "pending", variant: "primary" },
+          { label: "Publish Live", value: "published", variant: "secondary" },
+        ]}
+        onDelete={handleBatchDelete}
+        isLoading={batchLoading}
+      />
     </div>
   );
 }
