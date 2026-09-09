@@ -1,5 +1,10 @@
 import { Pool } from "pg";
+import dns from "dns";
 import { Cake, Category, Review, Enquiry, AdminStats, ProcessingJob, Promotion, PhoneEligibilityResult } from "./types";
+
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
 
 const defaultConnectionString =
   "postgresql://postgres.phpisimuahahngdaeohg:pKbgg0S2O201GK3z@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
@@ -17,7 +22,8 @@ export function getPool(): Pool {
       },
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 8000,
+      connectionTimeoutMillis: 3500,
+      keepAlive: true,
     });
   }
   return pool;

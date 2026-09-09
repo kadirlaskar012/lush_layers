@@ -144,6 +144,17 @@ async def get_system_status():
         "supabase_connected": db.is_connected
     }
 
+@app.get("/api/health")
+@app.get("/health")
+async def health_endpoint():
+    return {
+        "status": "healthy",
+        "service": "LUSH LAYERS API",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "database": "connected" if db.is_connected else "local_sqlite",
+        "port": settings.PORT
+    }
+
 @app.get("/api/admin/stats")
 async def get_admin_stats_endpoint():
     return db.get_admin_stats()

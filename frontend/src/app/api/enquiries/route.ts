@@ -10,8 +10,21 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || undefined;
     const limit = searchParams.get("limit") ? Number(searchParams.get("limit")) : undefined;
 
-    const enquiries = await dbGetEnquiries({ status, search, limit });
-    return NextResponse.json(enquiries);
+    try {
+      const enquiries = await dbGetEnquiries({ status, search, limit });
+      return NextResponse.json(enquiries);
+    } catch (e) {
+      console.warn("API GET /api/enquiries falling back to local backend:", e);
+      let url = "http://localhost:8000/api/enquiries";
+      const q: string[] = [];
+      if (status) q.push(`status=${encodeURIComponent(status)}`);
+      if (search) q.push(`search=${encodeURIComponent(search)}`);
+      if (limit) q.push(`limit=${limit}`);
+      if (q.length > 0) url += `?${q.join("&")}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) return NextResponse.json(await res.json());
+      return NextResponse.json([]);
+    }
   } catch (err: any) {
     console.error("API GET /api/enquiries error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
