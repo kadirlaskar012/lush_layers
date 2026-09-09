@@ -500,6 +500,25 @@ export default function AdminOrdersPage() {
                         <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
                           {enq.flavour || "Chef's Signature"}
                         </div>
+                        {enq.applied_promo_code && (
+                          <div
+                            style={{
+                              marginTop: "0.25rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                              background: "#FEF3C7",
+                              border: "1px solid #FDE68A",
+                              color: "#B45309",
+                              padding: "0.1rem 0.45rem",
+                              borderRadius: "4px",
+                              fontSize: "0.68rem",
+                              fontWeight: 700,
+                            }}
+                          >
+                            <span>🏷️ {enq.applied_promo_code} ({enq.discount_percent || 5}% OFF{enq.promo_perk ? " + Perk" : ""})</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Size / Portion */}

@@ -104,8 +104,45 @@ export interface Enquiry {
   delivery_date?: string;
   admin_notes?: string;
   status: "New" | "Contacted" | "Confirmed" | "Baking" | "Ready" | "Delivered" | "Completed" | "Cancelled";
+  applied_promo_code?: string;
+  discount_percent?: number;
+  promo_perk?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Promotion {
+  id: string;
+  title: string;
+  badge?: string;
+  tagline?: string;
+  description?: string;
+  edition?: string;
+  promo_code: string;
+  discount_percent: number;
+  min_order_amount?: number;
+  addon_perk?: string;
+  image_url?: string;
+  bg_gradient?: string;
+  accent_color?: string;
+  is_new_user_only: boolean | number;
+  is_active: boolean | number;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PhoneEligibilityResult {
+  is_valid_phone: boolean;
+  is_new_user: boolean;
+  eligible: boolean;
+  code_status?: "auto_applied" | "applied" | "already_redeemed" | "invalid" | "existing_user" | "none";
+  promo?: Promotion;
+  discount_percent?: number;
+  promo_code?: string;
+  addon_perk?: string;
+  min_order_amount?: number;
+  message: string;
 }
 
 export interface AdminStats {

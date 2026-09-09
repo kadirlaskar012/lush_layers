@@ -1,4 +1,5 @@
 import json
+import re
 import uuid
 import sqlite3
 import datetime
@@ -245,6 +246,9 @@ class Database:
             ("cake_image_url", "TEXT"),
             ("delivery_date", "TEXT"),
             ("admin_notes", "TEXT"),
+            ("applied_promo_code", "TEXT"),
+            ("discount_percent", "INTEGER DEFAULT 0"),
+            ("promo_perk", "TEXT"),
         ]:
             try:
                 cursor.execute(f"ALTER TABLE enquiries ADD COLUMN {col_name} {col_type}")
@@ -267,6 +271,136 @@ class Database:
                         break
         except Exception:
             pass
+
+        # Promotional Posters & Discount Offers
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS promotions (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                badge TEXT,
+                tagline TEXT,
+                description TEXT,
+                edition TEXT,
+                promo_code TEXT,
+                discount_percent INTEGER DEFAULT 5,
+                min_order_amount REAL DEFAULT 0,
+                addon_perk TEXT,
+                image_url TEXT,
+                bg_gradient TEXT,
+                accent_color TEXT,
+                is_new_user_only INTEGER DEFAULT 1,
+                is_active INTEGER DEFAULT 1,
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+
+        # Migration: Ensure all columns exist on promotions table
+        for col_name, col_type in [
+            ("badge", "TEXT"),
+            ("tagline", "TEXT"),
+            ("description", "TEXT"),
+            ("edition", "TEXT"),
+            ("promo_code", "TEXT"),
+            ("discount_percent", "INTEGER DEFAULT 5"),
+            ("min_order_amount", "REAL DEFAULT 0"),
+            ("addon_perk", "TEXT"),
+            ("image_url", "TEXT"),
+            ("bg_gradient", "TEXT"),
+            ("accent_color", "TEXT"),
+            ("is_new_user_only", "INTEGER DEFAULT 1"),
+            ("is_active", "INTEGER DEFAULT 1"),
+            ("sort_order", "INTEGER DEFAULT 0"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE promotions ADD COLUMN {col_name} {col_type}")
+                conn.commit()
+            except Exception:
+                pass
+
+        # Seed default promotions if empty
+        cursor.execute("SELECT COUNT(*) FROM promotions")
+        if cursor.fetchone()[0] == 0:
+            now_p = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            default_promos = [
+                (
+                    "promo-welcome-5",
+                    "First Customer Celebration Privilege",
+                    "New Patron Welcome Gift",
+                    "5% Welcome Discount on Your First Bespoke Order",
+                    "Welcome to Lush Layers! Enjoy an exclusive 5% welcome privilege on your first order. For celebratory orders above ₹1000, receive an additional 5% discount plus a complimentary chef's surprise addon mini cake!",
+                    "First-Time Patron Exclusive",
+                    "FIRST5",
+                    5,
+                    1000.0,
+                    "Complimentary Addon Surprise Mini Cake (Bills Above ₹1000)",
+                    None,
+                    "linear-gradient(135deg, #FFFDF8 0%, #FAF4E8 50%, #F5ECDD 100%)",
+                    "#C5983A",
+                    1,
+                    1,
+                    1,
+                    now_p,
+                    now_p
+                ),
+                (
+                    "promo-chef-selection",
+                    "Rosewater Raspberry & White Chocolate Velour",
+                    "Seasonal Chef's Curated Edition",
+                    "Wild Mountain Raspberries • French Churned Butter • Delicate Floral Essence",
+                    "Feather-light chiffon sponge layered with house-made berry compote and silken Swiss meringue buttercream. Milestone orders above ₹1000 include complimentary addon confections.",
+                    "Fresh Seasonal Harvest Selection",
+                    "CHEF10",
+                    10,
+                    1000.0,
+                    "Artisanal French Butter Macaron Addon",
+                    None,
+                    "linear-gradient(135deg, #FFFDF8 0%, #F8F5EE 50%, #F4ECE0 100%)",
+                    "#8F6418",
+                    0,
+                    1,
+                    2,
+                    now_p,
+                    now_p
+                ),
+            ]
+            cursor.executemany("""
+                INSERT INTO promotions (
+                    id, title, badge, tagline, description, edition, promo_code,
+                    discount_percent, min_order_amount, addon_perk, image_url,
+                    bg_gradient, accent_color, is_new_user_only, is_active, sort_order,
+                    created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, default_promos)
+            conn.commit()
+
+        # Postgres sync for promotions and enquiries
+        self._sync_to_postgres("""
+            CREATE TABLE IF NOT EXISTS promotions (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                badge TEXT,
+                tagline TEXT,
+                description TEXT,
+                edition TEXT,
+                promo_code TEXT,
+                discount_percent INTEGER DEFAULT 5,
+                min_order_amount NUMERIC DEFAULT 0,
+                addon_perk TEXT,
+                image_url TEXT,
+                bg_gradient TEXT,
+                accent_color TEXT,
+                is_new_user_only BOOLEAN DEFAULT true,
+                is_active BOOLEAN DEFAULT true,
+                sort_order INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS applied_promo_code TEXT;
+            ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS discount_percent INTEGER DEFAULT 0;
+            ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS promo_perk TEXT;
+        """, ())
 
 
 
@@ -1369,13 +1503,18 @@ class Database:
             except Exception:
                 pass
 
+        applied_promo_code = data.get("applied_promo_code") or None
+        discount_percent = int(data.get("discount_percent") or 0)
+        promo_perk = data.get("promo_perk") or None
+
         conn = self._get_conn()
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO enquiries (
                 id, enquiry_number, customer_name, phone, cake_name, cake_image_url, flavour, selected_size,
-                custom_message, delivery_date, admin_notes, status, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                custom_message, delivery_date, admin_notes, status, applied_promo_code, discount_percent, promo_perk,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             enquiry_id,
             enquiry_number,
@@ -1389,11 +1528,29 @@ class Database:
             data.get("delivery_date", ""),
             data.get("admin_notes", ""),
             data.get("status", "New"),
+            applied_promo_code,
+            discount_percent,
+            promo_perk,
             now,
             now
         ))
         conn.commit()
         conn.close()
+
+        # Postgres / Supabase sync
+        self._sync_to_postgres("""
+            INSERT INTO enquiries (
+                id, enquiry_number, customer_name, phone, cake_name, cake_image_url, flavour, selected_size,
+                custom_message, delivery_date, admin_notes, status, applied_promo_code, discount_percent, promo_perk,
+                created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING;
+        """, (
+            enquiry_id, enquiry_number, data.get("customer_name"), data.get("phone"),
+            data.get("cake_name"), cake_image_url, data.get("flavour"), data.get("selected_size"),
+            data.get("custom_message"), data.get("delivery_date", ""), data.get("admin_notes", ""),
+            data.get("status", "New"), applied_promo_code, discount_percent, promo_perk, now, now
+        ))
 
         if self.supabase:
             try:
@@ -1410,6 +1567,9 @@ class Database:
                     "delivery_date": data.get("delivery_date", ""),
                     "admin_notes": data.get("admin_notes", ""),
                     "status": data.get("status", "New"),
+                    "applied_promo_code": applied_promo_code,
+                    "discount_percent": discount_percent,
+                    "promo_perk": promo_perk,
                     "created_at": now,
                     "updated_at": now
                 }).execute()
@@ -1517,6 +1677,280 @@ class Database:
         conn.commit()
         conn.close()
         return rows > 0
+
+    # --- PROMOTIONS & POSTERS ---
+    def _format_promo_dict(self, row: Any) -> Dict[str, Any]:
+        d = dict(row)
+        d["is_new_user_only"] = bool(d.get("is_new_user_only"))
+        d["is_active"] = bool(d.get("is_active"))
+        d["discount_percent"] = int(d.get("discount_percent") or 5)
+        d["min_order_amount"] = float(d.get("min_order_amount") or 0.0)
+        d["sort_order"] = int(d.get("sort_order") or 0)
+        return d
+
+    def get_promotions(self, is_active: Optional[bool] = None) -> List[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        query = "SELECT * FROM promotions WHERE 1=1"
+        params = []
+        if is_active is not None:
+            query += " AND is_active = ?"
+            params.append(1 if is_active else 0)
+        query += " ORDER BY sort_order ASC, created_at DESC"
+        cursor.execute(query, params)
+        rows = [self._format_promo_dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+
+    def get_promotion_by_id(self, promo_id: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM promotions WHERE id = ?", (promo_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return self._format_promo_dict(row) if row else None
+
+    def get_promotion_by_code(self, promo_code: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM promotions WHERE UPPER(promo_code) = UPPER(?) AND is_active = 1 LIMIT 1", (promo_code.strip(),))
+        row = cursor.fetchone()
+        conn.close()
+        return self._format_promo_dict(row) if row else None
+
+    def create_promotion(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        promo_id = data.get("id") or f"promo-{str(uuid.uuid4())[:8]}"
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        title = data.get("title", "Exclusive Offer")
+        badge = data.get("badge", "Curated Offer")
+        tagline = data.get("tagline", "")
+        description = data.get("description", "")
+        edition = data.get("edition", "Limited Edition")
+        promo_code = (data.get("promo_code") or "OFFER5").strip().upper()
+        discount_percent = int(data.get("discount_percent") or 5)
+        min_order_amount = float(data.get("min_order_amount") or 0.0)
+        addon_perk = data.get("addon_perk", "")
+        image_url = data.get("image_url") or None
+        bg_gradient = data.get("bg_gradient") or "linear-gradient(135deg, #FFFDF8 0%, #FAF4E8 50%, #F5ECDD 100%)"
+        accent_color = data.get("accent_color") or "#C5983A"
+        is_new_user_only = 1 if data.get("is_new_user_only", True) else 0
+        is_active = 1 if data.get("is_active", True) else 0
+        sort_order = int(data.get("sort_order") or 0)
+
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO promotions (
+                id, title, badge, tagline, description, edition, promo_code,
+                discount_percent, min_order_amount, addon_perk, image_url,
+                bg_gradient, accent_color, is_new_user_only, is_active, sort_order,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            promo_id, title, badge, tagline, description, edition, promo_code,
+            discount_percent, min_order_amount, addon_perk, image_url,
+            bg_gradient, accent_color, is_new_user_only, is_active, sort_order,
+            now, now
+        ))
+        conn.commit()
+        conn.close()
+
+        # Postgres sync
+        self._sync_to_postgres("""
+            INSERT INTO promotions (
+                id, title, badge, tagline, description, edition, promo_code,
+                discount_percent, min_order_amount, addon_perk, image_url,
+                bg_gradient, accent_color, is_new_user_only, is_active, sort_order,
+                created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                title = EXCLUDED.title,
+                badge = EXCLUDED.badge,
+                tagline = EXCLUDED.tagline,
+                description = EXCLUDED.description,
+                edition = EXCLUDED.edition,
+                promo_code = EXCLUDED.promo_code,
+                discount_percent = EXCLUDED.discount_percent,
+                min_order_amount = EXCLUDED.min_order_amount,
+                addon_perk = EXCLUDED.addon_perk,
+                image_url = EXCLUDED.image_url,
+                bg_gradient = EXCLUDED.bg_gradient,
+                accent_color = EXCLUDED.accent_color,
+                is_new_user_only = EXCLUDED.is_new_user_only,
+                is_active = EXCLUDED.is_active,
+                sort_order = EXCLUDED.sort_order,
+                updated_at = EXCLUDED.updated_at;
+        """, (
+            promo_id, title, badge, tagline, description, edition, promo_code,
+            discount_percent, min_order_amount, addon_perk, image_url,
+            bg_gradient, accent_color, bool(is_new_user_only), bool(is_active), sort_order,
+            now, now
+        ))
+
+        return self.get_promotion_by_id(promo_id)
+
+    def update_promotion(self, promo_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        allowed = {
+            "title", "badge", "tagline", "description", "edition", "promo_code",
+            "discount_percent", "min_order_amount", "addon_perk", "image_url",
+            "bg_gradient", "accent_color", "is_new_user_only", "is_active", "sort_order"
+        }
+        fields = []
+        params = []
+        pg_fields = []
+        pg_params = []
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+        for k, v in updates.items():
+            if k in allowed and v is not None:
+                if k in ("is_new_user_only", "is_active"):
+                    fields.append(f"{k} = ?")
+                    params.append(1 if v else 0)
+                    pg_fields.append(f"{k} = %s")
+                    pg_params.append(bool(v))
+                elif k == "promo_code":
+                    clean_code = str(v).strip().upper()
+                    fields.append(f"{k} = ?")
+                    params.append(clean_code)
+                    pg_fields.append(f"{k} = %s")
+                    pg_params.append(clean_code)
+                else:
+                    fields.append(f"{k} = ?")
+                    params.append(v)
+                    pg_fields.append(f"{k} = %s")
+                    pg_params.append(v)
+
+        if not fields:
+            return self.get_promotion_by_id(promo_id)
+
+        fields.append("updated_at = ?")
+        params.append(now)
+        params.append(promo_id)
+
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE promotions SET {', '.join(fields)} WHERE id = ?", params)
+        conn.commit()
+        conn.close()
+
+        if pg_fields:
+            pg_fields.append("updated_at = %s")
+            pg_params.append(now)
+            pg_params.append(promo_id)
+            self._sync_to_postgres(f"UPDATE promotions SET {', '.join(pg_fields)} WHERE id = %s", tuple(pg_params))
+
+        return self.get_promotion_by_id(promo_id)
+
+    def delete_promotion(self, promo_id: str) -> bool:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM promotions WHERE id = ?", (promo_id,))
+        count = cursor.rowcount
+        conn.commit()
+        conn.close()
+
+        self._sync_to_postgres("DELETE FROM promotions WHERE id = %s", (promo_id,))
+        return count > 0
+
+    def check_phone_eligibility(self, phone: str, code: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Checks if phone number is a new customer vs. returning customer.
+        Auto-applies first-customer discount if new.
+        Rejects new-user codes if returning customer.
+        """
+        raw_phone = str(phone or "").strip()
+        clean_digits = re.sub(r"[^0-9]", "", raw_phone)
+        if len(clean_digits) < 7:
+            return {
+                "is_valid_phone": False,
+                "is_new_user": False,
+                "eligible": False,
+                "message": "Please enter a valid mobile number."
+            }
+
+        last_digits = clean_digits[-10:] if len(clean_digits) >= 10 else clean_digits
+
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*), customer_name FROM enquiries 
+            WHERE REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', ''), '(', '') LIKE ?
+        """, (f"%{last_digits}%",))
+        row = cursor.fetchone()
+        previous_orders_count = row[0] if row else 0
+        customer_name = row[1] if row and row[1] else ""
+        conn.close()
+
+        is_new_user = (previous_orders_count == 0)
+
+        # Look up requested code or active new user code
+        active_promos = self.get_promotions(is_active=True)
+        new_user_promo = next((p for p in active_promos if p.get("is_new_user_only")), None)
+        
+        if code:
+            clean_code = code.strip().upper()
+            target_promo = next((p for p in active_promos if p.get("promo_code", "").upper() == clean_code), None)
+            if not target_promo:
+                return {
+                    "is_valid_phone": True,
+                    "is_new_user": is_new_user,
+                    "eligible": False,
+                    "code_status": "invalid",
+                    "message": f"Promo code '{code}' is invalid or expired."
+                }
+            if target_promo.get("is_new_user_only") and not is_new_user:
+                return {
+                    "is_valid_phone": True,
+                    "is_new_user": False,
+                    "eligible": False,
+                    "code_status": "already_redeemed",
+                    "promo": target_promo,
+                    "message": "You have already redeemed the new customer welcome offer. Welcome back!"
+                }
+            return {
+                "is_valid_phone": True,
+                "is_new_user": is_new_user,
+                "eligible": True,
+                "code_status": "applied",
+                "promo": target_promo,
+                "discount_percent": target_promo.get("discount_percent", 5),
+                "promo_code": target_promo.get("promo_code"),
+                "addon_perk": target_promo.get("addon_perk"),
+                "min_order_amount": target_promo.get("min_order_amount", 1000),
+                "message": f"🎉 Code {target_promo.get('promo_code')} applied! {target_promo.get('discount_percent')}% discount granted."
+            }
+
+        # No code passed: Auto-detect behavior
+        if is_new_user and new_user_promo:
+            return {
+                "is_valid_phone": True,
+                "is_new_user": True,
+                "eligible": True,
+                "code_status": "auto_applied",
+                "promo": new_user_promo,
+                "discount_percent": new_user_promo.get("discount_percent", 5),
+                "promo_code": new_user_promo.get("promo_code"),
+                "addon_perk": new_user_promo.get("addon_perk"),
+                "min_order_amount": new_user_promo.get("min_order_amount", 1000),
+                "message": f"🎉 New Patron Detected! {new_user_promo.get('discount_percent')}% Welcome Discount automatically applied (Code: {new_user_promo.get('promo_code')})!"
+            }
+
+        if not is_new_user:
+            return {
+                "is_valid_phone": True,
+                "is_new_user": False,
+                "eligible": False,
+                "code_status": "existing_user",
+                "message": f"Welcome back, {customer_name or 'valued patron'}! You have previously ordered with us. New customer welcome discount has already been redeemed."
+            }
+
+        return {
+            "is_valid_phone": True,
+            "is_new_user": is_new_user,
+            "eligible": False,
+            "code_status": "none",
+            "message": "No active new customer promotions available."
+        }
 
     # --- ADMIN STATS ---
     def get_admin_stats(self) -> Dict[str, Any]:

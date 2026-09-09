@@ -1,4 +1,4 @@
-import { Cake, Category, Review, ProcessingJob, AdminStats, Enquiry } from "./types";
+import { Cake, Category, Review, ProcessingJob, AdminStats, Enquiry, Promotion, PhoneEligibilityResult } from "./types";
 
 function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -432,6 +432,9 @@ export async function createEnquiry(payload: {
   selected_size?: string;
   custom_message?: string;
   delivery_date?: string;
+  applied_promo_code?: string;
+  discount_percent?: number;
+  promo_perk?: string;
 }): Promise<Enquiry | null> {
   try {
     const res = await fetch(getApiUrlString("/api/enquiries"), {
@@ -521,4 +524,90 @@ export async function deleteEnquiry(enquiryId: string): Promise<boolean> {
     method: "DELETE",
   });
   return res.ok;
+}
+
+// --- PROMOTIONS & POSTERS API ---
+export async function getPromotions(isActiveOnly?: boolean): Promise<Promotion[]> {
+  try {
+    const url = createApiUrl("/api/promotions");
+    if (isActiveOnly) {
+      url.searchParams.set("is_active", "true");
+    }
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (err) {
+    console.error("Failed to fetch promotions:", err);
+    return [];
+  }
+}
+
+export async function createPromotion(data: Partial<Promotion>): Promise<Promotion | null> {
+  try {
+    const res = await fetch(getApiUrlString("/api/promotions"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const resData = await res.json();
+    return resData.promotion;
+  } catch (err) {
+    console.error("Failed to create promotion:", err);
+    return null;
+  }
+}
+
+export async function updatePromotion(id: string, data: Partial<Promotion>): Promise<Promotion | null> {
+  try {
+    const res = await fetch(getApiUrlString(`/api/promotions/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return null;
+    const resData = await res.json();
+    return resData.promotion;
+  } catch (err) {
+    console.error("Failed to update promotion:", err);
+    return null;
+  }
+}
+
+export async function deletePromotion(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(getApiUrlString(`/api/promotions/${id}`), {
+      method: "DELETE",
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("Failed to delete promotion:", err);
+    return false;
+  }
+}
+
+export async function checkPhoneEligibility(phone: string, code?: string): Promise<PhoneEligibilityResult> {
+  try {
+    const url = createApiUrl("/api/promotions/check-phone");
+    url.searchParams.set("phone", phone);
+    if (code) url.searchParams.set("code", code);
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    if (!res.ok) {
+      return {
+        is_valid_phone: false,
+        is_new_user: false,
+        eligible: false,
+        message: "Could not verify phone eligibility.",
+      };
+    }
+    return await res.json();
+  } catch (err: any) {
+    console.error("Failed to check phone eligibility:", err);
+    return {
+      is_valid_phone: false,
+      is_new_user: false,
+      eligible: false,
+      message: "Could not connect to verify offer.",
+    };
+  }
 }

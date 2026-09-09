@@ -16,6 +16,7 @@ import {
   ArchiveX,
   Star,
   Tag,
+  Percent,
   Zap,
   X,
   ArrowUpRight,
@@ -85,6 +86,7 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
       highlight: stats?.pending_reviews ? true : false,
     },
     { href: "/admin/categories", label: "Categories", icon: <Tag size={16} strokeWidth={1.8} /> },
+    { href: "/admin/promotions", label: "Offers & Posters", icon: <Percent size={16} strokeWidth={1.8} /> },
     { href: "/admin/upload", label: "Bulk Upload", icon: <Zap size={16} strokeWidth={1.8} /> },
   ];
 

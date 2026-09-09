@@ -3,8 +3,9 @@ import {
   dbGetCakeBySlug,
   dbGetCategories,
   dbGetReviews,
+  dbGetPromotions,
 } from "./db";
-import { Cake, Category, Review } from "./types";
+import { Cake, Category, Review, Promotion } from "./types";
 
 export async function getPublishedCakes(params?: {
   categoryId?: string;
@@ -67,4 +68,18 @@ export async function getApprovedReviews(): Promise<Review[]> {
     console.error("serverData: Failed to get approved reviews:", err);
     return [];
   }
+}
+
+export async function getActivePromotions(): Promise<Promotion[]> {
+  try {
+    const promos = await dbGetPromotions(true);
+    if (promos && promos.length > 0) return promos;
+  } catch (err) {
+    console.warn("serverData: Failed to get promotions from Supabase, attempting local fallback:", err);
+  }
+  try {
+    const res = await fetch("http://localhost:8000/api/promotions?is_active=true", { cache: "no-store" });
+    if (res.ok) return await res.json();
+  } catch {}
+  return [];
 }

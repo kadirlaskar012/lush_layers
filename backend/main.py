@@ -563,6 +563,9 @@ class EnquiryCreateRequest(BaseModel):
     selected_size: Optional[str] = "1.0 kg"
     custom_message: Optional[str] = ""
     delivery_date: Optional[str] = ""
+    applied_promo_code: Optional[str] = None
+    discount_percent: Optional[int] = 0
+    promo_perk: Optional[str] = None
 
 class EnquiryUpdateRequest(BaseModel):
     status: Optional[str] = None  # New, Contacted, Confirmed, Baking, Ready, Delivered, Cancelled
@@ -658,6 +661,117 @@ async def delete_enquiry(enquiry_id: str):
     if not deleted:
         raise HTTPException(status_code=404, detail="Enquiry not found.")
     return {"message": "Enquiry deleted successfully."}
+
+# ==========================================
+# PROMOTIONS, OFFERS & POSTER BANNER API
+# ==========================================
+class PromotionCreateRequest(BaseModel):
+    title: str
+    badge: Optional[str] = "Special Offer"
+    tagline: Optional[str] = ""
+    description: Optional[str] = ""
+    edition: Optional[str] = ""
+    promo_code: str
+    discount_percent: int = 5
+    min_order_amount: Optional[int] = 1000
+    addon_perk: Optional[str] = "Complimentary Addon Mini Cake"
+    image_url: Optional[str] = None
+    bg_gradient: Optional[str] = None
+    accent_color: Optional[str] = None
+    is_new_user_only: Optional[bool] = False
+    is_active: Optional[bool] = True
+    sort_order: Optional[int] = 0
+
+class PromotionUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    badge: Optional[str] = None
+    tagline: Optional[str] = None
+    description: Optional[str] = None
+    edition: Optional[str] = None
+    promo_code: Optional[str] = None
+    discount_percent: Optional[int] = None
+    min_order_amount: Optional[int] = None
+    addon_perk: Optional[str] = None
+    image_url: Optional[str] = None
+    bg_gradient: Optional[str] = None
+    accent_color: Optional[str] = None
+    is_new_user_only: Optional[bool] = None
+    is_active: Optional[bool] = None
+    sort_order: Optional[int] = None
+
+@app.get("/api/promotions")
+async def list_promotions(is_active: Optional[bool] = None):
+    """
+    Returns list of active promotions and custom posters for the homepage banner.
+    """
+    return db.get_promotions(is_active=is_active)
+
+@app.get("/api/promotions/check-phone")
+async def check_phone_eligibility_endpoint(
+    phone: str = Query(..., description="Patron mobile number to check"),
+    code: Optional[str] = Query(None, description="Optional promo code to test")
+):
+    """
+    Auto-detects whether a mobile number is a new customer vs. returning customer.
+    Auto-applies new user welcome discount if new.
+    Rejects new-user codes if returning customer.
+    """
+    return db.check_phone_eligibility(phone, code)
+
+@app.get("/api/promotions/{promo_id}")
+async def get_promotion(promo_id: str):
+    promo = db.get_promotion_by_id(promo_id)
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promotion not found.")
+    return promo
+
+@app.post("/api/promotions")
+async def create_promotion(payload: PromotionCreateRequest, background_tasks: BackgroundTasks = None):
+    promo = db.create_promotion(payload.dict())
+    if background_tasks:
+        background_tasks.add_task(trigger_frontend_revalidation, ["/"])
+    return {"message": "Promotion created successfully.", "promotion": promo}
+
+@app.put("/api/promotions/{promo_id}")
+async def update_promotion(promo_id: str, payload: PromotionUpdateRequest, background_tasks: BackgroundTasks = None):
+    updated = db.update_promotion(promo_id, payload.dict(exclude_unset=True))
+    if not updated:
+        raise HTTPException(status_code=404, detail="Promotion not found.")
+    if background_tasks:
+        background_tasks.add_task(trigger_frontend_revalidation, ["/"])
+    return {"message": "Promotion updated successfully.", "promotion": updated}
+
+@app.delete("/api/promotions/{promo_id}")
+async def delete_promotion(promo_id: str, background_tasks: BackgroundTasks = None):
+    deleted = db.delete_promotion(promo_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Promotion not found.")
+    if background_tasks:
+        background_tasks.add_task(trigger_frontend_revalidation, ["/"])
+    return {"message": "Promotion deleted successfully."}
+
+@app.post("/api/promotions/upload-poster")
+async def upload_poster_image(file: UploadFile = File(...)):
+    """
+    Uploads a custom poster image for promotional banner display.
+    """
+    ext = Path(file.filename).suffix.lower() or ".webp"
+    file_id = uuid.uuid4().hex[:10]
+    filename = f"poster_{file_id}{ext}"
+    target_path = settings.MEDIA_DIR / "processed" / filename
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    content = await file.read()
+    with open(target_path, "wb") as f:
+        f.write(content)
+        
+    media_url = f"/media/processed/{filename}"
+    return {
+        "success": True,
+        "filename": filename,
+        "image_url": media_url,
+        "full_url": f"http://localhost:{settings.PORT}{media_url}"
+    }
 
 async def _execute_ai_generation_for_cake(cake: Dict[str, Any], is_regenerate: bool = False) -> Dict[str, Any]:
     cake_id = cake["id"]

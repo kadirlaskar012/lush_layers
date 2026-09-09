@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Sparkles, Crown, Award, ArrowRight } from "lucide-react";
+import { Sparkles, Crown, Award, ArrowRight, Tag, Gift, Percent } from "lucide-react";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
-import { Cake } from "../lib/types";
+import { Cake, Promotion } from "../lib/types";
 
 interface AnimatedPostersProps {
   whatsappNumber?: string;
+  promotions?: Promotion[];
 }
 
 export function LuxuryMarqueeTape() {
@@ -35,71 +36,117 @@ export function LuxuryMarqueeTape() {
   );
 }
 
-export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: AnimatedPostersProps) {
-  // Start at 0, suppress hydration mismatch using isMounted pattern
+export function AtelierFeaturedPoster({
+  whatsappNumber = "918768388868",
+  promotions,
+}: AnimatedPostersProps) {
   const [activePosterIdx, setActivePosterIdx] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Only run client-side interactions after mount to avoid SSR flash
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const posters = [
+  const defaultPosters = [
     {
       id: "poster-1",
-      badge: "2026 Signature Showcase",
-      title: "The Royal Belgian Couverture & Vanilla Symphony",
-      tagline: "Slow-Melted 70% Callebaut Ganache • 24K Edible Gold Leaf • Madagascar Bourbon Vanilla",
+      badge: "First Customer Discount 5%",
+      title: "First Customer Celebration & Welcome",
+      tagline: "Above 1000 bill user will get 5% discount and an addon cake",
       description:
-        "Crafted tier-by-tier with velvety European chocolate sponge, rich espresso-infused ganache, and crisp hazelnut praline flakes.",
-      edition: "Limited Daily Batch: 8 Confections Only",
+        "Enjoy an exclusive 5% welcome discount on your initial luxury confection booking, plus an exquisite complimentary artisan addon cake when order exceeds ₹1,000.",
+      edition: "First Customer Special Welcome Edition",
+      promo_code: "FIRST5",
+      discount_percent: 5,
+      min_order_amount: 1000,
+      addon_perk: "Complimentary Addon Mini Cake",
+      image_url: "",
       accentColor: "#C5983A",
       bgGradient: "linear-gradient(135deg, #FFFDF8 0%, #FAF4E8 50%, #F5ECDD 100%)",
       icon: Crown,
     },
     {
       id: "poster-2",
+      badge: "Seasonal Chef's Curated Edition",
+      title: "The Royal Belgian Couverture & Vanilla Symphony",
+      tagline: "Slow-Melted 70% Callebaut Ganache • 24K Edible Gold Leaf • Madagascar Bourbon Vanilla",
+      description:
+        "Crafted tier-by-tier with velvety European chocolate sponge, rich espresso-infused ganache, and crisp hazelnut praline flakes.",
+      edition: "Limited Daily Batch: 8 Confections Only",
+      promo_code: "CHEF10",
+      discount_percent: 10,
+      min_order_amount: 1500,
+      addon_perk: "Artisan Macaron Gift Box",
+      image_url: "",
+      accentColor: "#C5983A",
+      bgGradient: "linear-gradient(135deg, #FFFDF8 0%, #FAF4E8 50%, #F5ECDD 100%)",
+      icon: Crown,
+    },
+    {
+      id: "poster-3",
       badge: "Bespoke Wedding Architecture",
       title: "Heirloom Tiered Botanicals & Ivory Silk Fondant",
       tagline: "Architectural Dowelled Stability • Sugar Bas-Relief Petals • Fresh Berry Compote",
       description:
         "Personalized by Chef Pâtissier Tina Baidya to complement your floral arrangements, venue lighting, and heirloom ceremony aesthetic.",
       edition: "Milestone Consultation Slots Open",
+      promo_code: "ROYAL5",
+      discount_percent: 5,
+      min_order_amount: 1000,
+      addon_perk: "Complimentary Addon Mini Cake",
+      image_url: "",
       accentColor: "#E11D48",
       bgGradient: "linear-gradient(135deg, #FFFDF9 0%, #FDF2F4 50%, #FCE8EC 100%)",
       icon: Sparkles,
     },
-    {
-      id: "poster-3",
-      badge: "Seasonal Chef's Curated Edition",
-      title: "Rosewater Raspberry & White Chocolate Velour",
-      tagline: "Wild Mountain Raspberries • French Churned Butter • Delicate Floral Essence",
-      description:
-        "Feather-light chiffon sponge layered with house-made berry compote and silken Swiss meringue buttercream.",
-      edition: "Fresh Seasonal Harvest Selection",
-      accentColor: "#8F6418",
-      bgGradient: "linear-gradient(135deg, #FFFDF8 0%, #F8F5EE 50%, #F4ECE0 100%)",
-      icon: Award,
-    },
   ];
+
+  const hasDbPromos = Boolean(promotions && promotions.length > 0);
+
+  const posters = hasDbPromos
+    ? (promotions as Promotion[]).map((p, idx) => ({
+        id: p.id,
+        badge: p.badge || "Special Offer",
+        title: p.title,
+        tagline: p.tagline || "",
+        description: p.description || "",
+        edition: p.edition || "Atelier Special Edition",
+        promo_code: p.promo_code,
+        discount_percent: p.discount_percent ?? 5,
+        min_order_amount: p.min_order_amount ?? 1000,
+        addon_perk: p.addon_perk || "Complimentary Addon Mini Cake",
+        image_url: p.image_url || "",
+        accentColor: p.accent_color || "#C5983A",
+        bgGradient: p.bg_gradient || "linear-gradient(135deg, #FFFDF8 0%, #FAF4E8 50%, #F5ECDD 100%)",
+        icon: idx % 3 === 0 ? Crown : idx % 3 === 1 ? Sparkles : Award,
+      }))
+    : defaultPosters;
 
   // Auto-cycle ONLY after client mount to prevent hydration flash
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || posters.length <= 1) return;
     const timer = setInterval(() => {
       setActivePosterIdx((prev) => (prev + 1) % posters.length);
-    }, 6000);
+    }, 6500);
     return () => clearInterval(timer);
   }, [isMounted, posters.length]);
 
-  const current = posters[activePosterIdx];
+  const current = posters[activePosterIdx] || posters[0];
   const IconComponent = current.icon;
+  const hasCustomPosterImage = Boolean(current.image_url);
 
   return (
     <>
-      <div className="animated-poster-container" id="atelier-animated-poster">
+      <div
+        className="animated-poster-container"
+        id="atelier-animated-poster"
+        style={{
+          background: current.bgGradient,
+          transition: "background 0.5s ease",
+          padding: "1.5rem 1.75rem",
+        }}
+      >
         {/* Specular Light Sheen sweep animation */}
         <div className="poster-shimmer-sweep" />
 
@@ -115,42 +162,70 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
               marginBottom: "1rem",
             }}
           >
-            <div className="poster-floating-tag">
-              <IconComponent size={13} style={{ color: "var(--gold)" }} />
-              <span>{current.badge}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+              <div className="poster-floating-tag">
+                <IconComponent size={13} style={{ color: "var(--gold)" }} />
+                <span>{current.badge}</span>
+              </div>
+
+              {/* Discount Tag Pill */}
+              <span
+                style={{
+                  background: "linear-gradient(135deg, #B88E3E 0%, #8F6418 100%)",
+                  color: "#FFFFFF",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  padding: "0.22rem 0.65rem",
+                  borderRadius: "20px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  boxShadow: "0 2px 8px rgba(184, 142, 62, 0.25)",
+                }}
+              >
+                <Tag size={12} />
+                <span>
+                  {current.discount_percent}% OFF • Code: {current.promo_code}
+                </span>
+              </span>
             </div>
 
-            {/* Poster Tab Selectors - Only interactive after mount */}
-            <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
-              {posters.map((p, idx) => (
-                <button
-                  key={p.id}
-                  onClick={() => isMounted && setActivePosterIdx(idx)}
-                  aria-label={`View poster ${idx + 1}`}
-                  style={{
-                    width: idx === activePosterIdx ? "26px" : "8px",
-                    height: "8px",
-                    borderRadius: "4px",
-                    background: idx === activePosterIdx ? "var(--gold)" : "rgba(197, 152, 58, 0.28)",
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                    padding: 0,
-                  }}
-                />
-              ))}
-            </div>
+            {/* Poster Tab Selectors */}
+            {posters.length > 1 && (
+              <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                {posters.map((p, idx) => (
+                  <button
+                    key={p.id}
+                    onClick={() => isMounted && setActivePosterIdx(idx)}
+                    aria-label={`View poster ${idx + 1}`}
+                    style={{
+                      width: idx === activePosterIdx ? "26px" : "8px",
+                      height: "8px",
+                      borderRadius: "4px",
+                      background: idx === activePosterIdx ? "var(--gold)" : "rgba(197, 152, 58, 0.28)",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                      padding: 0,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Poster Typography & Artwork Grid */}
+          {/* Poster Typography & Artwork Layout */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr",
-              gap: "1.25rem",
+              gridTemplateColumns: hasCustomPosterImage
+                ? "repeat(auto-fit, minmax(280px, 1fr))"
+                : "1fr",
+              gap: "1.5rem",
               alignItems: "center",
             }}
           >
+            {/* Left/Main Column: Copy & CTAs */}
             <div>
               <span
                 style={{
@@ -179,30 +254,58 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
                 {current.title}
               </h3>
 
-              <p
-                style={{
-                  fontSize: "0.82rem",
-                  color: "var(--gold-dark)",
-                  fontStyle: "italic",
-                  fontWeight: 500,
-                  marginBottom: "0.65rem",
-                  lineHeight: 1.4,
-                }}
-              >
-                {current.tagline}
-              </p>
+              {current.tagline && (
+                <p
+                  style={{
+                    fontSize: "0.84rem",
+                    color: "var(--gold-dark)",
+                    fontStyle: "italic",
+                    fontWeight: 600,
+                    marginBottom: "0.6rem",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {current.tagline}
+                </p>
+              )}
 
-              <p
-                style={{
-                  fontSize: "0.82rem",
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.55,
-                  marginBottom: "1.15rem",
-                  maxWidth: "600px",
-                }}
-              >
-                {current.description}
-              </p>
+              {current.description && (
+                <p
+                  style={{
+                    fontSize: "0.82rem",
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.55,
+                    marginBottom: "0.85rem",
+                    maxWidth: "600px",
+                  }}
+                >
+                  {current.description}
+                </p>
+              )}
+
+              {/* Complimentary Addon Perk Pill */}
+              {current.addon_perk && (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.45rem",
+                    background: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    color: "#065F46",
+                    padding: "0.3rem 0.75rem",
+                    borderRadius: "6px",
+                    fontSize: "0.76rem",
+                    fontWeight: 600,
+                    marginBottom: "1.15rem",
+                  }}
+                >
+                  <Gift size={13} style={{ color: "#059669" }} />
+                  <span>
+                    Special Perk: {current.addon_perk} on orders above ₹{current.min_order_amount || 1000}!
+                  </span>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div
@@ -234,6 +337,63 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
                 </Link>
               </div>
             </div>
+
+            {/* Right Column: Custom Poster Image (if uploaded) */}
+            {hasCustomPosterImage && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    maxWidth: "380px",
+                    height: "220px",
+                    borderRadius: "14px",
+                    overflow: "hidden",
+                    border: "2px solid rgba(197, 152, 58, 0.4)",
+                    boxShadow: "0 10px 30px rgba(184, 142, 62, 0.15)",
+                    background: "#FFFFFF",
+                  }}
+                >
+                  <img
+                    src={current.image_url}
+                    alt={current.title}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      transition: "transform 0.5s ease",
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "8px",
+                      right: "10px",
+                      background: "rgba(0,0,0,0.72)",
+                      backdropFilter: "blur(6px)",
+                      color: "#F6E7B9",
+                      padding: "0.2rem 0.6rem",
+                      borderRadius: "6px",
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.3rem",
+                      border: "1px solid rgba(246, 231, 185, 0.2)",
+                    }}
+                  >
+                    <Sparkles size={11} />
+                    <span>Lush Layers Atelier</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -247,7 +407,7 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
             slug: "bespoke-creation",
             description: current.description,
             flavour: current.tagline,
-            image_url: "",
+            image_url: current.image_url || "",
             available_sizes: ["0.5 kg (Small)", "1.0 kg (Medium)", "1.5 kg (Tiered)", "2.0 kg (Celebration)"],
             category_name: current.badge,
             status: "published",
@@ -256,6 +416,7 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
           }}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          initialPromoCode={current.promo_code}
         />
       )}
     </>

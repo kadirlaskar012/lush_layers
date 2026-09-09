@@ -1,10 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Cake, Enquiry } from "../lib/types";
-import { createEnquiry } from "../lib/api";
-import { X, CheckCircle2, Copy, Check, ArrowRight } from "lucide-react";
+import { createEnquiry, checkPhoneEligibility } from "../lib/api";
+import {
+  X,
+  CheckCircle2,
+  Copy,
+  Check,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
+  Tag,
+  Gift,
+  RefreshCw,
+} from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 
 interface WhatsAppOrderModalProps {
@@ -12,9 +23,16 @@ interface WhatsAppOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialSize?: string;
+  initialPromoCode?: string;
 }
 
-export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize }: WhatsAppOrderModalProps) {
+export default function WhatsAppOrderModal({
+  cake,
+  isOpen,
+  onClose,
+  initialSize,
+  initialPromoCode,
+}: WhatsAppOrderModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedSize, setSelectedSize] = useState<string>(
@@ -29,6 +47,102 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
   const [submittedEnquiry, setSubmittedEnquiry] = useState<Enquiry | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Phone auto-detect & promo states
+  const [phoneCheckStatus, setPhoneCheckStatus] = useState<
+    "idle" | "checking" | "new_user" | "existing_user"
+  >("idle");
+  const [promoCodeInput, setPromoCodeInput] = useState(initialPromoCode || "");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountPercent: number;
+    perk?: string;
+    minOrder?: number;
+  } | null>(null);
+  const [promoNotice, setPromoNotice] = useState<{
+    type: "celebration" | "warning" | "info" | "error";
+    title: string;
+    message: string;
+    perk?: string;
+  } | null>(null);
+
+  // Auto-detect new vs returning patron on phone entry (debounced)
+  useEffect(() => {
+    const cleanDigits = phone.replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 10) {
+      setPhoneCheckStatus("idle");
+      setPromoNotice(null);
+      return;
+    }
+
+    setPhoneCheckStatus("checking");
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkPhoneEligibility(phone, promoCodeInput);
+        if (result.is_new_user) {
+          setPhoneCheckStatus("new_user");
+          if (result.eligible && result.discount_percent) {
+            setAppliedPromo({
+              code: result.promo_code || "FIRST5",
+              discountPercent: result.discount_percent,
+              perk: result.addon_perk,
+              minOrder: result.min_order_amount,
+            });
+            if (!promoCodeInput && result.promo_code) {
+              setPromoCodeInput(result.promo_code);
+            }
+            setPromoNotice({
+              type: "celebration",
+              title: `🎉 You are eligible for ${result.discount_percent}% First-Customer Discount!`,
+              message: `Welcome to LUSH LAYERS! Your ${result.discount_percent}% welcome discount (Code: ${result.promo_code || "FIRST5"}) has been automatically applied!`,
+              perk: result.addon_perk
+                ? `🎂 Orders above ₹${result.min_order_amount || 1000} also receive: ${result.addon_perk}!`
+                : undefined,
+            });
+          }
+        } else {
+          setPhoneCheckStatus("existing_user");
+          // If code is new-user-only, disallow and show warning
+          if (
+            result.code_status === "already_redeemed" ||
+            (appliedPromo && result.promo?.is_new_user_only)
+          ) {
+            setAppliedPromo(null);
+            setPromoNotice({
+              type: "warning",
+              title: "ℹ️ Welcome Back to LUSH LAYERS!",
+              message:
+                "Our studio recognizes your mobile number! You have already redeemed the new customer welcome offer. Welcome back!",
+            });
+          } else if (result.eligible && result.discount_percent) {
+            setAppliedPromo({
+              code: result.promo_code || "",
+              discountPercent: result.discount_percent,
+              perk: result.addon_perk,
+              minOrder: result.min_order_amount,
+            });
+            setPromoNotice({
+              type: "celebration",
+              title: `🎉 Code ${result.promo_code} Applied!`,
+              message: `${result.discount_percent}% discount applied to this booking.`,
+              perk: result.addon_perk,
+            });
+          } else {
+            setPromoNotice({
+              type: "info",
+              title: "ℹ️ Valued Returning Patron",
+              message:
+                "Welcome back! New customer welcome discount codes are not applicable for returning numbers.",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Phone verification error:", err);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [phone]);
+
   if (!isOpen) return null;
 
   const bakeryWhatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
@@ -37,6 +151,7 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
     setSubmittedEnquiry(null);
     setCopied(false);
     setError("");
+    setPromoNotice(null);
     onClose();
   };
 
@@ -45,6 +160,48 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
     navigator.clipboard.writeText(submittedEnquiry.enquiry_number);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) return;
+    const cleanDigits = phone.replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 10) {
+      setError("Please enter your 10-digit mobile number above first to verify discount eligibility.");
+      return;
+    }
+
+    try {
+      const result = await checkPhoneEligibility(phone, promoCodeInput.trim());
+      if (result.eligible && result.discount_percent) {
+        setAppliedPromo({
+          code: result.promo_code || promoCodeInput.trim().toUpperCase(),
+          discountPercent: result.discount_percent,
+          perk: result.addon_perk,
+          minOrder: result.min_order_amount,
+        });
+        setPromoNotice({
+          type: "celebration",
+          title: `🎉 Code ${result.promo_code} Applied!`,
+          message: `${result.discount_percent}% discount granted!`,
+          perk: result.addon_perk
+            ? `🎂 Orders above ₹${result.min_order_amount || 1000} get: ${result.addon_perk}!`
+            : undefined,
+        });
+        setError("");
+      } else {
+        setAppliedPromo(null);
+        setPromoNotice({
+          type: result.code_status === "already_redeemed" ? "warning" : "error",
+          title:
+            result.code_status === "already_redeemed"
+              ? "ℹ️ Offer Already Redeemed"
+              : "Invalid Offer Code",
+          message: result.message || "This promo code is not eligible for your booking.",
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleOrder = async (e: React.FormEvent) => {
@@ -71,6 +228,9 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
         flavour: cake.flavour,
         selected_size: selectedSize,
         custom_message: customMessage.trim(),
+        applied_promo_code: appliedPromo?.code,
+        discount_percent: appliedPromo?.discountPercent,
+        promo_perk: appliedPromo?.perk,
       });
     } catch (err) {
       console.warn("Could not save enquiry in background:", err);
@@ -78,7 +238,7 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
 
     const refNumber = enquiry?.enquiry_number || `LL-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // STRICT FORMAT (ZERO PRICE)
+    // STRICT FORMAT (ZERO PRICE + PROMO APPLIED)
     const messageLines = [
       "Hello LUSH LAYERS,",
       "",
@@ -88,6 +248,14 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
       `• Confection: ${cake.name}`,
       `• Flavour: ${cake.flavour}`,
       `• Size / Tier: ${selectedSize}`,
+      ...(appliedPromo
+        ? [
+            `• Applied Offer: ${appliedPromo.code} (${appliedPromo.discountPercent}% OFF)`,
+            ...(appliedPromo.perk
+              ? [`• Special Perk: ${appliedPromo.perk} (on orders > ₹${appliedPromo.minOrder || 1000})`]
+              : []),
+          ]
+        : []),
       "",
       `• Patron Name: ${customerName.trim()}`,
       `• Contact Phone: ${phone.trim()}`,
@@ -114,6 +282,9 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
         cake_image_url: cake.image_url,
         flavour: cake.flavour,
         selected_size: selectedSize,
+        applied_promo_code: appliedPromo?.code,
+        discount_percent: appliedPromo?.discountPercent,
+        promo_perk: appliedPromo?.perk,
         status: "New",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -124,7 +295,12 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
 
   return (
     <div className="modal-overlay" onClick={handleClose} id="whatsapp-modal-overlay">
-      <div className="modal-container" onClick={(e) => e.stopPropagation()} id="whatsapp-modal">
+      <div
+        className="modal-container"
+        onClick={(e) => e.stopPropagation()}
+        id="whatsapp-modal"
+        style={{ maxWidth: "560px" }}
+      >
         <button
           className="modal-close-btn icon-hover-rotate"
           onClick={handleClose}
@@ -148,54 +324,76 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: "0.85rem",
-                boxShadow: "0 0 20px rgba(16, 185, 129, 0.2)",
               }}
             >
-              <CheckCircle2 size={32} />
+              <CheckCircle2 size={28} />
             </div>
 
-            <div>
-              <span className="cake-category-badge" style={{ background: "#ECFDF5", color: "#065F46", borderColor: "#A7F3D0" }}>
-                Enquiry Dispatched & Saved
-              </span>
-            </div>
-
-            <h3 style={{ fontSize: "1.35rem", color: "var(--text-primary)", margin: "0.5rem 0 0.35rem", fontWeight: 700 }}>
-              Enquiry Successfully Submitted!
+            <span className="cake-category-badge" style={{ marginBottom: "0.35rem", display: "inline-block" }}>
+              WhatsApp Consultation Dispatched
+            </span>
+            <h3 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.35rem", fontWeight: 700 }}>
+              Booking Request Registered!
             </h3>
-
-            <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", maxWidth: "380px", margin: "0 auto 1.25rem", lineHeight: 1.5 }}>
-              Your order dialogue has been logged with our master cake artists. Tina has received your request on WhatsApp.
+            <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
+              Chef Tina Baidya will review your bespoke specifications and respond on WhatsApp shortly.
             </p>
 
-            {/* Reference Number Card */}
+            {/* Applied Promotion Celebration Card */}
+            {(submittedEnquiry.applied_promo_code || appliedPromo) && (
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #FFFDF8 0%, #FAF3E0 100%)",
+                  border: "1.5px solid #E5C378",
+                  borderRadius: "10px",
+                  padding: "0.85rem 1rem",
+                  marginBottom: "1.25rem",
+                  textAlign: "left",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--gold-dark)", fontWeight: 700, fontSize: "0.84rem", marginBottom: "0.25rem" }}>
+                  <Sparkles size={16} />
+                  <span>
+                    Offer Applied: {submittedEnquiry.applied_promo_code || appliedPromo?.code} (
+                    {submittedEnquiry.discount_percent || appliedPromo?.discountPercent}% Discount)
+                  </span>
+                </div>
+                {(submittedEnquiry.promo_perk || appliedPromo?.perk) && (
+                  <div style={{ fontSize: "0.78rem", color: "#059669", fontWeight: 600 }}>
+                    🎂 {submittedEnquiry.promo_perk || appliedPromo?.perk} (above ₹1,000 order)
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reference Number Box */}
             <div
               style={{
-                background: "linear-gradient(135deg, var(--bg-cream) 0%, var(--bg-surface) 100%)",
+                background: "var(--bg-cream)",
                 border: "1.5px dashed var(--gold)",
                 borderRadius: "var(--radius-md)",
                 padding: "1rem",
-                marginBottom: "1.25rem",
-                boxShadow: "var(--shadow-xs)",
+                marginBottom: "1rem",
               }}
             >
-              <div style={{ fontSize: "0.72rem", color: "var(--gold-dark)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
+              <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.35rem" }}>
                 Your Unique Enquiry Reference
               </div>
               <div
                 style={{
-                  fontSize: "1.8rem",
-                  fontFamily: "monospace",
+                  fontSize: "1.75rem",
                   fontWeight: 800,
-                  color: "var(--text-primary)",
-                  letterSpacing: "0.12em",
-                  margin: "0.35rem 0",
+                  fontFamily: "monospace",
+                  color: "var(--gold-dark)",
+                  letterSpacing: "0.08em",
+                  marginBottom: "0.6rem",
                 }}
-                id="modal-success-enquiry-number"
+                id="modal-enquiry-ref-text"
               >
                 {submittedEnquiry.enquiry_number}
               </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "0.5rem" }}>
+
+              <div>
                 <button
                   type="button"
                   onClick={handleCopyRef}
@@ -265,12 +463,12 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
           </div>
         ) : (
           <>
-            <div style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+            <div style={{ textAlign: "center", marginBottom: "1.15rem" }}>
               <span className="cake-category-badge">Direct WhatsApp Enquiry</span>
-              <h3 style={{ fontSize: "1.35rem", color: "var(--text-primary)", marginBottom: "0.25rem", fontWeight: 700 }}>
+              <h3 style={{ fontSize: "1.35rem", color: "var(--text-primary)", marginBottom: "0.2rem", fontWeight: 700 }}>
                 Order with Our Master Baker
               </h3>
-              <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
                 Share your event date and desired portion to discuss bespoke styling directly on WhatsApp.
               </p>
             </div>
@@ -284,14 +482,14 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                 background: "var(--bg-main)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-sm)",
-                padding: "0.65rem 0.85rem",
-                marginBottom: "1.15rem",
+                padding: "0.6rem 0.85rem",
+                marginBottom: "1rem",
               }}
             >
               <div
                 style={{
-                  width: "52px",
-                  height: "52px",
+                  width: "50px",
+                  height: "50px",
                   background: "#FFFFFF",
                   borderRadius: "var(--radius-xs)",
                   border: "1px solid var(--border-light)",
@@ -316,15 +514,99 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                   <span style={{ fontSize: "1.25rem" }}>🎂</span>
                 )}
               </div>
-              <div style={{ minWidth: 0 }}>
-                <h4 style={{ fontSize: "0.92rem", color: "var(--text-primary)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h4
+                  style={{
+                    fontSize: "0.92rem",
+                    color: "var(--text-primary)",
+                    margin: 0,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {cake.name}
                 </h4>
-                <p style={{ fontSize: "0.76rem", color: "var(--gold-dark)", margin: "0.15rem 0 0", fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--gold-dark)",
+                    margin: "0.15rem 0 0",
+                    fontStyle: "italic",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {cake.flavour}
                 </p>
               </div>
             </div>
+
+            {/* AUTO-DETECT PROMOTION NOTIFICATION POPUP */}
+            {promoNotice && (
+              <div
+                style={{
+                  padding: "0.75rem 0.9rem",
+                  borderRadius: "8px",
+                  marginBottom: "1rem",
+                  background:
+                    promoNotice.type === "celebration"
+                      ? "linear-gradient(135deg, #FFFDF8 0%, #FEF9EC 100%)"
+                      : promoNotice.type === "warning"
+                      ? "#FFFBEB"
+                      : "#EFF6FF",
+                  border:
+                    promoNotice.type === "celebration"
+                      ? "1.5px solid #F59E0B"
+                      : promoNotice.type === "warning"
+                      ? "1px solid #FCD34D"
+                      : "1px solid #BFDBFE",
+                  animation: "fadeIn 0.3s ease",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                  {promoNotice.type === "celebration" ? (
+                    <Sparkles size={18} style={{ color: "#D97706", flexShrink: 0, marginTop: "2px" }} />
+                  ) : (
+                    <AlertCircle size={18} style={{ color: "#B45309", flexShrink: 0, marginTop: "2px" }} />
+                  )}
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: "0.84rem",
+                        color: promoNotice.type === "celebration" ? "#B45309" : "#92400E",
+                        marginBottom: "0.2rem",
+                      }}
+                    >
+                      {promoNotice.title}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.78rem",
+                        color: promoNotice.type === "celebration" ? "#78350F" : "#78350F",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {promoNotice.message}
+                    </div>
+                    {promoNotice.perk && (
+                      <div
+                        style={{
+                          fontSize: "0.78rem",
+                          fontWeight: 600,
+                          color: "#059669",
+                          marginTop: "0.3rem",
+                        }}
+                      >
+                        {promoNotice.perk}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {error && (
               <div
@@ -344,8 +626,10 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
 
             <form onSubmit={handleOrder}>
               {/* Size Selector */}
-              <div className="form-group">
-                <label className="form-label">Select Size / Tier:</label>
+              <div className="form-group" style={{ marginBottom: "0.85rem" }}>
+                <label className="form-label" style={{ fontSize: "0.78rem", marginBottom: "0.35rem" }}>
+                  Select Size / Tier:
+                </label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
                   {cake.available_sizes && cake.available_sizes.length > 0 ? (
                     cake.available_sizes.map((sz) => (
@@ -354,9 +638,9 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                         type="button"
                         onClick={() => setSelectedSize(sz)}
                         style={{
-                          padding: "0.35rem 0.75rem",
+                          padding: "0.3rem 0.7rem",
                           borderRadius: "var(--radius-full)",
-                          fontSize: "0.76rem",
+                          fontSize: "0.75rem",
                           cursor: "pointer",
                           transition: "all 0.15s",
                           background: selectedSize === sz ? "var(--gold)" : "var(--bg-main)",
@@ -374,13 +658,14 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                <div className="form-group">
-                  <label className="form-label">Your Name *</label>
+              {/* Name & Phone Inputs */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "0.75rem" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: "0.78rem" }}>Your Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Lady Vivienne"
+                    placeholder="e.g. Priyo Sen"
                     value={customerName}
                     onChange={(e) => {
                       setCustomerName(e.target.value);
@@ -388,16 +673,23 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                     }}
                     className="form-input"
                     id="modal-customer-name"
-                    style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+                    style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Phone Number *</label>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: "0.78rem", display: "flex", justifyContent: "space-between" }}>
+                    <span>Mobile Number *</span>
+                    {phoneCheckStatus === "checking" && (
+                      <span style={{ color: "var(--gold)", fontSize: "0.7rem", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                        <RefreshCw size={10} className="spin" /> checking...
+                      </span>
+                    )}
+                  </label>
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. +44 7911 123456"
+                    placeholder="e.g. 9876543210"
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
@@ -405,25 +697,101 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                     }}
                     className="form-input"
                     id="modal-customer-phone"
-                    style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+                    style={{
+                      padding: "0.45rem 0.75rem",
+                      fontSize: "0.82rem",
+                      borderColor:
+                        phoneCheckStatus === "new_user"
+                          ? "#10B981"
+                          : phoneCheckStatus === "existing_user"
+                          ? "#F59E0B"
+                          : undefined,
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Custom Inscription / Date / Preferences</label>
+              {/* Promo Code Input & Quick Apply Bar */}
+              <div
+                style={{
+                  background: "var(--bg-main)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: "8px",
+                  padding: "0.55rem 0.75rem",
+                  marginBottom: "0.75rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <Tag size={15} style={{ color: "var(--gold-dark)", flexShrink: 0 }} />
+                <input
+                  type="text"
+                  placeholder="Offer Code (e.g. FIRST5)"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "0.8rem",
+                    flex: 1,
+                    outline: "none",
+                    fontFamily: "monospace",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                  }}
+                />
+                {appliedPromo ? (
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      background: "#ECFDF5",
+                      color: "#059669",
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: "4px",
+                      fontWeight: 700,
+                      border: "1px solid #A7F3D0",
+                    }}
+                  >
+                    ✓ {appliedPromo.discountPercent}% OFF
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleApplyPromoCode}
+                    style={{
+                      background: "var(--gold)",
+                      color: "#FFFFFF",
+                      border: "none",
+                      padding: "0.25rem 0.65rem",
+                      borderRadius: "4px",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
+
+              {/* Inscription & Event Notes */}
+              <div className="form-group" style={{ marginBottom: "1rem" }}>
+                <label className="form-label" style={{ fontSize: "0.78rem" }}>
+                  Custom Inscription / Date / Event Details
+                </label>
                 <textarea
                   rows={2}
-                  placeholder="e.g. Inscription on plaque, delivery date next Saturday, allergen notes..."
+                  placeholder="e.g. Happy 30th Birthday plaque, deliver this Sunday, eggless..."
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   className="form-textarea"
                   id="modal-custom-message"
-                  style={{ padding: "0.5rem 0.75rem", fontSize: "0.84rem" }}
+                  style={{ padding: "0.45rem 0.75rem", fontSize: "0.82rem" }}
                 />
               </div>
 
-              <div style={{ display: "flex", gap: "0.6rem", marginTop: "1rem" }}>
+              <div style={{ display: "flex", gap: "0.6rem" }}>
                 <button
                   type="button"
                   onClick={handleClose}
@@ -436,7 +804,13 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                 <button
                   type="submit"
                   className="btn-whatsapp icon-hover-lift"
-                  style={{ flex: 2, padding: "0.55rem 1rem", fontSize: "0.82rem", justifyContent: "center", gap: "0.4rem" }}
+                  style={{
+                    flex: 2,
+                    padding: "0.55rem 1rem",
+                    fontSize: "0.82rem",
+                    justifyContent: "center",
+                    gap: "0.4rem",
+                  }}
                   id="modal-submit-whatsapp-btn"
                   disabled={isSubmitting}
                 >

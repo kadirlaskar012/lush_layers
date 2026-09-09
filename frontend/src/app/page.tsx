@@ -12,15 +12,16 @@ import {
 } from "../components/AnimatedPosters";
 import WhatsAppIcon from "../components/WhatsAppIcon";
 import HeroMasterworkRotator from "../components/HeroMasterworkRotator";
-import { getPublishedCakes, getCategories } from "../lib/serverData";
+import { getPublishedCakes, getCategories, getActivePromotions } from "../lib/serverData";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
 export const revalidate = 60; // ISR: 60 seconds revalidation
 
 export default async function HomePage() {
-  const [cakes, categories] = await Promise.all([
+  const [cakes, categories, promotions] = await Promise.all([
     getPublishedCakes(),
     getCategories(),
+    getActivePromotions(),
   ]);
 
   const bakeryWhatsApp = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "918768388868";
@@ -151,7 +152,7 @@ export default async function HomePage() {
         }}
       >
         <div className="container-lux">
-          <AtelierFeaturedPoster whatsappNumber={bakeryWhatsApp} />
+          <AtelierFeaturedPoster whatsappNumber={bakeryWhatsApp} promotions={promotions} />
         </div>
       </section>
 

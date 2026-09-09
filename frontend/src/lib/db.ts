@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { Cake, Category, Review, Enquiry, AdminStats, ProcessingJob } from "./types";
+import { Cake, Category, Review, Enquiry, AdminStats, ProcessingJob, Promotion, PhoneEligibilityResult } from "./types";
 
 const defaultConnectionString =
   "postgresql://postgres.phpisimuahahngdaeohg:pKbgg0S2O201GK3z@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres";
@@ -111,8 +111,34 @@ function mapEnquiry(row: any): Enquiry {
     delivery_date: row.delivery_date || undefined,
     admin_notes: row.admin_notes || undefined,
     status: row.status || "New",
+    applied_promo_code: row.applied_promo_code || undefined,
+    discount_percent: row.discount_percent !== null && row.discount_percent !== undefined ? Number(row.discount_percent) : 0,
+    promo_perk: row.promo_perk || undefined,
     created_at: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
     updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
+  };
+}
+
+function mapPromotion(row: any): Promotion {
+  return {
+    id: String(row.id),
+    title: row.title || "",
+    badge: row.badge || undefined,
+    tagline: row.tagline || undefined,
+    description: row.description || undefined,
+    edition: row.edition || undefined,
+    promo_code: (row.promo_code || "").toUpperCase(),
+    discount_percent: Number(row.discount_percent || 0),
+    min_order_amount: Number(row.min_order_amount || 0),
+    addon_perk: row.addon_perk || undefined,
+    image_url: row.image_url || undefined,
+    bg_gradient: row.bg_gradient || undefined,
+    accent_color: row.accent_color || undefined,
+    is_new_user_only: Boolean(row.is_new_user_only),
+    is_active: Boolean(row.is_active),
+    sort_order: Number(row.sort_order || 0),
+    created_at: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+    updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
   };
 }
 
@@ -502,6 +528,9 @@ export async function dbCreateEnquiry(payload: {
   selected_size?: string;
   custom_message?: string;
   delivery_date?: string;
+  applied_promo_code?: string;
+  discount_percent?: number;
+  promo_perk?: string;
 }): Promise<Enquiry | null> {
   const p = getPool();
   const enquiryNumber = generateEnquiryNumber();
@@ -510,10 +539,12 @@ export async function dbCreateEnquiry(payload: {
     INSERT INTO enquiries (
       id, enquiry_number, customer_name, phone, cake_name, cake_image_url,
       flavour, selected_size, custom_message, delivery_date, status,
+      applied_promo_code, discount_percent, promo_perk,
       created_at, updated_at
     ) VALUES (
       gen_random_uuid()::text, $1, $2, $3, $4, $5,
       $6, $7, $8, $9, 'New',
+      $10, $11, $12,
       NOW(), NOW()
     )
     RETURNING *
@@ -528,6 +559,9 @@ export async function dbCreateEnquiry(payload: {
     payload.selected_size || null,
     payload.custom_message || null,
     payload.delivery_date || null,
+    payload.applied_promo_code ? payload.applied_promo_code.toUpperCase().trim() : null,
+    payload.discount_percent || 0,
+    payload.promo_perk || null,
   ]);
   if (res.rows.length === 0) return null;
   return mapEnquiry(res.rows[0]);
@@ -585,13 +619,16 @@ export async function dbUpdateEnquiryDetails(
     flavour?: string;
     cake_name?: string;
     custom_message?: string;
+    applied_promo_code?: string;
+    discount_percent?: number;
+    promo_perk?: string;
   }
 ): Promise<Enquiry> {
   const p = getPool();
   const sets: string[] = ["updated_at = NOW()"];
   const values: any[] = [enquiryId];
 
-  const allowed = ["status", "selected_size", "delivery_date", "admin_notes", "flavour", "cake_name", "custom_message"];
+  const allowed = ["status", "selected_size", "delivery_date", "admin_notes", "flavour", "cake_name", "custom_message", "applied_promo_code", "discount_percent", "promo_perk"];
   for (const field of allowed) {
     if ((payload as any)[field] !== undefined) {
       values.push((payload as any)[field]);
@@ -686,5 +723,252 @@ export async function dbGetAdminStats(): Promise<AdminStats> {
     failed: 0,
     pending_reviews: reviewCounts.rows[0]?.count || 0,
     enquiries: enquiryMap as any,
+  };
+}
+
+// ================= PROMOTIONS & POSTERS =================
+
+export async function dbGetPromotions(isActiveOnly: boolean = false): Promise<Promotion[]> {
+  const p = getPool();
+  let query = `SELECT * FROM promotions`;
+  if (isActiveOnly) {
+    query += ` WHERE is_active = true`;
+  }
+  query += ` ORDER BY sort_order ASC, created_at DESC`;
+  try {
+    const res = await p.query(query);
+    return res.rows.map(mapPromotion);
+  } catch (err) {
+    console.error("dbGetPromotions error:", err);
+    return [];
+  }
+}
+
+export async function dbGetPromotionById(id: string): Promise<Promotion | null> {
+  const p = getPool();
+  try {
+    const res = await p.query(`SELECT * FROM promotions WHERE id = $1 LIMIT 1`, [id]);
+    if (res.rows.length === 0) return null;
+    return mapPromotion(res.rows[0]);
+  } catch (err) {
+    console.error("dbGetPromotionById error:", err);
+    return null;
+  }
+}
+
+export async function dbCreatePromotion(data: {
+  title: string;
+  badge?: string;
+  tagline?: string;
+  description?: string;
+  edition?: string;
+  promo_code: string;
+  discount_percent: number;
+  min_order_amount?: number;
+  addon_perk?: string;
+  image_url?: string;
+  bg_gradient?: string;
+  accent_color?: string;
+  is_new_user_only?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+}): Promise<Promotion | null> {
+  const p = getPool();
+  const query = `
+    INSERT INTO promotions (
+      id, title, badge, tagline, description, edition,
+      promo_code, discount_percent, min_order_amount, addon_perk,
+      image_url, bg_gradient, accent_color, is_new_user_only,
+      is_active, sort_order, created_at, updated_at
+    ) VALUES (
+      gen_random_uuid()::text, $1, $2, $3, $4, $5,
+      $6, $7, $8, $9,
+      $10, $11, $12, $13,
+      $14, $15, NOW(), NOW()
+    )
+    RETURNING *
+  `;
+  try {
+    const res = await p.query(query, [
+      data.title,
+      data.badge || "Special Offer",
+      data.tagline || null,
+      data.description || null,
+      data.edition || null,
+      (data.promo_code || "").trim().toUpperCase(),
+      data.discount_percent ?? 5,
+      data.min_order_amount ?? 1000,
+      data.addon_perk || null,
+      data.image_url || null,
+      data.bg_gradient || null,
+      data.accent_color || null,
+      Boolean(data.is_new_user_only),
+      data.is_active !== undefined ? Boolean(data.is_active) : true,
+      data.sort_order ?? 0,
+    ]);
+    if (res.rows.length === 0) return null;
+    return mapPromotion(res.rows[0]);
+  } catch (err) {
+    console.error("dbCreatePromotion error:", err);
+    return null;
+  }
+}
+
+export async function dbUpdatePromotion(
+  id: string,
+  data: Partial<Promotion>
+): Promise<Promotion | null> {
+  const p = getPool();
+  const sets: string[] = ["updated_at = NOW()"];
+  const values: any[] = [id];
+
+  const allowed = [
+    "title", "badge", "tagline", "description", "edition",
+    "promo_code", "discount_percent", "min_order_amount", "addon_perk",
+    "image_url", "bg_gradient", "accent_color", "is_new_user_only",
+    "is_active", "sort_order"
+  ];
+
+  for (const field of allowed) {
+    if ((data as any)[field] !== undefined) {
+      let val = (data as any)[field];
+      if (field === "promo_code" && typeof val === "string") {
+        val = val.trim().toUpperCase();
+      }
+      values.push(val);
+      sets.push(`${field} = $${values.length}`);
+    }
+  }
+
+  const query = `
+    UPDATE promotions
+    SET ${sets.join(", ")}
+    WHERE id = $1
+    RETURNING *
+  `;
+  try {
+    const res = await p.query(query, values);
+    if (res.rows.length === 0) return null;
+    return mapPromotion(res.rows[0]);
+  } catch (err) {
+    console.error("dbUpdatePromotion error:", err);
+    return null;
+  }
+}
+
+export async function dbDeletePromotion(id: string): Promise<boolean> {
+  const p = getPool();
+  try {
+    const res = await p.query(`DELETE FROM promotions WHERE id = $1`, [id]);
+    return (res.rowCount ?? 0) > 0;
+  } catch (err) {
+    console.error("dbDeletePromotion error:", err);
+    return false;
+  }
+}
+
+export async function dbCheckPhoneEligibility(phone: string, code?: string): Promise<PhoneEligibilityResult> {
+  const raw = String(phone || "").trim();
+  const cleanDigits = raw.replace(/[^0-9]/g, "");
+  if (cleanDigits.length < 7) {
+    return {
+      is_valid_phone: false,
+      is_new_user: false,
+      eligible: false,
+      message: "Please enter a valid mobile number.",
+    };
+  }
+
+  const last10 = cleanDigits.length >= 10 ? cleanDigits.slice(-10) : cleanDigits;
+  const p = getPool();
+
+  let previousOrdersCount = 0;
+  let customerName = "";
+
+  try {
+    const countRes = await p.query(`
+      SELECT COUNT(*)::int as count, MAX(customer_name) as name
+      FROM enquiries
+      WHERE regexp_replace(phone, '[^0-9]', '', 'g') LIKE $1
+    `, [`%${last10}%`]);
+    if (countRes.rows.length > 0) {
+      previousOrdersCount = countRes.rows[0].count || 0;
+      customerName = countRes.rows[0].name || "";
+    }
+  } catch (err) {
+    console.warn("Phone lookup error in enquiries:", err);
+  }
+
+  const isNewUser = previousOrdersCount === 0;
+  const activePromos = await dbGetPromotions(true);
+  const newUserPromo = activePromos.find((p) => Boolean(p.is_new_user_only));
+
+  if (code && code.trim()) {
+    const cleanCode = code.trim().toUpperCase();
+    const targetPromo = activePromos.find((p) => p.promo_code === cleanCode);
+    if (!targetPromo) {
+      return {
+        is_valid_phone: true,
+        is_new_user: isNewUser,
+        eligible: false,
+        code_status: "invalid",
+        message: `Promo code '${code}' is invalid or expired.`,
+      };
+    }
+    if (targetPromo.is_new_user_only && !isNewUser) {
+      return {
+        is_valid_phone: true,
+        is_new_user: false,
+        eligible: false,
+        code_status: "already_redeemed",
+        promo: targetPromo,
+        message: "You have already redeemed the new customer welcome offer. Welcome back!",
+      };
+    }
+    return {
+      is_valid_phone: true,
+      is_new_user: isNewUser,
+      eligible: true,
+      code_status: "applied",
+      promo: targetPromo,
+      discount_percent: targetPromo.discount_percent,
+      promo_code: targetPromo.promo_code,
+      addon_perk: targetPromo.addon_perk,
+      min_order_amount: targetPromo.min_order_amount,
+      message: `🎉 Code ${targetPromo.promo_code} applied! ${targetPromo.discount_percent}% discount granted.`,
+    };
+  }
+
+  if (isNewUser && newUserPromo) {
+    return {
+      is_valid_phone: true,
+      is_new_user: true,
+      eligible: true,
+      code_status: "auto_applied",
+      promo: newUserPromo,
+      discount_percent: newUserPromo.discount_percent,
+      promo_code: newUserPromo.promo_code,
+      addon_perk: newUserPromo.addon_perk,
+      min_order_amount: newUserPromo.min_order_amount,
+      message: `🎉 New Patron Detected! ${newUserPromo.discount_percent}% Welcome Discount automatically applied (Code: ${newUserPromo.promo_code})!`,
+    };
+  }
+
+  if (!isNewUser) {
+    return {
+      is_valid_phone: true,
+      is_new_user: false,
+      eligible: false,
+      code_status: "existing_user",
+      message: `Welcome back, ${customerName || "valued patron"}! You have previously ordered with us. New customer welcome offer has already been redeemed.`,
+    };
+  }
+
+  return {
+    is_valid_phone: true,
+    is_new_user: isNewUser,
+    eligible: false,
+    code_status: "none",
+    message: "No active promotions available at this time.",
   };
 }
