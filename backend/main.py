@@ -222,20 +222,23 @@ async def set_gemini_key_endpoint(payload: SetGeminiKeyPayload):
 @app.post("/api/upload/bulk")
 async def upload_bulk_images(
     files: List[UploadFile] = File(...),
+    name: Optional[str] = Form(None),
+    flavour: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    category_id: Optional[str] = Form(None),
     compress: bool = Form(True),
     white_background: bool = Form(True),
     auto_focus: bool = Form(True),
-    ai_metadata: bool = Form(True),
-    category_id: Optional[str] = Form(None),
+    ai_metadata: bool = Form(False),  # Default is False (unticked) as requested
     background_tasks: BackgroundTasks = None
 ):
     """
     Accepts multiple cake images with configurable processing options:
+    - name, flavour, description, category_id: optional manual inputs
     - compress: WebP high-efficiency optimization
     - white_background: RemBG background removal & studio white shadow
     - auto_focus: subject detection, auto-crop & 1:1 square centering
-    - ai_metadata: Gemini AI sensory copywriting
-    - category_id: optional pre-assigned category
+    - ai_metadata: Gemini AI sensory copywriting (Default: False)
     """
     if not files:
         raise HTTPException(status_code=400, detail="No files provided.")
@@ -243,11 +246,14 @@ async def upload_bulk_images(
     created_jobs = []
     
     options = {
+        "name": name.strip() if name and name.strip() else None,
+        "flavour": flavour.strip() if flavour and flavour.strip() else None,
+        "description": description.strip() if description and description.strip() else None,
+        "category_id": category_id.strip() if category_id and category_id.strip() else None,
         "compress": compress,
         "white_background": white_background,
         "auto_focus": auto_focus,
         "ai_metadata": ai_metadata,
-        "category_id": category_id.strip() if category_id and category_id.strip() else None
     }
     
     for file in files:
@@ -379,21 +385,29 @@ async def list_approved_cakes():
 
 @app.get("/api/cakes/{cake_id}")
 async def get_cake(cake_id: str):
-    cake = db.get_cake_by_id(cake_id)
+    cake = db.find_cake_by_serial_or_id(cake_id)
     if not cake:
-        # Also check by slug
-        cake = db.get_cake_by_slug(cake_id)
-    if not cake:
-        raise HTTPException(status_code=404, detail="Cake not found.")
+        raise HTTPException(status_code=404, detail=f"Cake '{cake_id}' not found.")
     return cake
 
 @app.put("/api/cakes/{cake_id}")
 async def update_cake(cake_id: str, payload: CakeUpdateRequest, background_tasks: BackgroundTasks):
+    existing = db.find_cake_by_serial_or_id(cake_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail=f"Cake '{cake_id}' not found.")
+    
+    actual_id = existing["id"]
     updates = {k: v for k, v in payload.dict().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="No fields provided for update.")
     
-    updated = db.update_cake(cake_id, updates)
+    # Auto-generate URL slug if title changes
+    if "name" in updates and "slug" not in updates and updates["name"]:
+        import re
+        base_slug = re.sub(r'[^a-zA-Z0-9]+', '-', updates["name"].lower()).strip('-')
+        updates["slug"] = f"{base_slug}-{actual_id[:6]}"
+    
+    updated = db.update_cake(actual_id, updates)
     if not updated:
         raise HTTPException(status_code=404, detail="Cake not found.")
         
@@ -401,7 +415,7 @@ async def update_cake(cake_id: str, payload: CakeUpdateRequest, background_tasks
     if updated.get("status") == "published" or updates.get("status") == "published":
         background_tasks.add_task(
             trigger_frontend_revalidation,
-            ["/", "/cakes", f"/cakes/{updated.get('slug', '')}"]
+            ["/", "/cakes", f"/cakes/{updated.get('slug', '')}", "/categories"]
         )
     return updated
 
@@ -1523,6 +1537,32 @@ async def serve_lan_portal():
             outline: none;
         }}
 
+        .portal-form-group {{
+            margin-bottom: 0.95rem;
+        }}
+        .portal-form-group label {{
+            display: block;
+            font-size: 0.8rem;
+            color: var(--gold-light);
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }}
+        .portal-input, .portal-textarea {{
+            width: 100%;
+            background: #100C0A;
+            border: 1px solid var(--border);
+            color: var(--cream);
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+            font-family: inherit;
+        }}
+        .portal-input:focus, .portal-textarea:focus {{
+            border-color: var(--gold);
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.25);
+        }}
+
         .modal-actions {{
             display: flex;
             align-items: center;
@@ -1757,19 +1797,41 @@ async def serve_lan_portal():
                     </div>
                 </div>
 
-                <!-- Option 4: AI Copywriting -->
-                <div class="option-item checked" id="optAiCard" onclick="toggleOption('optAi')">
+                <!-- Option 4: AI Copywriting (Unticked by default) -->
+                <div class="option-item" id="optAiCard" onclick="toggleOption('optAi')">
                     <div class="custom-checkbox">
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </div>
-                    <input type="checkbox" id="optAi" checked style="display: none;">
+                    <input type="checkbox" id="optAi" style="display: none;">
                     <div class="option-content">
                         <div class="option-label-row">
                             <span class="option-label">Gemini AI Title & Tasting Notes</span>
-                            <span class="option-badge">Sensory AI</span>
+                            <span class="option-badge">Sensory AI (Optional)</span>
                         </div>
-                        <div class="option-desc">কেকের টেক্সচার ও ডিজাইন বিশ্লেষণ করে স্বয়ংক্রিয়ভাবে আর্টিসানাল নাম, স্বাদ (Flavour) এবং মিষ্টি কাব্যিক বিবরণ তৈরি করে।</div>
+                        <div class="option-desc">কেকের ছবি স্ক্যান করে স্বয়ংক্রিয়ভাবে আর্টিসানাল নাম, স্বাদ (Flavour) এবং মিষ্টি কাব্যিক বিবরণ তৈরি করবে (Unticked = নো এআই)।</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Optional Manual Cake Metadata -->
+            <div style="border-top: 1px dashed var(--border); padding-top: 1.1rem; margin-top: 0.5rem; margin-bottom: 1.1rem;">
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--gold-light); margin-bottom: 0.75rem;">
+                    📝 Custom Cake Details (অপশনাল ম্যানুয়াল তথ্য):
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modalCakeTitle">Cake Title / Name (কেকের নাম):</label>
+                    <input type="text" id="modalCakeTitle" class="portal-input" placeholder="e.g. Royal Rosewater Pistachio Gateau (Optional)">
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modalCakeFlavour">Flavour Profile (কেকের স্বাদ):</label>
+                    <input type="text" id="modalCakeFlavour" class="portal-input" placeholder="e.g. Belgian Dark Chocolate Truffle (Optional)">
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modalCakeDesc">Artisan Description (কেকের বিবরণ):</label>
+                    <textarea id="modalCakeDesc" class="portal-textarea" rows="2" placeholder="e.g. Handcrafted triple-layered sponge infused with Madagascar vanilla... (Optional)"></textarea>
                 </div>
             </div>
 
@@ -1789,8 +1851,74 @@ async def serve_lan_portal():
         </div>
     </div>
 
+    <!-- MODIFY CAKE BY SERIAL NUMBER MODAL -->
+    <div class="modal-overlay" id="modifyModal">
+        <div class="modal-content" style="max-width: 620px;">
+            <button class="modal-close" onclick="closeModifyModal()">×</button>
+            <div class="modal-title">✏️ Modify Cake by Serial Number</div>
+            <div class="modal-subtitle">Search cake by serial # (e.g. #1001), update title, flavour, description & push live instantly</div>
+
+            <div style="display: flex; gap: 0.6rem; margin-bottom: 1.25rem;">
+                <input type="text" id="modifySearchInput" class="portal-input" placeholder="Enter Serial # (e.g. 1001, #1001) or Cake ID..." onkeydown="if(event.key==='Enter') searchCakeForModify()">
+                <button type="button" class="btn-submit" style="padding: 0.65rem 1.4rem; white-space: nowrap;" onclick="searchCakeForModify()">
+                    🔍 Search
+                </button>
+            </div>
+
+            <div id="modifyLoading" style="display: none; text-align: center; padding: 1.5rem; color: var(--gold-light);">
+                ⏳ Searching database for cake...
+            </div>
+
+            <div id="modifyError" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--error); color: #FCA5A5; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem;"></div>
+
+            <div id="modifyCard" style="display: none;">
+                <div class="modal-preview-bar" style="margin-bottom: 1.25rem;">
+                    <img id="modifyCakeThumb" src="" class="modal-preview-thumb" alt="Cake Preview">
+                    <div class="modal-preview-info">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span id="modifySerialBadge" style="background: var(--gold); color: #000; font-weight: 700; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;">#1001</span>
+                            <span id="modifyStatusBadge" class="status-pill status-approved">APPROVED</span>
+                        </div>
+                        <div class="modal-preview-name" id="modifyCurrentName" style="margin-top: 0.35rem;">Current Name</div>
+                        <div class="modal-preview-meta" id="modifyCurrentMeta">Category • Slug</div>
+                    </div>
+                </div>
+
+                <input type="hidden" id="modifyCakeId">
+
+                <div class="portal-form-group">
+                    <label for="modCakeTitle">Cake Title / Name (কেকের নাম):</label>
+                    <input type="text" id="modCakeTitle" class="portal-input">
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modCakeFlavour">Flavour Profile (কেকের স্বাদ):</label>
+                    <input type="text" id="modCakeFlavour" class="portal-input">
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modCakeCategory">Category (ক্যাটাগরি):</label>
+                    <select id="modCakeCategory" class="category-select"></select>
+                </div>
+
+                <div class="portal-form-group">
+                    <label for="modCakeDesc">Artisan Description (কেকের বিবরণ):</label>
+                    <textarea id="modCakeDesc" class="portal-textarea" rows="3"></textarea>
+                </div>
+
+                <div class="modal-actions" style="margin-top: 1.25rem;">
+                    <button type="button" class="btn-cancel" onclick="closeModifyModal()">Cancel</button>
+                    <button type="button" class="btn-submit" id="btnSaveModifiedCake" onclick="saveModifiedCake()">
+                        💾 Save & Update Live Website
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- QUICK LINKS -->
     <div class="quick-nav">
+        <button type="button" onclick="openModifyModal()" class="nav-pill nav-pill-highlight" style="border-color: #10B981; color: #A7F3D0; background: rgba(16, 185, 129, 0.12);">✏️ Modify Cake by Serial #</button>
         <button type="button" onclick="openWebsiteDestination('http://localhost:3000', 'Public Website')" class="nav-pill">🌐 Public Website (Port 3000) ↗</button>
         <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin', 'Admin Dashboard')" class="nav-pill">👑 Admin Dashboard ↗</button>
         <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin/cakes/pending', 'Pending Approval Queue')" class="nav-pill nav-pill-highlight">⏳ Pending Approval Queue ↗</button>
@@ -1935,6 +2063,9 @@ async def serve_lan_portal():
             configModal.style.display = 'none';
             fileInput.value = '';
             selectedFiles = [];
+            const t = document.getElementById('modalCakeTitle'); if (t) t.value = '';
+            const f = document.getElementById('modalCakeFlavour'); if (f) f.value = '';
+            const d = document.getElementById('modalCakeDesc'); if (d) d.value = '';
         }}
 
         function toggleOption(checkboxId) {{
@@ -1974,6 +2105,9 @@ async def serve_lan_portal():
             const optAutoFocus = document.getElementById('optAutoFocus').checked;
             const optAi = document.getElementById('optAi').checked;
             const categoryId = document.getElementById('categorySelect').value;
+            const cakeTitle = (document.getElementById('modalCakeTitle')?.value || '').trim();
+            const cakeFlavour = (document.getElementById('modalCakeFlavour')?.value || '').trim();
+            const cakeDesc = (document.getElementById('modalCakeDesc')?.value || '').trim();
 
             submitProcessBtn.disabled = true;
             submitProcessBtn.innerHTML = "<span>Enqueuing Images...</span>";
@@ -1986,6 +2120,15 @@ async def serve_lan_portal():
             formData.append("ai_metadata", optAi);
             if (categoryId) {{
                 formData.append("category_id", categoryId);
+            }}
+            if (cakeTitle) {{
+                formData.append("name", cakeTitle);
+            }}
+            if (cakeFlavour) {{
+                formData.append("flavour", cakeFlavour);
+            }}
+            if (cakeDesc) {{
+                formData.append("description", cakeDesc);
             }}
 
             try {{
@@ -2003,6 +2146,146 @@ async def serve_lan_portal():
             }} finally {{
                 submitProcessBtn.disabled = false;
                 submitProcessBtn.innerHTML = "<span>🚀 Upload & Process to Database</span>";
+            }}
+        }}
+
+        // --- CAKE MODIFICATION BY SERIAL NUMBER ---
+        function openModifyModal() {{
+            document.getElementById('modifySearchInput').value = '';
+            document.getElementById('modifyError').style.display = 'none';
+            document.getElementById('modifyCard').style.display = 'none';
+            document.getElementById('modifyLoading').style.display = 'none';
+            loadModifyCategoriesDropdown();
+            document.getElementById('modifyModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('modifySearchInput').focus(), 100);
+        }}
+
+        function closeModifyModal() {{
+            document.getElementById('modifyModal').style.display = 'none';
+        }}
+
+        async function loadModifyCategoriesDropdown() {{
+            const selectEl = document.getElementById('modCakeCategory');
+            if (selectEl.options.length > 0) return;
+            try {{
+                const resp = await fetch('/api/categories');
+                if (resp.ok) {{
+                    const categories = await resp.json();
+                    categories.forEach(cat => {{
+                        const opt = document.createElement('option');
+                        opt.value = cat.id;
+                        opt.textContent = `${{cat.name}}`;
+                        selectEl.appendChild(opt);
+                    }});
+                }}
+            }} catch (e) {{}}
+        }}
+
+        async function searchCakeForModify() {{
+            const query = document.getElementById('modifySearchInput').value.trim();
+            const errEl = document.getElementById('modifyError');
+            const cardEl = document.getElementById('modifyCard');
+            const loadingEl = document.getElementById('modifyLoading');
+
+            errEl.style.display = 'none';
+            cardEl.style.display = 'none';
+
+            if (!query) {{
+                errEl.innerText = "Please enter a Cake Serial Number (e.g. #1001 or 1001) or Cake ID.";
+                errEl.style.display = 'block';
+                return;
+            }}
+
+            loadingEl.style.display = 'block';
+
+            try {{
+                const resp = await fetch('/api/cakes/' + encodeURIComponent(query));
+                loadingEl.style.display = 'none';
+                if (!resp.ok) {{
+                    const err = await resp.json();
+                    errEl.innerText = err.detail || `Cake '${{query}}' not found. Check the serial number and try again.`;
+                    errEl.style.display = 'block';
+                    return;
+                }}
+
+                const cake = await resp.json();
+                document.getElementById('modifyCakeId').value = cake.id;
+                document.getElementById('modifySerialBadge').innerText = '#' + (cake.display_id || 'N/A');
+                document.getElementById('modifyStatusBadge').innerText = (cake.status || 'pending').toUpperCase();
+                document.getElementById('modifyStatusBadge').className = 'status-pill status-' + (cake.status || 'pending');
+                document.getElementById('modifyCurrentName').innerText = cake.name || 'Untitled Cake';
+                document.getElementById('modifyCurrentMeta').innerText = (cake.category_name || 'Artisan') + ' • slug: ' + (cake.slug || '');
+                document.getElementById('modifyCakeThumb').src = cake.image_url || '';
+
+                document.getElementById('modCakeTitle').value = cake.name || '';
+                document.getElementById('modCakeFlavour').value = cake.flavour || '';
+                document.getElementById('modCakeDesc').value = cake.description || '';
+
+                await loadModifyCategoriesDropdown();
+                if (cake.category_id) {{
+                    document.getElementById('modCakeCategory').value = cake.category_id;
+                }}
+
+                cardEl.style.display = 'block';
+            }} catch (err) {{
+                loadingEl.style.display = 'none';
+                errEl.innerText = "Network error while fetching cake: " + err.message;
+                errEl.style.display = 'block';
+            }}
+        }}
+
+        async function saveModifiedCake() {{
+            const cakeId = document.getElementById('modifyCakeId').value;
+            if (!cakeId) return;
+
+            const name = document.getElementById('modCakeTitle').value.trim();
+            const flavour = document.getElementById('modCakeFlavour').value.trim();
+            const category_id = document.getElementById('modCakeCategory').value;
+            const description = document.getElementById('modCakeDesc').value.trim();
+
+            if (!name) {{
+                alert("Cake title cannot be empty.");
+                return;
+            }}
+
+            const btn = document.getElementById('btnSaveModifiedCake');
+            btn.disabled = true;
+            btn.innerHTML = "<span>Saving to Database & Revalidating...</span>";
+
+            try {{
+                const resp = await fetch('/api/cakes/' + encodeURIComponent(cakeId), {{
+                    method: 'PUT',
+                    headers: {{ 'Content-Type': 'application/json' }},
+                    body: JSON.stringify({{
+                        name,
+                        flavour,
+                        category_id,
+                        description
+                    }})
+                }});
+
+                if (!resp.ok) {{
+                    const err = await resp.json();
+                    throw new Error(err.detail || "Failed to update cake.");
+                }}
+
+                const updated = await resp.json();
+                closeModifyModal();
+                showToast(`✓ Cake #${{updated.display_id || ''}} "${{updated.name}}" updated live on website!`, 'success');
+
+                // If published, offer instant storefront view
+                if (updated.status === 'published') {{
+                    setTimeout(() => {{
+                        if (confirm(`Cake is live! Would you like to view it on the public storefront now?`)) {{
+                            openWebsiteDestination(`http://localhost:3000/cakes/${{updated.slug}}`, updated.name);
+                        }}
+                    }}, 500);
+                }}
+            }} catch (e) {{
+                alert("Update failed: " + e.message);
+            }} finally {{
+                btn.disabled = false;
+                btn.innerHTML = "<span>💾 Save & Update Live Website</span>";
             }}
         }}
 

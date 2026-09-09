@@ -105,8 +105,11 @@ class BackgroundJobQueue:
         opt_compress = options.get("compress", True)
         opt_white_bg = options.get("white_background", True)
         opt_auto_focus = options.get("auto_focus", True)
-        opt_ai_metadata = options.get("ai_metadata", True)
-        opt_category_id = options.get("category_id")
+        opt_ai_metadata = options.get("ai_metadata", False)  # By default False / unticked
+        opt_name = (options.get("name") or "").strip() or None
+        opt_flavour = (options.get("flavour") or "").strip() or None
+        opt_description = (options.get("description") or "").strip() or None
+        opt_category_id = (options.get("category_id") or "").strip() or None
         
         try:
             # 1. State: PROCESSING (Progress 15%)
@@ -142,7 +145,7 @@ class BackgroundJobQueue:
                 f"cake_{job_id[:8]}"
             )
 
-            # 4. AI Sensory Copywriting & Categorization (or Clean Manual Fallback)
+            # 4. AI Sensory Copywriting & Categorization (or Clean Manual / Fallback)
             all_categories = db.get_categories(active_only=False)
             cat_names = [c["name"] for c in all_categories]
             ai_data = {}
@@ -158,13 +161,28 @@ class BackgroundJobQueue:
                 except Exception as e:
                     print(f"[Queue][{worker_name}] AI sensory analysis note: {e}")
 
-            # Resolve Cake Attributes
-            clean_title = (ai_data.get("name") if ai_data else None) or Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
-            if not clean_title or clean_title.lower().startswith("img"):
-                clean_title = f"Artisan Confection #{job_id[:6].upper()}"
+            # Resolve Cake Attributes (Manual inputs have highest priority, then AI if enabled, then clean defaults)
+            if opt_name:
+                clean_title = opt_name
+            elif ai_data and ai_data.get("name"):
+                clean_title = ai_data["name"]
+            else:
+                stem = Path(job["file_name"]).stem.replace("_", " ").replace("-", " ").title()
+                clean_title = stem if stem and not stem.lower().startswith("img") else f"Artisan Confection #{job_id[:6].upper()}"
 
-            flavour = (ai_data.get("flavour") if ai_data and ai_data.get("flavour") and ai_data.get("flavour").lower() not in ("not specified", "unknown", "none") else None) or "Madagascar Bourbon Vanilla Bean & Fresh Cream"
-            description = (ai_data.get("description") if ai_data else None) or "An exquisite handcrafted luxury confection prepared with pure artisanal ingredients."
+            if opt_flavour:
+                flavour = opt_flavour
+            elif ai_data and ai_data.get("flavour") and ai_data.get("flavour").lower() not in ("not specified", "unknown", "none"):
+                flavour = ai_data["flavour"]
+            else:
+                flavour = "Artisanal Confectionery Flavour Selection"
+
+            if opt_description:
+                description = opt_description
+            elif ai_data and ai_data.get("description"):
+                description = ai_data["description"]
+            else:
+                description = "An exquisite handcrafted luxury confection prepared with pure artisanal ingredients."
 
             category_id = opt_category_id
             if not category_id and ai_data and ai_data.get("category"):

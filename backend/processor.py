@@ -11,16 +11,21 @@ from backend.config import settings
 try:
     from rembg import remove, new_session
     REMBG_AVAILABLE = True
-    try:
-        # Pre-initialize session to avoid cold start latency
-        REMBG_SESSION = new_session("u2netp")
-    except Exception as e:
-        print(f"[Processor] Could not load specific rembg session: {e}. Will use default remove.")
-        REMBG_SESSION = None
+    REMBG_SESSION = None  # Lazily initialized on first use to prevent blocking imports
 except ImportError:
     REMBG_AVAILABLE = False
     REMBG_SESSION = None
     print("[Processor] rembg not installed. Fallback background processor will be active.")
+
+def _get_rembg_session():
+    global REMBG_SESSION
+    if REMBG_AVAILABLE and REMBG_SESSION is None:
+        try:
+            REMBG_SESSION = new_session("u2netp")
+        except Exception as e:
+            print(f"[Processor] Could not load specific rembg session: {e}. Will use default remove.")
+            REMBG_SESSION = False
+    return REMBG_SESSION if REMBG_SESSION is not False else None
 
 class ImageProcessor:
     def __init__(self):
@@ -60,8 +65,9 @@ class ImageProcessor:
                 input_image.save(buf, format="PNG")
                 img_bytes = buf.getvalue()
                 
-                if REMBG_SESSION:
-                    result_bytes = remove(img_bytes, session=REMBG_SESSION)
+                sess = _get_rembg_session()
+                if sess:
+                    result_bytes = remove(img_bytes, session=sess)
                 else:
                     result_bytes = remove(img_bytes)
                     

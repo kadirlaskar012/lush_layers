@@ -528,10 +528,11 @@ def interactive_wizard():
         print(" 14. " + Fore.BLUE + "🔄 Refresh Website Cache (Revalidate)" + Style.RESET_ALL)
         print(" 15. " + Fore.WHITE + "🩺 System Health Diagnostics" + Style.RESET_ALL)
         print(" 16. " + Fore.MAGENTA + "🔍 Run Multi-Tier Duplicate Fingerprint Backfill" + Style.RESET_ALL)
+        print(" 17. " + Fore.GREEN + Style.BRIGHT + "✏️  Modify Cake by Serial Number (#1001)" + Style.RESET_ALL)
         print("  0. " + Fore.WHITE + "❌ Exit" + Style.RESET_ALL)
         print()
         
-        choice = input(Fore.YELLOW + "Enter choice [0-16]: " + Style.RESET_ALL).strip()
+        choice = input(Fore.YELLOW + "Enter choice [0-17]: " + Style.RESET_ALL).strip()
         
         if choice == "0":
             print(Fore.CYAN + "\nExiting Lush Layers Master Control. Happy Baking!\n")
@@ -626,8 +627,12 @@ def interactive_wizard():
             action_backfill_fingerprints()
             input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
             
+        elif choice == "17":
+            action_modify_cake()
+            input(Fore.WHITE + "\nPress Enter to return to main menu..." + Style.RESET_ALL)
+            
         else:
-            warning("Invalid choice. Please enter a number from 0 to 16.")
+            warning("Invalid choice. Please enter a number from 0 to 17.")
             time.sleep(1)
 
 def action_interactive_add():
@@ -642,9 +647,9 @@ def action_interactive_add():
         error(f"File not found: {img_path}")
         return
         
-    # AI Analysis prompt
-    ai_choice = input(Fore.YELLOW + "Enable Google Gemini AI sensory copywriting? [Y/n]: " + Style.RESET_ALL).strip().lower()
-    use_ai = ai_choice != "n"
+    # AI Analysis prompt (Unticked/No by default as requested)
+    ai_choice = input(Fore.YELLOW + "Enable Google Gemini AI sensory copywriting? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
+    use_ai = ai_choice in ["y", "yes"]
     
     # Background removal prompt
     bg_choice = input(Fore.YELLOW + "Remove background & composite on studio white canvas? [Y/n]: " + Style.RESET_ALL).strip().lower()
@@ -653,7 +658,7 @@ def action_interactive_add():
     # Category selection
     cats = db.get_categories(active_only=True)
     print("\nSelect Category:")
-    print("  0. Auto-detect via AI")
+    print("  0. Auto-detect via AI (or first category if AI disabled)")
     for idx, c in enumerate(cats, 1):
         print(f"  {idx}. {c['name']}")
     cat_sel = input(Fore.YELLOW + f"Choose category [0-{len(cats)}]: " + Style.RESET_ALL).strip()
@@ -663,13 +668,13 @@ def action_interactive_add():
         selected_cat_id = cats[int(cat_sel) - 1]["id"]
         info(f"Selected category: {cats[int(cat_sel) - 1]['name']}")
     else:
-        info("Category will be auto-detected by AI.")
+        info("Category will be auto-assigned." if not use_ai else "Category will be auto-detected by AI.")
         
-    # Optional Manual Overrides
-    print("\n" + Fore.WHITE + Style.DIM + "(Optional) Press Enter on any prompt below to let AI automatically generate:" + Style.RESET_ALL)
-    custom_name = input(Fore.YELLOW + "Cake Title (or Enter for AI): " + Style.RESET_ALL).strip() or None
-    custom_flavour = input(Fore.YELLOW + "Flavour Profile (or Enter for AI): " + Style.RESET_ALL).strip() or None
-    custom_desc = input(Fore.YELLOW + "Artisan Description (or Enter for AI): " + Style.RESET_ALL).strip() or None
+    # Cake Metadata (Title, Flavour, Description)
+    print("\n" + Fore.WHITE + Style.DIM + "Cake Metadata (Enter details manually or leave blank for defaults/AI if enabled):" + Style.RESET_ALL)
+    custom_name = input(Fore.YELLOW + "Cake Title / Name (Optional): " + Style.RESET_ALL).strip() or None
+    custom_flavour = input(Fore.YELLOW + "Flavour Profile (Optional): " + Style.RESET_ALL).strip() or None
+    custom_desc = input(Fore.YELLOW + "Artisan Description (Optional): " + Style.RESET_ALL).strip() or None
     
     pub_choice = input(Fore.YELLOW + "\nPublish immediately to LIVE storefront? [y/N] (Default: Stage as pending review): " + Style.RESET_ALL).strip().lower()
     publish_now = pub_choice == "y"
@@ -736,8 +741,8 @@ def action_interactive_bulk():
     pub_choice = input(Fore.YELLOW + "Publish all immediately to LIVE storefront? [y/N] (Default: Stage as pending): " + Style.RESET_ALL).strip().lower()
     publish_now = pub_choice == "y"
     
-    ai_choice = input(Fore.YELLOW + "Run AI sensory copywriting for all images? [Y/n]: " + Style.RESET_ALL).strip().lower()
-    use_ai = ai_choice != "n"
+    ai_choice = input(Fore.YELLOW + "Run AI sensory copywriting for all images? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
+    use_ai = ai_choice in ["y", "yes"]
     
     confirm = input(Fore.GREEN + f"Ready to process {len(image_files)} images? [Y/n]: " + Style.RESET_ALL).strip().lower()
     if confirm == "n":
@@ -845,6 +850,97 @@ def action_delete(cake_id: str):
             error("Failed to delete cake record.")
     except Exception as e:
         error(f"Delete operation failed: {e}")
+
+def action_modify_cake(serial_query: Optional[str] = None):
+    print(Fore.GREEN + Style.BRIGHT + "\n=== ✏️ MODIFY CAKE BY SERIAL NUMBER (#1001) ===" + Style.RESET_ALL)
+    if not serial_query:
+        serial_query = input(Fore.YELLOW + "Enter Cake Serial Number (e.g. 1001, #1001) or Cake ID / Slug: " + Style.RESET_ALL).strip()
+    if not serial_query:
+        warning("No serial number provided.")
+        return
+
+    cake = db.find_cake_by_serial_or_id(serial_query)
+    if not cake:
+        error(f"Cake not found matching '{serial_query}'. Please check the serial number and try again.")
+        return
+
+    display_id = cake.get("display_id") or "N/A"
+    print("\n" + Fore.CYAN + "----------------------------------------------------------" + Style.RESET_ALL)
+    print(f"  {Fore.YELLOW}Serial Number:{Style.RESET_ALL} #{display_id}")
+    print(f"  {Fore.YELLOW}Cake ID:{Style.RESET_ALL}       {cake['id']}")
+    print(f"  {Fore.YELLOW}Title:{Style.RESET_ALL}         {Fore.WHITE}{Style.BRIGHT}{cake.get('name')}{Style.RESET_ALL}")
+    print(f"  {Fore.YELLOW}Slug:{Style.RESET_ALL}          {cake.get('slug')}")
+    print(f"  {Fore.YELLOW}Category:{Style.RESET_ALL}      {cake.get('category_name') or 'None'}")
+    print(f"  {Fore.YELLOW}Flavour:{Style.RESET_ALL}       {cake.get('flavour')}")
+    print(f"  {Fore.YELLOW}Status:{Style.RESET_ALL}        {cake.get('status', 'pending').upper()}")
+    print(f"  {Fore.YELLOW}Description:{Style.RESET_ALL}   {cake.get('description')}")
+    if cake.get('status') == 'published':
+        print(f"  {Fore.GREEN}Live URL:{Style.RESET_ALL}      http://localhost:3000/cakes/{cake.get('slug')}")
+    print(Fore.CYAN + "----------------------------------------------------------" + Style.RESET_ALL)
+    print(Fore.WHITE + Style.DIM + "Press Enter on any prompt below to keep the current value unchanged.\n" + Style.RESET_ALL)
+
+    new_title = input(Fore.YELLOW + f"New Title [{cake.get('name')}]: " + Style.RESET_ALL).strip()
+    new_flavour = input(Fore.YELLOW + f"New Flavour [{cake.get('flavour')}]: " + Style.RESET_ALL).strip()
+    
+    # Category selection
+    cats = db.get_categories(active_only=True)
+    print(Fore.YELLOW + f"\nCurrent Category: {cake.get('category_name') or 'None'}" + Style.RESET_ALL)
+    print("  0. Keep current category")
+    for idx, c in enumerate(cats, 1):
+        print(f"  {idx}. {c['name']}")
+    cat_sel = input(Fore.YELLOW + f"Choose new category [0-{len(cats)}] (Enter to keep current): " + Style.RESET_ALL).strip()
+    new_cat_id = None
+    if cat_sel.isdigit() and 1 <= int(cat_sel) <= len(cats):
+        new_cat_id = cats[int(cat_sel) - 1]["id"]
+        info(f"Category changed to: {cats[int(cat_sel) - 1]['name']}")
+
+    new_desc = input(Fore.YELLOW + f"New Description (Enter to keep current): " + Style.RESET_ALL).strip()
+
+    updates = {}
+    if new_title and new_title != cake.get("name"):
+        updates["name"] = new_title
+        import re
+        base_slug = re.sub(r'[^a-zA-Z0-9]+', '-', new_title.lower()).strip('-')
+        updates["slug"] = f"{base_slug}-{cake['id'][:6]}"
+    if new_flavour and new_flavour != cake.get("flavour"):
+        updates["flavour"] = new_flavour
+    if new_cat_id and new_cat_id != cake.get("category_id"):
+        updates["category_id"] = new_cat_id
+    if new_desc and new_desc != cake.get("description"):
+        updates["description"] = new_desc
+
+    if not updates:
+        info("No fields were changed. Keeping existing cake data.")
+        return
+
+    info("Saving updates to SQLite and Supabase PostgreSQL...")
+    updated_cake = db.update_cake(cake["id"], updates)
+    if not updated_cake:
+        error("Failed to update cake in database.")
+        return
+
+    # Trigger Next.js storefront revalidation so changes are live immediately
+    reval_paths = ["/", "/cakes", f"/cakes/{updated_cake.get('slug', '')}", "/categories"]
+    if cake.get("slug") and cake["slug"] != updated_cake.get("slug"):
+        reval_paths.append(f"/cakes/{cake['slug']}")
+    
+    info("Revalidating Next.js storefront cache for live visibility...")
+    revalidate_frontend(reval_paths)
+    
+    print("\n" + Fore.GREEN + Style.BRIGHT + "==========================================================")
+    print(f"  ✓ CAKE #{display_id} UPDATED & PUSHED LIVE!")
+    print("==========================================================" + Style.RESET_ALL)
+    print(f"  {Fore.CYAN}Title:{Style.RESET_ALL}       {Fore.WHITE}{Style.BRIGHT}{updated_cake.get('name')}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}Flavour:{Style.RESET_ALL}     {updated_cake.get('flavour')}")
+    print(f"  {Fore.CYAN}Category:{Style.RESET_ALL}    {updated_cake.get('category_name') or 'Assigned'}")
+    print(f"  {Fore.CYAN}Status:{Style.RESET_ALL}      {updated_cake.get('status', '').upper()}")
+    print(f"  {Fore.CYAN}Description:{Style.RESET_ALL} {updated_cake.get('description')}")
+    if updated_cake.get("status") == "published":
+        live_url = f"http://localhost:3000/cakes/{updated_cake.get('slug')}"
+        print(f"  {Fore.GREEN}Live Website:{Style.RESET_ALL} {Fore.CYAN}{live_url}{Style.RESET_ALL}")
+    else:
+        print(f"  {Fore.YELLOW}Admin Pending:{Style.RESET_ALL} http://localhost:3000/admin/cakes/pending")
+    print(Fore.GREEN + Style.BRIGHT + "==========================================================\n" + Style.RESET_ALL)
 
 def action_backfill_fingerprints():
     banner()
@@ -988,6 +1084,10 @@ def main():
     parser_del = subparsers.add_parser("delete", help="Permanently delete a cake")
     parser_del.add_argument("cake_id", help="Cake ID")
     
+    # Subcommand: modify
+    parser_mod = subparsers.add_parser("modify", help="Modify cake title, flavour, description & category by serial number (#1001)")
+    parser_mod.add_argument("serial", nargs="?", help="Cake Serial Number (e.g. 1001 or #1001) or Cake ID / Slug")
+    
     # Subcommand: revalidate
     subparsers.add_parser("revalidate", help="Trigger Next.js ISR cache revalidation")
     
@@ -1008,6 +1108,9 @@ def main():
     if not args.subcommand or args.subcommand == "interactive":
         interactive_wizard()
         return
+
+    if args.subcommand == "modify":
+        action_modify_cake(args.serial)
 
     if args.subcommand == "add":
         if not args.image_path:

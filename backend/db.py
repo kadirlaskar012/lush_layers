@@ -517,6 +517,74 @@ class Database:
         conn.close()
         return self._format_cake_dict(row)
 
+    def find_cake_by_serial_or_id(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        Searches for a cake using:
+        1. Serial number / display_id (e.g. '1001', '#1001', 'LL-1001')
+        2. Exact UUID ID (e.g. 'fbdc1138-...')
+        3. Slug (e.g. 'rosewater-strawberry-champagne-gateau')
+        4. Case-insensitive name substring
+        """
+        if not query:
+            return None
+            
+        clean_q = str(query).strip()
+        serial_digits = clean_q.lstrip("#").upper().replace("LL-", "").replace("LL", "").strip()
+        
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # 1. Try exact display_id match
+        if serial_digits:
+            cursor.execute("""
+                SELECT c.*, cat.name as category_name, cat.slug as category_slug
+                FROM cakes c
+                LEFT JOIN categories cat ON c.category_id = cat.id
+                WHERE c.display_id = ? OR c.display_id = ?
+            """, (serial_digits, f"#{serial_digits}"))
+            row = cursor.fetchone()
+            if row:
+                conn.close()
+                return self._format_cake_dict(row)
+                
+        # 2. Try ID match
+        cursor.execute("""
+            SELECT c.*, cat.name as category_name, cat.slug as category_slug
+            FROM cakes c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            WHERE c.id = ?
+        """, (clean_q,))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return self._format_cake_dict(row)
+
+        # 3. Try slug match
+        cursor.execute("""
+            SELECT c.*, cat.name as category_name, cat.slug as category_slug
+            FROM cakes c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            WHERE c.slug = ?
+        """, (clean_q.lower(),))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return self._format_cake_dict(row)
+
+        # 4. Try name match
+        cursor.execute("""
+            SELECT c.*, cat.name as category_name, cat.slug as category_slug
+            FROM cakes c
+            LEFT JOIN categories cat ON c.category_id = cat.id
+            WHERE LOWER(c.name) LIKE ?
+            LIMIT 1
+        """, (f"%{clean_q.lower()}%",))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return self._format_cake_dict(row)
+        return None
+
     def create_cake(self, cake_data: Dict[str, Any]) -> Dict[str, Any]:
         """Creates a pending cake. Mandatory: image_url. Status MUST start as 'pending'."""
         if not cake_data.get("image_url"):
@@ -687,7 +755,7 @@ class Database:
             pg_fields = []
             pg_params = []
             for k, v in updates.items():
-                if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status"):
+                if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status", "display_id"):
                     pg_fields.append(f"{k} = %s")
                     pg_params.append(v)
                 elif k in ("is_hero", "is_trending", "is_inspiration"):
