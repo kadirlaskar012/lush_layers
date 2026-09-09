@@ -20,10 +20,14 @@ export function getPool(): Pool {
       ssl: {
         rejectUnauthorized: false,
       },
-      max: 10,
+      max: process.env.NODE_ENV === "production" ? 3 : 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 3500,
+      connectionTimeoutMillis: 7000,
       keepAlive: true,
+    });
+
+    pool.on("error", (err) => {
+      console.error("[db.ts] Unexpected PostgreSQL pool client error:", err.message || err);
     });
   }
   return pool;

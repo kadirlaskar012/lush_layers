@@ -8,8 +8,11 @@ export async function syncCakeActionToLocal(
   action: "approve" | "publish" | "unpublish" | "reject" | "restore" | "dismiss-duplicate" | "delete" | "update",
   data?: any
 ) {
+  const backendBase = process.env.BACKEND_URL || (process.env.NODE_ENV !== "production" ? "http://127.0.0.1:8000" : null);
+  if (!backendBase) return;
+
   try {
-    let url = `http://127.0.0.1:8000/api/cakes/${encodeURIComponent(cakeId)}`;
+    let url = `${backendBase}/api/cakes/${encodeURIComponent(cakeId)}`;
     let method = "POST";
 
     if (action === "delete") {

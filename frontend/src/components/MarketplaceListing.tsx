@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, SlidersHorizontal, X, Sparkles, Cake as CakeIcon, RotateCcw } from "lucide-react";
 import { Cake, Category } from "../lib/types";
 import CakeCard from "./CakeCard";
@@ -28,6 +28,7 @@ export default function MarketplaceListing({
   title = "Our Signature Confections",
   subtitle = "Handcrafted with single-origin ingredients, fresh daily for your special moments.",
 }: MarketplaceListingProps) {
+  const [cakes, setCakes] = useState<Cake[]>(initialCakes || []);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState(initialCategorySlug);
   const [selectedFlavour, setSelectedFlavour] = useState(initialFlavour);
@@ -35,21 +36,41 @@ export default function MarketplaceListing({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   useBodyScrollLock(isMobileFilterOpen);
 
+  useEffect(() => {
+    if (initialCakes && initialCakes.length > 0) {
+      setCakes(initialCakes);
+    }
+  }, [initialCakes]);
+
+  // Client-side self-healing fallback: If initialCakes was empty on SSR, recover directly from API
+  useEffect(() => {
+    if (cakes.length === 0) {
+      fetch("/api/cakes?status=published")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: Cake[]) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setCakes(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [cakes.length]);
+
   // Extract unique flavours from cakes for the flavour filter dropdown
   const uniqueFlavours = useMemo(() => {
     const set = new Set<string>();
-    initialCakes.forEach((c) => {
+    cakes.forEach((c) => {
       if (c.flavour && c.flavour !== "Not specified") {
         const primary = c.flavour.split("&")[0].trim();
         if (primary) set.add(primary);
       }
     });
     return Array.from(set).slice(0, 12);
-  }, [initialCakes]);
+  }, [cakes]);
 
   // Filter and sort cakes in real-time
   const filteredCakes = useMemo(() => {
-    let result = [...initialCakes];
+    let result = [...cakes];
 
     // Search filter
     if (searchQuery.trim()) {

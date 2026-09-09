@@ -20,18 +20,22 @@ export async function PATCH(
       console.warn("Supabase curation update failed, falling back to local backend:", dbErr.message);
     }
 
-    // Also sync to local backend if running
-    try {
-      const res = await fetch(`http://localhost:8000/api/cakes/${id}/curation`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!cake && res.ok) {
-        const data = await res.json();
-        cake = data.cake;
-      }
-    } catch {}
+    // Also sync to local backend if running in dev or configured
+    const backendBase = process.env.BACKEND_URL || (process.env.NODE_ENV !== "production" ? "http://localhost:8000" : null);
+    if (backendBase) {
+      try {
+        const res = await fetch(`${backendBase}/api/cakes/${id}/curation`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(2000),
+        });
+        if (!cake && res.ok) {
+          const data = await res.json();
+          cake = data.cake;
+        }
+      } catch {}
+    }
 
     if (!cake) {
       throw new Error("Failed to update cake curation on database.");

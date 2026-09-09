@@ -13,10 +13,15 @@ export async function GET() {
         mode: "cloud_direct",
         stats,
       });
-    } catch (e) {
-      console.warn("API GET /api/system/status falling back to local backend:", e);
-      const res = await fetch("http://localhost:8000/api/system/status", { cache: "no-store" });
-      if (res.ok) return NextResponse.json(await res.json());
+    } catch (e: any) {
+      console.warn("API GET /api/system/status error from db:", e.message || e);
+      const backendBase = process.env.BACKEND_URL || (process.env.NODE_ENV !== "production" ? "http://localhost:8000" : null);
+      if (backendBase) {
+        try {
+          const res = await fetch(`${backendBase}/api/system/status`, { cache: "no-store", signal: AbortSignal.timeout(2000) });
+          if (res.ok) return NextResponse.json(await res.json());
+        } catch {}
+      }
       return NextResponse.json({
         success: true,
         status: "operational",
