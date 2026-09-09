@@ -40,17 +40,39 @@ export async function GET(req: NextRequest) {
         sortBy,
         placement,
       });
+
+      // If querying pending cakes, check local Python backend to guarantee newly ingested cakes appear instantly
+      if (status === "pending" || !status) {
+        try {
+          let localUrl = "http://127.0.0.1:8000/api/cakes";
+          if (status) localUrl += `?status=${encodeURIComponent(status)}`;
+          const localRes = await fetch(localUrl, { cache: "no-store", signal: AbortSignal.timeout(1500) });
+          if (localRes.ok) {
+            const localCakes = await localRes.json();
+            const existingIds = new Set((cakes || []).map((c: any) => String(c.id)));
+            const merged = [...(cakes || [])];
+            for (const lc of localCakes) {
+              if (!existingIds.has(String(lc.id))) {
+                merged.push(lc);
+                existingIds.add(String(lc.id));
+              }
+            }
+            return NextResponse.json(merged);
+          }
+        } catch {}
+      }
+
       return NextResponse.json(cakes);
     } catch (e) {
       console.warn("API GET /api/cakes admin falling back to local backend:", e);
       try {
-        let url = "http://localhost:8000/api/cakes";
+        let url = "http://127.0.0.1:8000/api/cakes";
         const q: string[] = [];
         if (status) q.push(`status=${encodeURIComponent(status)}`);
         if (categoryId) q.push(`category_id=${encodeURIComponent(categoryId)}`);
         if (search) q.push(`search=${encodeURIComponent(search)}`);
         if (q.length > 0) url += `?${q.join("&")}`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(2000) });
         if (res.ok) return NextResponse.json(await res.json());
       } catch {}
       return NextResponse.json([]);

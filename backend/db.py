@@ -79,14 +79,14 @@ class Database:
                     user=settings.SUPABASE_USER,
                     password=settings.SUPABASE_PASSWORD,
                     dbname=settings.SUPABASE_DB,
-                    connect_timeout=3
+                    connect_timeout=8
                 )
                 conn.autocommit = True
                 cur = conn.cursor()
                 cur.execute(sql, params)
                 conn.close()
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[DB][Sync Postgres Warning]: {e}")
         t = threading.Thread(target=_run, daemon=True)
         t.start()
 
@@ -963,11 +963,22 @@ class Database:
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
                 ai_metadata, created_at, updated_at, published_at,
-                is_hero, is_trending, is_inspiration, is_seasonal
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                display_id, is_hero, is_trending, is_inspiration, is_seasonal,
+                raw_hash, file_hash, phash, color_hist, is_duplicate,
+                duplicate_of_id, duplicate_of_display_id, duplicate_score, duplicate_reason
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s
+            )
             ON CONFLICT (slug) DO UPDATE SET
                 name = EXCLUDED.name,
                 image_url = EXCLUDED.image_url,
+                display_id = EXCLUDED.display_id,
+                status = EXCLUDED.status,
                 is_seasonal = EXCLUDED.is_seasonal,
                 updated_at = EXCLUDED.updated_at;
         """, (
@@ -985,10 +996,20 @@ class Database:
             now,
             now,
             None,
+            display_id,
             is_hero,
             is_trending,
             is_inspiration,
-            is_seasonal
+            is_seasonal,
+            raw_hash,
+            file_hash,
+            phash,
+            color_hist,
+            bool(is_duplicate),
+            duplicate_of_id,
+            duplicate_of_display_id,
+            duplicate_score,
+            duplicate_reason
         ))
 
         return self.get_cake_by_id(cake_id)

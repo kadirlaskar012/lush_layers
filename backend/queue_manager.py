@@ -335,6 +335,18 @@ class BackgroundJobQueue:
             )
             print(f"[Queue][{worker_name}] Successfully completed job {job_id} -> Cake '{created_cake['name']}' ({created_cake['status'].upper()})")
 
+            # Trigger Next.js revalidation so Admin Panel and storefront immediately update
+            try:
+                import httpx
+                async with httpx.AsyncClient(timeout=3.0) as client:
+                    for p in ["/admin/cakes/pending", "/admin", "/cakes", "/"]:
+                        await client.post(
+                            f"{settings.NEXTJS_URL}/api/revalidate",
+                            json={"path": p, "secret": settings.REVALIDATE_SECRET}
+                        )
+            except Exception:
+                pass
+
         except asyncio.CancelledError:
             print(f"[Queue][{worker_name}] Job {job_id} cancelled while processing.")
             db.update_job(job_id, status="cancelled", progress=0, error_message="Cancelled by user.")
