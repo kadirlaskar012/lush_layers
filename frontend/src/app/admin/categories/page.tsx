@@ -583,7 +583,7 @@ export default function AdminCategoriesPage() {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(4, 1fr)",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
                     gap: "0.5rem",
                   }}
                   id="icon-picker-grid"
@@ -698,7 +698,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* SECTION: CATEGORY DETAILS */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+              <div className="admin-form-grid-2col" style={{ marginBottom: "0.85rem" }}>
                 <div>
                   <label className="form-label" style={{ fontSize: "0.78rem" }}>Category Name *</label>
                   <input
@@ -737,7 +737,7 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              <div className="admin-form-grid-2col" style={{ marginBottom: "1.25rem" }}>
                 <div>
                   <label className="form-label" style={{ fontSize: "0.78rem" }}>Display Order (Sort Index)</label>
                   <input

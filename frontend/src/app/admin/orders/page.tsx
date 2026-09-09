@@ -315,7 +315,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Search */}
-        <div style={{ minWidth: "250px" }}>
+        <div style={{ flex: 1, minWidth: "min(100%, 260px)" }}>
           <input
             type="text"
             placeholder="Search by Enquiry # (e.g. LL-7492), name, phone, cake..."
@@ -364,301 +364,528 @@ export default function AdminOrdersPage() {
           </p>
         </div>
       ) : (
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-md)",
-            overflow: "hidden",
-            boxShadow: "var(--shadow-xs)",
-          }}
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                textAlign: "left",
-                fontSize: "0.82rem",
-              }}
-            >
-              <thead>
-                <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Enquiry Ref #</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Patron & Date</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Contact WhatsApp</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Confection</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Size / Portion</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Est. Delivery</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Preparation Status</th>
-                  <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600, textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEnquiries.map((enq) => {
-                  const badge = getStatusBadge(enq.status);
-                  const cleanPhone = enq.phone.replace(/[^0-9]/g, "");
+        <>
+          {/* DESKTOP TABLE VIEW (>= 768px) */}
+          <div
+            className="admin-orders-desktop-table"
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              overflow: "hidden",
+              boxShadow: "var(--shadow-xs)",
+            }}
+          >
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  textAlign: "left",
+                  fontSize: "0.82rem",
+                }}
+              >
+                <thead>
+                  <tr style={{ background: "var(--bg-cream)", borderBottom: "1px solid var(--border-subtle)" }}>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Enquiry Ref #</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Patron & Date</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Contact WhatsApp</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Confection</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Size / Portion</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Est. Delivery</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600 }}>Preparation Status</th>
+                    <th style={{ padding: "0.65rem 0.85rem", color: "var(--text-primary)", fontWeight: 600, textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEnquiries.map((enq) => {
+                    const badge = getStatusBadge(enq.status);
+                    const cleanPhone = enq.phone.replace(/[^0-9]/g, "");
 
-                  return (
-                    <tr
-                      key={enq.id}
-                      style={{
-                        borderBottom: "1px solid var(--border-light)",
-                        transition: "background 0.15s",
-                      }}
-                      className="admin-table-row"
-                    >
-                      {/* Enquiry Ref Number with Copy & Track link */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                          <span
-                            style={{
-                              fontFamily: "monospace",
-                              fontWeight: 800,
-                              color: "var(--gold-dark)",
-                              background: "var(--bg-cream)",
-                              border: "1px solid var(--gold-border)",
-                              padding: "0.15rem 0.5rem",
-                              borderRadius: "var(--radius-xs)",
-                              fontSize: "0.82rem",
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            {enq.enquiry_number || `#${enq.id.slice(0, 8)}`}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyRef(enq.enquiry_number || enq.id, enq.id)}
-                            title="Copy reference"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: copiedId === enq.id ? "#059669" : "var(--text-muted)",
-                              cursor: "pointer",
-                              padding: "2px",
-                              display: "inline-flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            {copiedId === enq.id ? <Check size={13} /> : <Copy size={13} />}
-                          </button>
-                          <Link
-                            href={`/track?ref=${encodeURIComponent(enq.enquiry_number || enq.id)}`}
-                            target="_blank"
-                            title="Open Customer Tracker"
-                            style={{ color: "var(--text-muted)", display: "inline-flex", alignItems: "center" }}
-                            className="icon-hover-lift"
-                          >
-                            <ExternalLink size={13} />
-                          </Link>
-                        </div>
-                      </td>
-
-                      {/* Customer & Timestamp */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{enq.customer_name}</div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                          {new Date(enq.created_at).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </td>
-
-                      {/* Phone with WhatsApp Link */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        {cleanPhone ? (
-                          <a
-                            href={`https://wa.me/${cleanPhone}?text=Hello%20${encodeURIComponent(enq.customer_name)}%2C%20this%20is%20Chef%20Tina%20from%20LUSH%20LAYERS%20regarding%20order%20${encodeURIComponent(enq.enquiry_number || "")}%20(${encodeURIComponent(enq.cake_name)}).`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              color: "var(--whatsapp)",
-                              textDecoration: "none",
-                              fontWeight: 600,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.35rem",
-                            }}
-                            className="icon-hover-pulse"
-                          >
-                            <WhatsAppIcon size={14} />
-                            <span>{enq.phone}</span>
-                          </a>
-                        ) : (
-                          <span style={{ color: "var(--text-muted)" }}>{enq.phone}</span>
-                        )}
-                      </td>
-
-                      {/* Cake & Flavour */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <div style={{ fontWeight: 600, color: "var(--gold-dark)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                          <Cake size={13} color="var(--gold-dark)" />
-                          <span>{enq.cake_name}</span>
-                        </div>
-                        <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
-                          {enq.flavour || "Chef's Signature"}
-                        </div>
-                        {enq.applied_promo_code && (
-                          <div
-                            style={{
-                              marginTop: "0.25rem",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.25rem",
-                              background: "#FEF3C7",
-                              border: "1px solid #FDE68A",
-                              color: "#B45309",
-                              padding: "0.1rem 0.45rem",
-                              borderRadius: "4px",
-                              fontSize: "0.68rem",
-                              fontWeight: 700,
-                            }}
-                          >
-                            <span>🏷️ {enq.applied_promo_code} ({enq.discount_percent || 5}% OFF{enq.promo_perk ? " + Perk" : ""})</span>
+                    return (
+                      <tr
+                        key={enq.id}
+                        style={{
+                          borderBottom: "1px solid var(--border-light)",
+                          transition: "background 0.15s",
+                        }}
+                        className="admin-table-row"
+                      >
+                        {/* Enquiry Ref Number with Copy & Track link */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                            <span
+                              style={{
+                                fontFamily: "monospace",
+                                fontWeight: 800,
+                                color: "var(--gold-dark)",
+                                background: "var(--bg-cream)",
+                                border: "1px solid var(--gold-border)",
+                                padding: "0.15rem 0.5rem",
+                                borderRadius: "var(--radius-xs)",
+                                fontSize: "0.82rem",
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              {enq.enquiry_number || `#${enq.id.slice(0, 8)}`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyRef(enq.enquiry_number || enq.id, enq.id)}
+                              title="Copy reference"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: copiedId === enq.id ? "#059669" : "var(--text-muted)",
+                                cursor: "pointer",
+                                padding: "2px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              {copiedId === enq.id ? <Check size={13} /> : <Copy size={13} />}
+                            </button>
+                            <Link
+                              href={`/track?ref=${encodeURIComponent(enq.enquiry_number || enq.id)}`}
+                              target="_blank"
+                              title="Open Customer Tracker"
+                              style={{ color: "var(--text-muted)", display: "inline-flex", alignItems: "center" }}
+                              className="icon-hover-lift"
+                            >
+                              <ExternalLink size={12} />
+                            </Link>
                           </div>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Size / Portion */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                        {/* Patron & Date */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{enq.customer_name}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                            {new Date(enq.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </div>
+                        </td>
+
+                        {/* Phone / Direct WhatsApp */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                            <span style={{ fontFamily: "monospace", color: "var(--text-secondary)" }}>{enq.phone}</span>
+                            <a
+                              href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                                `Hello ${enq.customer_name}, this is Lush Layers regarding your enquiry (${enq.enquiry_number || enq.id.slice(0, 8)}) for the ${enq.cake_name}.`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Chat on WhatsApp"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "22px",
+                                height: "22px",
+                                borderRadius: "50%",
+                                background: "#25D366",
+                                color: "#FFF",
+                                flexShrink: 0,
+                              }}
+                              className="icon-hover-lift"
+                            >
+                              <WhatsAppIcon size={12} color="#FFFFFF" />
+                            </a>
+                          </div>
+                        </td>
+
+                        {/* Confection & Flavour */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            <Cake size={13} style={{ color: "var(--gold-dark)", flexShrink: 0 }} />
+                            <span>{enq.cake_name}</span>
+                          </div>
+                          {enq.flavour && (
+                            <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontStyle: "italic", marginLeft: "1.1rem" }}>
+                              {enq.flavour}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Size / Portion */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
                           <span
                             style={{
-                              fontSize: "0.74rem",
-                              padding: "0.15rem 0.55rem",
+                              display: "inline-block",
                               background: "var(--bg-cream)",
                               border: "1px solid var(--border-subtle)",
+                              padding: "0.15rem 0.5rem",
                               borderRadius: "var(--radius-full)",
-                              color: "var(--text-primary)",
+                              fontSize: "0.75rem",
                               fontWeight: 600,
-                              whiteSpace: "nowrap",
+                              color: "var(--text-primary)",
                             }}
                           >
-                            {enq.selected_size || "1.0 kg"}
+                            {enq.selected_size || "1.0 kg (Standard)"}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditModal(enq)}
-                            title="Edit Portion Size"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--gold-dark)",
-                              cursor: "pointer",
-                              padding: "2px",
-                              display: "inline-flex",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Edit size={12} />
-                          </button>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Estimated Delivery Date */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        {enq.delivery_date ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "var(--text-primary)", fontWeight: 500, fontSize: "0.76rem" }}>
-                            <Calendar size={12} color="var(--gold-dark)" />
-                            <span>{enq.delivery_date}</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditModal(enq)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-muted)",
-                              cursor: "pointer",
-                              fontSize: "0.74rem",
-                              fontStyle: "italic",
-                              textDecoration: "underline",
-                            }}
-                          >
-                            + Set Date
-                          </button>
-                        )}
-                      </td>
+                        {/* Delivery Date */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          {enq.delivery_date ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", color: "var(--gold-dark)", fontWeight: 600, fontSize: "0.75rem" }}>
+                              <Calendar size={12} />
+                              <span>{formatReadableDate(enq.delivery_date)}</span>
+                            </div>
+                          ) : (
+                            <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", fontStyle: "italic" }}>
+                              Not scheduled
+                            </span>
+                          )}
+                          {enq.admin_notes && (
+                            <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "0.15rem", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={enq.admin_notes}>
+                              📝 {enq.admin_notes}
+                            </div>
+                          )}
+                        </td>
 
-                      {/* Status Dropdown */}
-                      <td style={{ padding: "0.65rem 0.85rem" }}>
-                        <select
-                          value={enq.status}
-                          onChange={(e) => handleStatusChange(enq.id, e.target.value)}
-                          disabled={actionLoading === enq.id}
-                          style={{
-                            background: badge.bg,
-                            color: badge.text,
-                            border: `1px solid ${badge.border}`,
-                            borderRadius: "var(--radius-full)",
-                            padding: "0.25rem 0.6rem",
-                            fontSize: "0.74rem",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            outline: "none",
-                          }}
-                          id={`status-select-${enq.id}`}
-                        >
-                          <option value="New">1. New Enquiry</option>
-                          <option value="Contacted">2. Contacted</option>
-                          <option value="Confirmed">3. Confirmed</option>
-                          <option value="Baking">4. In Pastry Kitchen (Baking)</option>
-                          <option value="Ready">5. Ready for Handover</option>
-                          <option value="Delivered">6. Delivered / Celebrated</option>
-                          <option value="Cancelled">✕ Cancelled</option>
-                        </select>
-                      </td>
+                        {/* Status dropdown */}
+                        <td style={{ padding: "0.65rem 0.85rem" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                            <select
+                              value={enq.status}
+                              onChange={(e) => handleStatusChange(enq.id, e.target.value)}
+                              disabled={actionLoading === enq.id}
+                              style={{
+                                background: badge.bg,
+                                color: badge.text,
+                                border: `1px solid ${badge.border}`,
+                                borderRadius: "var(--radius-full)",
+                                padding: "0.22rem 0.55rem",
+                                fontSize: "0.73rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                outline: "none",
+                              }}
+                              className="admin-status-select"
+                            >
+                              <option value="New">New</option>
+                              <option value="Contacted">Contacted</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Baking">Baking</option>
+                              <option value="Ready">Ready</option>
+                              <option value="Delivered">Delivered</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                            {actionLoading === enq.id && <RotateCw size={12} className="spin" style={{ color: "var(--gold-dark)" }} />}
+                          </div>
+                        </td>
 
-                      {/* Actions */}
-                      <td style={{ padding: "0.65rem 0.85rem", textAlign: "right" }}>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
-                          <button
-                            onClick={() => handleOpenEditModal(enq)}
-                            title="Edit Order Details & Kitchen Notes"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--gold-dark)",
-                              cursor: "pointer",
-                              padding: "0.25rem",
-                              display: "inline-flex",
-                              alignItems: "center",
-                            }}
-                            className="icon-hover-lift"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(enq.id)}
-                            disabled={actionLoading === enq.id}
-                            title="Delete enquiry"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "#EF4444",
-                              cursor: "pointer",
-                              padding: "0.25rem",
-                              display: "inline-flex",
-                              alignItems: "center",
-                            }}
-                            className="icon-hover-lift"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {/* Action Buttons: Edit Modal & Delete */}
+                        <td style={{ padding: "0.65rem 0.85rem", textAlign: "right" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.4rem" }}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(enq)}
+                              title="Edit Portion & Schedule Date"
+                              style={{
+                                background: "var(--bg-cream)",
+                                border: "1px solid var(--border-subtle)",
+                                color: "var(--gold-dark)",
+                                borderRadius: "var(--radius-xs)",
+                                cursor: "pointer",
+                                padding: "0.28rem 0.55rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                                fontSize: "0.74rem",
+                                fontWeight: 600,
+                              }}
+                              className="icon-hover-lift"
+                            >
+                              <Edit size={12} />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(enq.id)}
+                              title="Delete enquiry record"
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "#EF4444",
+                                cursor: "pointer",
+                                padding: "0.25rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                              }}
+                              className="icon-hover-lift"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* MOBILE CARDS VIEW (< 768px) */}
+          <div className="admin-orders-mobile-cards">
+            {filteredEnquiries.map((enq) => {
+              const badge = getStatusBadge(enq.status);
+              const cleanPhone = enq.phone.replace(/[^0-9]/g, "");
+
+              return (
+                <div key={enq.id} className="admin-order-card">
+                  {/* Top Bar: Ref Number & Status */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.4rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <span
+                        style={{
+                          fontFamily: "monospace",
+                          fontWeight: 800,
+                          color: "var(--gold-dark)",
+                          background: "var(--bg-cream)",
+                          border: "1px solid var(--gold-border)",
+                          padding: "0.2rem 0.5rem",
+                          borderRadius: "var(--radius-xs)",
+                          fontSize: "0.85rem",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {enq.enquiry_number || `#${enq.id.slice(0, 8)}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyRef(enq.enquiry_number || enq.id, enq.id)}
+                        title="Copy reference"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: copiedId === enq.id ? "#059669" : "var(--text-muted)",
+                          cursor: "pointer",
+                          padding: "3px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        {copiedId === enq.id ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                      <Link
+                        href={`/track?ref=${encodeURIComponent(enq.enquiry_number || enq.id)}`}
+                        target="_blank"
+                        title="Open Customer Tracker"
+                        style={{ color: "var(--gold-dark)", display: "inline-flex", alignItems: "center", fontSize: "0.75rem", textDecoration: "none", gap: "0.2rem" }}
+                      >
+                        <ExternalLink size={13} />
+                        <span>Track</span>
+                      </Link>
+                    </div>
+
+                    <span
+                      style={{
+                        background: badge.bg,
+                        color: badge.text,
+                        border: `1px solid ${badge.border}`,
+                        padding: "0.2rem 0.6rem",
+                        borderRadius: "var(--radius-full)",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {enq.status}
+                    </span>
+                  </div>
+
+                  {/* Patron Info & Quick WhatsApp CTA */}
+                  <div
+                    style={{
+                      background: "var(--bg-cream)",
+                      padding: "0.65rem 0.75rem",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border-subtle)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>
+                        {enq.customer_name}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                        {enq.phone} • {new Date(enq.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </div>
+                    </div>
+
+                    <a
+                      href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                        `Hello ${enq.customer_name}, this is Lush Layers regarding your enquiry (${enq.enquiry_number || enq.id.slice(0, 8)}) for the ${enq.cake_name}.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem",
+                        background: "#25D366",
+                        color: "#FFFFFF",
+                        padding: "0.35rem 0.65rem",
+                        borderRadius: "var(--radius-full)",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        textDecoration: "none",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <WhatsAppIcon size={14} color="#FFFFFF" />
+                      <span>WhatsApp</span>
+                    </a>
+                  </div>
+
+                  {/* Confection & Details */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                      <Cake size={15} style={{ color: "var(--gold-dark)", flexShrink: 0 }} />
+                      <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>
+                        {enq.cake_name}
+                      </span>
+                    </div>
+                    {enq.flavour && (
+                      <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", fontStyle: "italic", paddingLeft: "1.3rem" }}>
+                        {enq.flavour}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", paddingLeft: "1.3rem", marginTop: "0.15rem" }}>
+                      <span
+                        style={{
+                          background: "var(--bg-cream)",
+                          border: "1px solid var(--border-subtle)",
+                          padding: "0.15rem 0.5rem",
+                          borderRadius: "var(--radius-full)",
+                          fontSize: "0.74rem",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        {enq.selected_size || "1.0 kg (Standard)"}
+                      </span>
+                      {enq.delivery_date && (
+                        <span
+                          style={{
+                            background: "#FEF3C7",
+                            border: "1px solid #FCD34D",
+                            color: "#92400E",
+                            padding: "0.15rem 0.5rem",
+                            borderRadius: "var(--radius-full)",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                          }}
+                        >
+                          <Calendar size={11} />
+                          <span>{formatReadableDate(enq.delivery_date)}</span>
+                        </span>
+                      )}
+                    </div>
+                    {enq.admin_notes && (
+                      <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", background: "var(--gold-soft)", padding: "0.35rem 0.55rem", borderRadius: "var(--radius-xs)", border: "1px solid var(--gold-border)", marginTop: "0.25rem" }}>
+                        <strong>Note:</strong> {enq.admin_notes}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status update & Actions Footer */}
+                  <div
+                    style={{
+                      borderTop: "1px solid var(--border-light)",
+                      paddingTop: "0.6rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <select
+                        value={enq.status}
+                        onChange={(e) => handleStatusChange(enq.id, e.target.value)}
+                        disabled={actionLoading === enq.id}
+                        className="form-input"
+                        style={{
+                          width: "100%",
+                          padding: "0.4rem 0.5rem",
+                          fontSize: "0.78rem",
+                          fontWeight: 600,
+                          background: badge.bg,
+                          color: badge.text,
+                          border: `1px solid ${badge.border}`,
+                          borderRadius: "var(--radius-xs)",
+                        }}
+                      >
+                        <option value="New">1. New Enquiry</option>
+                        <option value="Contacted">2. Contacted</option>
+                        <option value="Confirmed">3. Confirmed</option>
+                        <option value="Baking">4. Baking in Kitchen</option>
+                        <option value="Ready">5. Ready for Pickup</option>
+                        <option value="Delivered">6. Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(enq)}
+                      style={{
+                        background: "var(--bg-cream)",
+                        border: "1px solid var(--border-subtle)",
+                        color: "var(--gold-dark)",
+                        borderRadius: "var(--radius-xs)",
+                        padding: "0.4rem 0.65rem",
+                        fontSize: "0.78rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.3rem",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Edit size={13} />
+                      <span>Edit</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(enq.id)}
+                      title="Delete"
+                      style={{
+                        background: "#FEE2E2",
+                        border: "1px solid #FECACA",
+                        color: "#DC2626",
+                        borderRadius: "var(--radius-xs)",
+                        padding: "0.4rem 0.5rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Edit Order Modal */}

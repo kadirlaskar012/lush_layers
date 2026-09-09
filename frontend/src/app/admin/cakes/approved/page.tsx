@@ -674,7 +674,7 @@ export default function ApprovedCakesPage() {
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+            <div className="admin-form-grid-2col" style={{ marginBottom: "0.85rem" }}>
               <div className="form-group">
                 <label className="form-label">Category</label>
                 <select

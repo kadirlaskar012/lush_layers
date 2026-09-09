@@ -281,22 +281,23 @@ export default function AdminPromotionsPage() {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.35rem" }}>
             <span
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: "32px",
-                height: "32px",
+                width: "34px",
+                height: "34px",
                 borderRadius: "8px",
                 background: "var(--gold-soft)",
                 color: "var(--gold-dark)",
+                flexShrink: 0,
               }}
             >
               <Percent size={18} />
             </span>
-            <h1 style={{ fontSize: "1.6rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+            <h1 style={{ fontSize: "clamp(1.2rem, 3.5vw, 1.6rem)", fontWeight: 700, color: "var(--text-primary)", margin: 0, lineHeight: 1.25 }}>
               Promotional Offers & Homepage Posters
             </h1>
           </div>
@@ -798,9 +799,9 @@ export default function AdminPromotionsPage() {
 
             {/* FORM */}
             <form onSubmit={handleSave}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div className="admin-form-grid-2col">
                 {/* Title */}
-                <div style={{ gridColumn: "span 2" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <label className="admin-form-label">
                     Poster Title <span style={{ color: "#DC2626" }}>*</span>
                   </label>
@@ -897,7 +898,7 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 {/* Tagline */}
-                <div style={{ gridColumn: "span 2" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <label className="admin-form-label">Tagline (Highlighted Italic)</label>
                   <input
                     type="text"
@@ -909,7 +910,7 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 {/* Description */}
-                <div style={{ gridColumn: "span 2" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <label className="admin-form-label">Full Description</label>
                   <textarea
                     rows={3}
@@ -922,16 +923,16 @@ export default function AdminPromotionsPage() {
                 </div>
 
                 {/* Custom Poster Image Upload / URL */}
-                <div style={{ gridColumn: "span 2" }}>
+                <div style={{ gridColumn: "1 / -1" }}>
                   <label className="admin-form-label">Custom Poster Artwork Image</label>
-                  <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                     <input
                       type="text"
                       value={formImageUrl}
                       onChange={(e) => setFormImageUrl(e.target.value)}
                       placeholder="Paste image URL (e.g. /media/processed/poster.webp or https://...)"
                       className="admin-form-input"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, minWidth: "min(100%, 200px)" }}
                     />
                     <input
                       type="file"
@@ -945,7 +946,7 @@ export default function AdminPromotionsPage() {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingImage}
                       className="admin-btn-secondary"
-                      style={{ display: "flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap" }}
+                      style={{ display: "flex", alignItems: "center", gap: "0.4rem", whiteSpace: "nowrap", flexShrink: 0 }}
                     >
                       <Upload size={14} />
                       <span>{uploadingImage ? "Uploading..." : "Upload Poster"}</span>
@@ -959,42 +960,43 @@ export default function AdminPromotionsPage() {
                 {/* Checkboxes: New User Only & Active */}
                 <div
                   style={{
-                    gridColumn: "span 2",
+                    gridColumn: "1 / -1",
                     display: "flex",
-                    gap: "2rem",
+                    flexDirection: "column",
+                    gap: "0.85rem",
                     background: "var(--bg-main)",
                     padding: "0.85rem 1rem",
                     borderRadius: "8px",
                     border: "1px solid var(--border-subtle)",
                   }}
                 >
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.84rem" }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", cursor: "pointer", fontSize: "0.84rem" }}>
                     <input
                       type="checkbox"
                       checked={formIsNewUserOnly}
                       onChange={(e) => setFormIsNewUserOnly(e.target.checked)}
-                      style={{ width: "17px", height: "17px", accentColor: "var(--gold)" }}
+                      style={{ width: "17px", height: "17px", accentColor: "var(--gold)", marginTop: "2px", flexShrink: 0 }}
                     />
                     <div>
                       <strong style={{ display: "block", color: "var(--text-primary)" }}>
                         New Customer Only (First Order Auto-Apply)
                       </strong>
-                      <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+                      <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)", display: "block", marginTop: "1px" }}>
                         Auto-detects when new mobile number is typed during enquiry. Rejects returning numbers.
                       </span>
                     </div>
                   </label>
 
-                  <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", fontSize: "0.84rem" }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", cursor: "pointer", fontSize: "0.84rem" }}>
                     <input
                       type="checkbox"
                       checked={formIsActive}
                       onChange={(e) => setFormIsActive(e.target.checked)}
-                      style={{ width: "17px", height: "17px", accentColor: "var(--gold)" }}
+                      style={{ width: "17px", height: "17px", accentColor: "var(--gold)", marginTop: "2px", flexShrink: 0 }}
                     />
                     <div>
                       <strong style={{ display: "block", color: "var(--text-primary)" }}>Active on Storefront</strong>
-                      <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+                      <span style={{ fontSize: "0.74rem", color: "var(--text-secondary)", display: "block", marginTop: "1px" }}>
                         Visible on homepage animated poster rotator.
                       </span>
                     </div>

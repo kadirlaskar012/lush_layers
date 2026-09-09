@@ -1997,6 +1997,57 @@ body.modal-open-scroll-locked {
   font-weight: 600;
 }
 
+/* Admin Form Elements */
+.admin-form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.02em;
+}
+
+.admin-form-input {
+  width: 100%;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  transition: var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.admin-form-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(184, 142, 62, 0.15);
+  background: #FFFFFF;
+}
+
+.admin-btn-secondary {
+  background: var(--bg-cream);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: var(--transition-fast);
+}
+
+.admin-btn-secondary:hover {
+  background: var(--bg-surface);
+  border-color: var(--gold-border);
+  color: var(--gold-dark);
+}
+
 /* Admin Compact Stat Cards */
 .admin-stat-card {
   background: var(--bg-surface);
@@ -2293,6 +2344,79 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .admin-mobile-header {
     display: flex !important;
   }
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    padding: 0.85rem 0.75rem !important;
+  }
+}
+
+/* Admin Responsive Orders View */
+.admin-orders-desktop-table {
+  display: block;
+}
+.admin-orders-mobile-cards {
+  display: none;
+}
+@media (max-width: 768px) {
+  .admin-orders-desktop-table {
+    display: none !important;
+  }
+  .admin-orders-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+}
+
+/* Responsive Form Grids for Admin Modals */
+.admin-form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+@media (min-width: 640px) {
+  .admin-form-grid-2col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-form-grid-3col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .admin-form-grid-3col {
+    grid-template-columns: 100px 1fr 1fr;
+  }
+}
+
+/* Mobile modal padding optimization */
+@media (max-width: 640px) {
+  .modal-container {
+    padding: 1.1rem !important;
+    margin: 0.5rem !important;
+    max-height: 94vh !important;
+  }
+}
+
+/* Admin Order Card for Mobile View */
+.admin-order-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.admin-order-card:hover {
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ==========================================================================

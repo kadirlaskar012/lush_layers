@@ -1169,7 +1169,7 @@ export default function AdminCakesManagementPage() {
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+            <div className="admin-form-grid-3col" style={{ marginBottom: "0.85rem" }}>
               <div className="form-group">
                 <label className="form-label">ID (4-Digit)</label>
                 <input

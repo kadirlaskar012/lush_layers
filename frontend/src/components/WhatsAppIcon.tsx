@@ -4,15 +4,16 @@ interface WhatsAppIconProps {
   size?: number;
   className?: string;
   style?: React.CSSProperties;
+  color?: string;
 }
 
-export default function WhatsAppIcon({ size = 16, className = "", style }: WhatsAppIconProps) {
+export default function WhatsAppIcon({ size = 16, className = "", style, color }: WhatsAppIconProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="currentColor"
+      fill={color || "currentColor"}
       className={`icon-svg ${className}`}
       style={{ verticalAlign: "middle", ...style }}
       aria-hidden="true"
