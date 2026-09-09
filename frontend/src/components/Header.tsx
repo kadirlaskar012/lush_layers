@@ -117,9 +117,10 @@ export default function Header() {
               <span
                 style={{
                   fontFamily: "var(--font-editorial)",
-                  fontSize: "0.68rem",
-                  letterSpacing: "0.18em",
-                  color: "var(--gold)",
+                  fontSize: "0.72rem",
+                  letterSpacing: "0.14em",
+                  color: "var(--gold-dark)",
+                  fontWeight: 600,
                   fontStyle: "italic",
                   lineHeight: 1,
                   marginTop: "2px",
@@ -391,8 +392,9 @@ export default function Header() {
               <div
                 style={{
                   fontFamily: "var(--font-editorial)",
-                  fontSize: "0.75rem",
-                  color: "var(--gold)",
+                  fontSize: "0.78rem",
+                  color: "var(--gold-dark)",
+                  fontWeight: 600,
                   fontStyle: "italic",
                   marginTop: "2px",
                 }}

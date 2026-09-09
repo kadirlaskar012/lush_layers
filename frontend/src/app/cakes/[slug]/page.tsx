@@ -182,14 +182,16 @@ export default async function CakeDetailPage({ params }: CakeDetailPageProps) {
               </h1>
 
               <div
+                className="font-editorial"
                 style={{
-                  fontSize: "0.95rem",
-                  color: "var(--gold-dark)",
+                  fontSize: "1.05rem",
+                  color: "var(--text-secondary)",
                   fontStyle: "italic",
+                  fontWeight: 500,
                   marginBottom: "1rem",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.4rem",
+                  gap: "0.45rem",
                 }}
               >
                 <Sparkles size={15} color="var(--gold)" />

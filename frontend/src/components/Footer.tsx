@@ -70,9 +70,10 @@ export default function Footer() {
                 <span
                   style={{
                     fontFamily: "var(--font-editorial)",
-                    fontSize: "0.82rem",
-                    letterSpacing: "0.15em",
-                    color: "var(--gold)",
+                    fontSize: "0.85rem",
+                    letterSpacing: "0.12em",
+                    color: "var(--gold-dark)",
+                    fontWeight: 600,
                     fontStyle: "italic",
                     display: "block",
                     marginTop: "2px",

@@ -388,11 +388,13 @@ export default function HeroMasterworkRotator({
           </Link>
 
           <p
+            className="font-editorial"
             style={{
               margin: "0.2rem 0 0.85rem",
               fontStyle: "italic",
-              fontSize: "0.82rem",
-              color: "var(--gold-dark)",
+              fontSize: "0.88rem",
+              fontWeight: 500,
+              color: "var(--text-secondary)",
               lineHeight: 1.4,
               height: "1.4em",
               whiteSpace: "nowrap",

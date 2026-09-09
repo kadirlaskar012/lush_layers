@@ -282,8 +282,9 @@ export function AtelierFeaturedPoster({
               </h3>
 
               <p
+                className="font-editorial"
                 style={{
-                  fontSize: "0.84rem",
+                  fontSize: "0.88rem",
                   color: "var(--gold-dark)",
                   fontStyle: "italic",
                   fontWeight: 600,
