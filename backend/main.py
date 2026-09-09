@@ -309,13 +309,24 @@ async def list_jobs(limit: int = Query(50, ge=1, le=200)):
 @app.post("/api/jobs/clear")
 @app.delete("/api/jobs/clear")
 async def clear_job_history():
-    """Clears completed and failed job records from the queue."""
+    """Clears completed, failed, and cancelled job records from the queue."""
     conn = db._get_conn()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM processing_jobs WHERE status IN ('completed', 'failed')")
+    cursor.execute("DELETE FROM processing_jobs WHERE status IN ('completed', 'failed', 'cancelled')")
     conn.commit()
     conn.close()
+    if db.supabase:
+        try:
+            db.supabase.table("processing_jobs").delete().in_("status", ["completed", "failed", "cancelled"]).execute()
+        except Exception:
+            pass
     return {"message": "Job history cleared successfully."}
+
+@app.post("/api/jobs/cancel-all")
+async def cancel_all_jobs_endpoint():
+    """Cancels all active and queued jobs."""
+    count = await job_queue.cancel_all_queued()
+    return {"message": f"Successfully cancelled {count} active/queued job(s).", "cancelled_count": count}
 
 @app.get("/api/jobs/{job_id}")
 async def get_job_detail(job_id: str):
@@ -323,6 +334,20 @@ async def get_job_detail(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found.")
     return job
+
+@app.post("/api/jobs/{job_id}/cancel")
+@app.delete("/api/jobs/{job_id}")
+async def cancel_job_endpoint(job_id: str):
+    """Cancels a queued or currently processing job."""
+    success = await job_queue.cancel(job_id)
+    return {"message": "Job cancelled successfully.", "job_id": job_id, "success": success}
+
+@app.delete("/api/jobs/{job_id}/delete")
+async def delete_job_endpoint(job_id: str):
+    """Permanently removes a job record from queue history."""
+    await job_queue.cancel(job_id, unlink_file=True)
+    deleted = db.delete_job(job_id)
+    return {"message": "Job removed from queue.", "job_id": job_id, "deleted": deleted}
 
 @app.post("/api/jobs/{job_id}/retry")
 async def retry_job(job_id: str):
@@ -1400,9 +1425,41 @@ async def serve_lan_portal():
             flex-shrink: 0;
         }}
         .status-completed {{ background: var(--success-bg); color: #34D399; border: 1px solid rgba(16,185,129,0.3); }}
-        .status-processing, .status-uploading, .status-image_processed {{ background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }}
+        .status-processing, .status-uploading, .status-image_processed, .status-retrying {{ background: rgba(245,158,11,0.15); color: #FBBF24; border: 1px solid rgba(245,158,11,0.3); }}
         .status-queued {{ background: rgba(163,150,145,0.15); color: #D1D5DB; border: 1px solid rgba(163,150,145,0.3); }}
-        .status-failed {{ background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }}
+        .status-failed, .status-cancelled {{ background: rgba(239,68,68,0.15); color: #F87171; border: 1px solid rgba(239,68,68,0.3); }}
+
+        .btn-cancel-job {{
+            background: rgba(239, 68, 68, 0.12);
+            color: #F87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }}
+        .btn-cancel-job:hover {{
+            background: rgba(239, 68, 68, 0.25);
+            border-color: #F87171;
+            color: #FECACA;
+            transform: translateY(-1px);
+        }}
+
+        .icon-btn-danger {{
+            background: rgba(239, 68, 68, 0.12) !important;
+            border-color: rgba(239, 68, 68, 0.35) !important;
+            color: #F87171 !important;
+        }}
+        .icon-btn-danger:hover {{
+            background: rgba(239, 68, 68, 0.25) !important;
+            border-color: #F87171 !important;
+            color: #FECACA !important;
+        }}
 
         /* BEFORE / AFTER SIZE COMPARISON CHIP */
         .size-comparison-chip {{
@@ -1847,7 +1904,8 @@ async def serve_lan_portal():
                     <span>Queue & Live Activity</span>
                 </div>
                 <div class="queue-header-actions">
-                    <button class="icon-btn" onclick="clearJobHistory()" title="Clear finished jobs">Clear History</button>
+                    <button class="icon-btn icon-btn-danger" id="btnCancelAllQueued" onclick="cancelAllQueuedJobs()" title="Cancel all queued and active jobs" style="display: none;">✕ Cancel Queued (0)</button>
+                    <button class="icon-btn" onclick="clearJobHistory()" title="Clear finished and cancelled jobs">Clear History</button>
                     <button class="icon-btn" onclick="fetchJobs(true)" title="Refresh now">Refresh ⟳</button>
                 </div>
             </div>
@@ -2455,12 +2513,76 @@ async def serve_lan_portal():
         }}
 
         async function clearJobHistory() {{
-            if (!confirm("Are you sure you want to clear finished and failed jobs from queue history?")) return;
+            if (!confirm("Are you sure you want to clear finished, failed, and cancelled jobs from queue history?")) return;
             try {{
                 await fetch("/api/jobs/clear", {{ method: "POST" }});
                 lastJobsSignature = "";
                 fetchJobs(true);
             }} catch (e) {{}}
+        }}
+
+        async function cancelJob(jobId) {{
+            if (!confirm("Are you sure you want to cancel this processing job?")) return;
+            try {{
+                const resp = await fetch(`/api/jobs/${{jobId}}/cancel`, {{ method: "POST" }});
+                const data = await resp.json();
+                if (resp.ok) {{
+                    showToast("✓ Job cancelled successfully", "info");
+                    lastJobsSignature = "";
+                    fetchJobs(true);
+                }} else {{
+                    showToast(data.detail || "Could not cancel job", "warn");
+                }}
+            }} catch (err) {{
+                showToast("Network error cancelling job: " + err.message, "warn");
+            }}
+        }}
+
+        async function cancelAllQueuedJobs() {{
+            if (!confirm("Are you sure you want to cancel all queued and processing jobs?")) return;
+            try {{
+                const resp = await fetch("/api/jobs/cancel-all", {{ method: "POST" }});
+                const data = await resp.json();
+                if (resp.ok) {{
+                    showToast(`✓ Cancelled ${{data.cancelled_count || 0}} queued job(s)`, "info");
+                    lastJobsSignature = "";
+                    fetchJobs(true);
+                }} else {{
+                    showToast(data.detail || "Could not cancel jobs", "warn");
+                }}
+            }} catch (err) {{
+                showToast("Network error: " + err.message, "warn");
+            }}
+        }}
+
+        async function retryJob(jobId) {{
+            try {{
+                const resp = await fetch(`/api/jobs/${{jobId}}/retry`, {{ method: "POST" }});
+                const data = await resp.json();
+                if (resp.ok) {{
+                    showToast("✓ Job queued for retry", "info");
+                    lastJobsSignature = "";
+                    fetchJobs(true);
+                }} else {{
+                    showToast(data.detail || "Could not retry job", "warn");
+                }}
+            }} catch (err) {{
+                showToast("Network error: " + err.message, "warn");
+            }}
+        }}
+
+        async function deleteJob(jobId) {{
+            if (!confirm("Remove this job record from queue history?")) return;
+            try {{
+                const resp = await fetch(`/api/jobs/${{jobId}}/delete`, {{ method: "DELETE" }});
+                if (resp.ok) {{
+                    showToast("✓ Job removed from queue", "info");
+                    lastJobsSignature = "";
+                    fetchJobs(true);
+                }}
+            }} catch (err) {{
+                showToast("Network error: " + err.message, "warn");
+            }}
         }}
 
         // HIGH-FPS SMART DOM RECONCILIATION
@@ -2477,6 +2599,18 @@ async def serve_lan_portal():
                     document.getElementById('statPending').innerText = status.stats.pending || 0;
                     document.getElementById('statProcessing').innerText = status.stats.processing || 0;
                     document.getElementById('statPublished').innerText = status.stats.published || 0;
+                }}
+
+                // Update Cancel All Queued button state
+                const activeJobs = (jobs || []).filter(j => ['queued', 'processing', 'retrying', 'image_processed', 'uploading'].includes(j.status));
+                const btnCancelAll = document.getElementById('btnCancelAllQueued');
+                if (btnCancelAll) {{
+                    if (activeJobs.length > 0) {{
+                        btnCancelAll.style.display = 'inline-flex';
+                        btnCancelAll.innerText = `✕ Cancel Queued (${{activeJobs.length}})`;
+                    }} else {{
+                        btnCancelAll.style.display = 'none';
+                    }}
                 }}
 
                 // Compute signature to avoid unnecessary DOM replacements (120 FPS performance)
@@ -2502,6 +2636,9 @@ async def serve_lan_portal():
                     const procBytes = j.processed_size_bytes || (j.status === 'completed' ? Math.round(j.original_size_bytes * 0.08) : 0);
                     const procFormatted = formatBytes(procBytes);
                     const savings = calcSavings(j.original_size_bytes, procBytes);
+                    const isActive = ['queued', 'processing', 'retrying', 'image_processed', 'uploading'].includes(j.status);
+                    const isCancelled = j.status === 'cancelled';
+                    const isFailed = j.status === 'failed';
 
                     return `
                     <div class="job-card">
@@ -2513,7 +2650,14 @@ async def serve_lan_portal():
                                     <div class="job-text-sub">${{j.file_name}}</div>
                                 </div>
                             </div>
-                            <span class="status-pill status-${{j.status}}">${{j.status.replace('_', ' ')}}</span>
+                            <div style="display: flex; align-items: center; gap: 0.45rem;">
+                                ${{isActive ? `
+                                    <button type="button" class="btn-cancel-job" onclick="cancelJob('${{j.id}}')" title="Cancel this queued job">
+                                        ✕ Cancel
+                                    </button>
+                                ` : ''}}
+                                <span class="status-pill status-${{j.status}}">${{j.status.replace('_', ' ')}}</span>
+                            </div>
                         </div>
 
                         ${{j.status === 'completed' ? `
@@ -2524,6 +2668,14 @@ async def serve_lan_portal():
                                 <span class="size-tag-proc">After: <strong>${{procFormatted}}</strong></span>
                                 <span class="savings-badge">⚡ -${{savings}}% Saved</span>
                             </div>
+                        ` : isCancelled ? `
+                            <div style="font-size: 0.74rem; color: #F87171; margin: 0.35rem 0;">
+                                Original Size: <strong>${{origFormatted}}</strong> • Cancelled by user
+                            </div>
+                        ` : isFailed ? `
+                            <div style="font-size: 0.74rem; color: #F87171; margin: 0.35rem 0;">
+                                Original Size: <strong>${{origFormatted}}</strong> • Processing Failed
+                            </div>
                         ` : `
                             <div style="font-size: 0.74rem; color: var(--muted); margin: 0.35rem 0;">
                                 Original Size: <strong>${{origFormatted}}</strong> • Processing...
@@ -2531,7 +2683,7 @@ async def serve_lan_portal():
                         `}}
 
                         <div class="progress-track">
-                            <div class="progress-fill" style="width: ${{j.progress}}%;"></div>
+                            <div class="progress-fill" style="width: ${{j.progress}}%; ${{isCancelled || isFailed ? 'background: #EF4444;' : ''}}"></div>
                         </div>
 
                         ${{j.error_message ? `<div style="font-size: 0.75rem; color: #F87171; margin-top: 0.35rem;">${{j.error_message}}</div>` : ''}}
@@ -2543,6 +2695,15 @@ async def serve_lan_portal():
                                 </button>
                                 <button type="button" onclick="openWebsiteDestination('http://localhost:3000/admin', 'Admin Dashboard')" class="action-link">
                                     👑 Admin Dashboard ↗
+                                </button>
+                            </div>
+                        ` : (isFailed || isCancelled) ? `
+                            <div class="job-actions">
+                                <button type="button" onclick="retryJob('${{j.id}}')" class="action-link" style="color: var(--gold-light);">
+                                    🔄 Retry
+                                </button>
+                                <button type="button" onclick="deleteJob('${{j.id}}')" class="action-link" style="color: #F87171; border-color: rgba(239, 68, 68, 0.3);">
+                                    🗑️ Remove
                                 </button>
                             </div>
                         ` : ''}}

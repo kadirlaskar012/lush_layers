@@ -1496,7 +1496,7 @@ class Database:
         if status:
             fields.append("status = ?")
             params.append(status)
-            if status in ("completed", "failed"):
+            if status in ("completed", "failed", "cancelled"):
                 fields.append("completed_at = ?")
                 params.append(now)
         if progress is not None:
@@ -1525,7 +1525,7 @@ class Database:
                 if error_message is not None: payload["error_message"] = error_message
                 if cake_id is not None: payload["cake_id"] = cake_id
                 if processed_size_bytes is not None: payload["processed_size_bytes"] = processed_size_bytes
-                if status in ("completed", "failed"): payload["completed_at"] = now
+                if status in ("completed", "failed", "cancelled"): payload["completed_at"] = now
                 self.supabase.table("processing_jobs").update(payload).eq("id", job_id).execute()
             except Exception:
                 pass
@@ -1557,6 +1557,34 @@ class Database:
         rows = [dict(row) for row in cursor.fetchall()]
         conn.close()
         return rows
+
+    def get_active_jobs(self) -> List[Dict[str, Any]]:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT j.*, c.name as cake_name, c.image_url as cake_image_url
+            FROM processing_jobs j
+            LEFT JOIN cakes c ON j.cake_id = c.id
+            WHERE j.status IN ('queued', 'processing', 'retrying', 'image_processed', 'uploading')
+            ORDER BY j.created_at ASC
+        """)
+        rows = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+        return rows
+
+    def delete_job(self, job_id: str) -> bool:
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM processing_jobs WHERE id = ?", (job_id,))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        conn.close()
+        if self.supabase:
+            try:
+                self.supabase.table("processing_jobs").delete().eq("id", job_id).execute()
+            except Exception:
+                pass
+        return deleted
 
     # --- REVIEWS ---
     def get_reviews(self, status: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:

@@ -17,6 +17,8 @@ class BackgroundJobQueue:
         self.is_running = False
         self._file_paths: Dict[str, Path] = {}
         self._job_options: Dict[str, Dict[str, Any]] = {}
+        self._cancelled_jobs: set = set()
+        self._current_tasks: Dict[str, asyncio.Task] = {}
 
     def start(self):
         """Starts the background worker tasks."""
@@ -50,15 +52,54 @@ class BackgroundJobQueue:
         await self.queue.put(job_id)
         return job_id
 
+    async def cancel(self, job_id: str, unlink_file: bool = False) -> bool:
+        """Cancels a queued or currently processing job and marks it cancelled."""
+        self._cancelled_jobs.add(job_id)
+
+        # Cancel any active asyncio task running for this job
+        task = self._current_tasks.get(job_id)
+        if task and not task.done():
+            task.cancel()
+
+        # Update database status
+        db.update_job(job_id, status="cancelled", progress=0, error_message="Cancelled by user.")
+
+        if unlink_file:
+            f_path = self._file_paths.pop(job_id, None)
+            if not f_path:
+                job = db.get_job(job_id)
+                if job and job.get("file_name"):
+                    possible = settings.UPLOAD_DIR / job["file_name"]
+                    if possible.exists():
+                        f_path = possible
+            if f_path and f_path.exists() and "upload" in str(f_path).lower():
+                try:
+                    f_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
+        print(f"[Queue] Job {job_id} successfully cancelled by user.")
+        return True
+
+    async def cancel_all_queued(self) -> int:
+        """Cancels all currently queued or running jobs."""
+        active_jobs = db.get_active_jobs()
+        cancelled_count = 0
+        for j in active_jobs:
+            if j.get("status") in ("queued", "processing", "retrying", "image_processed", "uploading"):
+                await self.cancel(j["id"])
+                cancelled_count += 1
+        return cancelled_count
+
     async def retry(self, job_id: str) -> bool:
-        """Resets and retries a failed job."""
+        """Resets and retries a failed or cancelled job."""
         job = db.get_job(job_id)
         if not job:
             return False
         
+        self._cancelled_jobs.discard(job_id)
         file_path = self._file_paths.get(job_id)
         if not file_path or not file_path.exists():
-            # Check if original file exists in upload dir
             possible_path = settings.UPLOAD_DIR / job["file_name"]
             if possible_path.exists():
                 file_path = possible_path
@@ -76,9 +117,26 @@ class BackgroundJobQueue:
         while self.is_running:
             try:
                 job_id = await self.queue.get()
-                async with self.semaphore:
-                    await self._process_job(job_id, worker_name)
-                self.queue.task_done()
+                if job_id in self._cancelled_jobs:
+                    self._cancelled_jobs.discard(job_id)
+                    self.queue.task_done()
+                    continue
+
+                job = db.get_job(job_id)
+                if not job or job.get("status") == "cancelled":
+                    self.queue.task_done()
+                    continue
+
+                self._current_tasks[job_id] = asyncio.current_task()
+                try:
+                    async with self.semaphore:
+                        if job_id not in self._cancelled_jobs:
+                            await self._process_job(job_id, worker_name)
+                        else:
+                            self._cancelled_jobs.discard(job_id)
+                finally:
+                    self._current_tasks.pop(job_id, None)
+                    self.queue.task_done()
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -87,8 +145,11 @@ class BackgroundJobQueue:
 
     async def _process_job(self, job_id: str, worker_name: str):
         """Executes full processing pipeline for a single cake image."""
+        if job_id in self._cancelled_jobs:
+            return
+
         job = db.get_job(job_id)
-        if not job:
+        if not job or job.get("status") == "cancelled":
             return
 
         file_path = self._file_paths.get(job_id)
@@ -258,6 +319,9 @@ class BackgroundJobQueue:
                 }
             }
 
+            if job_id in self._cancelled_jobs:
+                return
+
             created_cake = db.create_cake(cake_record)
 
             # 7. Mark Job Completed with Before/After size tracking
@@ -271,6 +335,10 @@ class BackgroundJobQueue:
             )
             print(f"[Queue][{worker_name}] Successfully completed job {job_id} -> Cake '{created_cake['name']}' ({created_cake['status'].upper()})")
 
+        except asyncio.CancelledError:
+            print(f"[Queue][{worker_name}] Job {job_id} cancelled while processing.")
+            db.update_job(job_id, status="cancelled", progress=0, error_message="Cancelled by user.")
+            raise
         except Exception as e:
             err = f"Processing error: {str(e)}"
             print(f"[Queue][{worker_name}] Failed job {job_id}: {err}")
