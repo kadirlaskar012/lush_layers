@@ -17,6 +17,17 @@ export async function PATCH(
       revalidatePath("/categories");
       revalidatePath("/cakes");
     } catch {}
+
+    // Immediately notify local Python tools backend if active
+    try {
+      fetch("http://127.0.0.1:8000/api/categories/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(category),
+        signal: AbortSignal.timeout(800),
+      }).catch(() => {});
+    } catch {}
+
     return NextResponse.json({ message: "Category updated", category });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

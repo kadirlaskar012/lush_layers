@@ -19,9 +19,14 @@ class Database:
         self.db_path = settings.DB_PATH
         self.supabase: Optional[Any] = None
         self.postgres_connected: bool = False
+        self.last_category_sync: float = 0.0
         self._init_sqlite()
         self._init_supabase()
         self._check_postgres()
+        try:
+            self.sync_categories_from_cloud(force=True)
+        except Exception:
+            pass
 
     def _check_postgres(self):
         try:
@@ -426,7 +431,126 @@ class Database:
         conn.close()
 
     # --- CATEGORIES ---
-    def get_categories(self, active_only: bool = True) -> List[Dict[str, Any]]:
+    def sync_categories_from_cloud(self, force: bool = False) -> List[Dict[str, Any]]:
+        """
+        Synchronizes categories from Supabase PostgreSQL (or Next.js API) into local SQLite.
+        Ensures Python tools (CLI, Portal, Queue) immediately fetch newly added/updated categories from Admin Panel.
+        """
+        import time
+        now = time.time()
+        if not force and (now - getattr(self, "last_category_sync", 0.0)) < 8.0:
+            return self.get_categories(active_only=False, force_sync=False)
+
+        cloud_categories = []
+        # 1. Try Supabase PostgreSQL pooler via psycopg2
+        try:
+            import psycopg2
+            conn = psycopg2.connect(
+                host=settings.SUPABASE_HOST,
+                port=settings.SUPABASE_PORT,
+                user=settings.SUPABASE_USER,
+                password=settings.SUPABASE_PASSWORD,
+                dbname=settings.SUPABASE_DB,
+                connect_timeout=3
+            )
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT id, name, slug, description, image_url, icon, color, accent, active, sort_order, created_at, updated_at
+                FROM categories
+                ORDER BY sort_order ASC, name ASC
+            """)
+            col_names = [d[0] for d in cur.description]
+            for row in cur.fetchall():
+                cloud_categories.append(dict(zip(col_names, row)))
+            conn.close()
+        except Exception as e:
+            # 2. Fallback to Supabase REST client
+            if self.supabase:
+                try:
+                    res = self.supabase.table("categories").select("*").order("sort_order").execute()
+                    if res.data:
+                        cloud_categories = res.data
+                except Exception:
+                    pass
+            # 3. Fallback to Next.js API if running locally
+            if not cloud_categories:
+                try:
+                    import urllib.request
+                    req = urllib.request.Request(f"{settings.NEXTJS_URL}/api/categories?all=true", headers={"User-Agent": "LushLayers-Python"})
+                    with urllib.request.urlopen(req, timeout=2) as resp:
+                        if resp.status == 200:
+                            cloud_categories = json.loads(resp.read().decode())
+                except Exception:
+                    pass
+
+        if cloud_categories:
+            self._upsert_categories_into_sqlite(cloud_categories)
+            self.last_category_sync = now
+            print(f"[DB] Synced {len(cloud_categories)} categories from cloud into SQLite.")
+
+        return self.get_categories(active_only=False, force_sync=False)
+
+    def _upsert_categories_into_sqlite(self, categories: List[Dict[str, Any]]):
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        for cat in categories:
+            cat_id = str(cat.get("id"))
+            name = str(cat.get("name") or "").strip()
+            if not name:
+                continue
+            slug = str(cat.get("slug") or re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-'))
+            description = str(cat.get("description") or "")
+            image_url = str(cat.get("image_url") or "/categories/default.webp")
+            icon = str(cat.get("icon") or "Cake")
+            color = str(cat.get("color") or "#FAF6F0")
+            accent = str(cat.get("accent") or "#B88E3E")
+            raw_active = cat.get("active", True)
+            active = 1 if raw_active in (True, 1, "true", "t", "TRUE") else 0
+            sort_order = int(cat.get("sort_order") or 0)
+            c_at = str(cat.get("created_at") or now_iso)
+            u_at = str(cat.get("updated_at") or now_iso)
+
+            # Check if exists by id
+            cursor.execute("SELECT id FROM categories WHERE id = ?", (cat_id,))
+            exists_by_id = cursor.fetchone()
+            if exists_by_id:
+                cursor.execute("""
+                    UPDATE categories SET
+                        name = ?, slug = ?, description = ?, image_url = ?, icon = ?,
+                        color = ?, accent = ?, active = ?, sort_order = ?, updated_at = ?
+                    WHERE id = ?
+                """, (name, slug, description, image_url, icon, color, accent, active, sort_order, u_at, cat_id))
+            else:
+                # Check if exists by name or slug to avoid unique constraint collision
+                cursor.execute("SELECT id FROM categories WHERE name = ? OR slug = ?", (name, slug))
+                exists_by_name = cursor.fetchone()
+                if exists_by_name:
+                    cursor.execute("""
+                        UPDATE categories SET
+                            id = ?, name = ?, slug = ?, description = ?, image_url = ?, icon = ?,
+                            color = ?, accent = ?, active = ?, sort_order = ?, updated_at = ?
+                        WHERE id = ?
+                    """, (cat_id, name, slug, description, image_url, icon, color, accent, active, sort_order, u_at, exists_by_name["id"]))
+                else:
+                    cursor.execute("""
+                        INSERT INTO categories (id, name, slug, description, image_url, icon, color, accent, active, sort_order, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (cat_id, name, slug, description, image_url, icon, color, accent, active, sort_order, c_at, u_at))
+
+        conn.commit()
+        conn.close()
+
+    def get_categories(self, active_only: bool = True, force_sync: bool = False) -> List[Dict[str, Any]]:
+        import time
+        # Automatically sync if more than 10s since last sync or forced
+        if force_sync or (time.time() - getattr(self, "last_category_sync", 0.0)) > 10.0:
+            try:
+                self.sync_categories_from_cloud(force=force_sync)
+            except Exception:
+                pass
+
         conn = self._get_conn()
         cursor = conn.cursor()
         if active_only:
@@ -459,14 +583,15 @@ class Database:
         cat_id = data.get("id") or str(uuid.uuid4())
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
-        name = data["name"]
+        name = data["name"].strip()
         slug = data.get("slug") or re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
         description = data.get("description", "")
         image_url = data.get("image_url", "/categories/default.webp")
         icon = data.get("icon", "Cake")
         color = data.get("color", "#FAF6F0")
         accent = data.get("accent", "#B88E3E")
-        active = 1 if data.get("active", True) else 0
+        raw_active = data.get("active", True)
+        active = 1 if raw_active in (True, 1, "true", "t", "TRUE") else 0
         sort_order = int(data.get("sort_order", 0))
         
         cursor.execute("""
@@ -478,6 +603,28 @@ class Database:
         cursor.execute("SELECT * FROM categories WHERE id = ?", (cat_id,))
         row = cursor.fetchone()
         conn.close()
+
+        # Async sync to Postgres if connected
+        try:
+            pg_sql = """
+                INSERT INTO categories (id, name, slug, description, image_url, icon, color, accent, active, sort_order, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    name = EXCLUDED.name,
+                    slug = EXCLUDED.slug,
+                    description = EXCLUDED.description,
+                    image_url = EXCLUDED.image_url,
+                    icon = EXCLUDED.icon,
+                    color = EXCLUDED.color,
+                    accent = EXCLUDED.accent,
+                    active = EXCLUDED.active,
+                    sort_order = EXCLUDED.sort_order,
+                    updated_at = EXCLUDED.updated_at
+            """
+            self._sync_to_postgres(pg_sql, (cat_id, name, slug, description, image_url, icon, color, accent, bool(active), sort_order, now, now))
+        except Exception:
+            pass
+
         return dict(row)
 
     def update_category(self, cat_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:

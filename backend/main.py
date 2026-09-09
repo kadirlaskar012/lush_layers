@@ -1004,8 +1004,21 @@ class CategoryUpdateRequest(BaseModel):
     sort_order: Optional[int] = None
 
 @app.get("/api/categories")
-async def get_categories(all: bool = False):
+async def get_categories(all: bool = False, refresh: bool = False):
+    if refresh:
+        db.sync_categories_from_cloud(force=True)
     return db.get_categories(active_only=not all)
+
+@app.post("/api/categories/sync")
+async def sync_categories_webhook(payload: Optional[Dict[str, Any]] = None):
+    """Syncs categories from cloud immediately when notified by Next.js Admin Panel."""
+    try:
+        if payload and isinstance(payload, dict) and payload.get("name"):
+            db._upsert_categories_into_sqlite([payload])
+        cats = db.sync_categories_from_cloud(force=True)
+        return {"status": "ok", "count": len(cats)}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 @app.post("/api/categories")
 async def create_category(payload: CategoryCreateRequest):
@@ -1894,18 +1907,18 @@ async def serve_lan_portal():
                     </div>
                 </div>
 
-                <!-- Option 2: White Studio Background -->
-                <div class="option-item checked" id="optWhiteBgCard" onclick="toggleOption('optWhiteBg')">
+                <!-- Option 2: White Studio Background (Unticked by default) -->
+                <div class="option-item" id="optWhiteBgCard" onclick="toggleOption('optWhiteBg')">
                     <div class="custom-checkbox">
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </div>
-                    <input type="checkbox" id="optWhiteBg" checked style="display: none;">
+                    <input type="checkbox" id="optWhiteBg" style="display: none;">
                     <div class="option-content">
                         <div class="option-label-row">
                             <span class="option-label">Pure Studio White Background</span>
-                            <span class="option-badge">RemBG Studio</span>
+                            <span class="option-badge">RemBG Studio (Optional)</span>
                         </div>
-                        <div class="option-desc">AI রিমুভার দিয়ে মূল ব্যাকগ্রাউন্ড মুছে লাক্সারি পিওর হোয়াইট ব্যাকগ্রাউন্ড ও সফট কন্ট্যাক্ট শ্যাডো তৈরি করে।</div>
+                        <div class="option-desc">AI রিমুভার দিয়ে মূল ব্যাকগ্রাউন্ড মুছে লাক্সারি পিওর হোয়াইট ব্যাকগ্রাউন্ড ও সফট কন্ট্যাক্ট শ্যাডো তৈরি করে (Unticked = অরিজিনাল ব্যাকগ্রাউন্ড থাকবে)।</div>
                     </div>
                 </div>
 
@@ -2182,8 +2195,35 @@ async def serve_lan_portal():
             }};
             reader.readAsDataURL(first);
 
-            loadCategoriesDropdown();
+            resetOptionDefaults();
+            loadCategoriesDropdown(true);
             configModal.style.display = 'flex';
+        }}
+
+        function resetOptionDefaults() {{
+            // Option 1: Compression (TICKED by default)
+            const compressCb = document.getElementById('optCompress');
+            const compressCard = document.getElementById('optCompressCard');
+            if (compressCb) compressCb.checked = true;
+            if (compressCard) compressCard.classList.add('checked');
+
+            // Option 2: White Studio BG (UNTICKED by default)
+            const whiteBgCb = document.getElementById('optWhiteBg');
+            const whiteBgCard = document.getElementById('optWhiteBgCard');
+            if (whiteBgCb) whiteBgCb.checked = false;
+            if (whiteBgCard) whiteBgCard.classList.remove('checked');
+
+            // Option 3: Auto Focus (TICKED by default)
+            const autoFocusCb = document.getElementById('optAutoFocus');
+            const autoFocusCard = document.getElementById('optAutoFocusCard');
+            if (autoFocusCb) autoFocusCb.checked = true;
+            if (autoFocusCard) autoFocusCard.classList.add('checked');
+
+            // Option 4: AI Sensory (UNTICKED by default)
+            const aiCb = document.getElementById('optAi');
+            const aiCard = document.getElementById('optAiCard');
+            if (aiCb) aiCb.checked = false;
+            if (aiCard) aiCard.classList.remove('checked');
         }}
 
         function closeModal() {{
@@ -2193,6 +2233,8 @@ async def serve_lan_portal():
             const t = document.getElementById('modalCakeTitle'); if (t) t.value = '';
             const f = document.getElementById('modalCakeFlavour'); if (f) f.value = '';
             const d = document.getElementById('modalCakeDesc'); if (d) d.value = '';
+            const c = document.getElementById('categorySelect'); if (c) c.value = '';
+            resetOptionDefaults();
         }}
 
         function toggleOption(checkboxId) {{
@@ -2206,18 +2248,21 @@ async def serve_lan_portal():
             }}
         }}
 
-        async function loadCategoriesDropdown() {{
+        async function loadCategoriesDropdown(force = false) {{
             const selectEl = document.getElementById('categorySelect');
-            if (selectEl.options.length > 1) return;
+            if (!force && selectEl && selectEl.options.length > 1) return;
 
             try {{
-                const resp = await fetch('/api/categories');
+                const resp = await fetch('/api/categories?refresh=true');
                 if (resp.ok) {{
                     const categories = await resp.json();
+                    const currentVal = selectEl.value;
+                    selectEl.innerHTML = '<option value="">✨ Auto-Detect Category with AI (স্মার্ট অটো ডিটেক্ট)</option>';
                     categories.forEach(cat => {{
                         const opt = document.createElement('option');
                         opt.value = cat.id;
                         opt.textContent = `${{cat.name}}`;
+                        if (cat.id === currentVal) opt.selected = true;
                         selectEl.appendChild(opt);
                     }});
                 }}
@@ -2266,7 +2311,7 @@ async def serve_lan_portal():
                 const res = await resp.json();
 
                 closeModal();
-                showToast(`✓ ${{res.total_queued}} image(s) queued for parallel studio processing!`, 'success');
+                showToast(`✓ ${{res.total_queued}} image(s) successfully queued! Ready for next cakes.`, 'success');
                 fetchJobs(true);
             }} catch (err) {{
                 alert("Upload failed: " + err.message);
@@ -2293,15 +2338,17 @@ async def serve_lan_portal():
 
         async function loadModifyCategoriesDropdown() {{
             const selectEl = document.getElementById('modCakeCategory');
-            if (selectEl.options.length > 0) return;
             try {{
-                const resp = await fetch('/api/categories');
+                const resp = await fetch('/api/categories?refresh=true');
                 if (resp.ok) {{
                     const categories = await resp.json();
+                    const curVal = selectEl.value;
+                    selectEl.innerHTML = '';
                     categories.forEach(cat => {{
                         const opt = document.createElement('option');
                         opt.value = cat.id;
                         opt.textContent = `${{cat.name}}`;
+                        if (cat.id === curVal) opt.selected = true;
                         selectEl.appendChild(opt);
                     }});
                 }}
@@ -2399,15 +2446,6 @@ async def serve_lan_portal():
                 const updated = await resp.json();
                 closeModifyModal();
                 showToast(`✓ Cake #${{updated.display_id || ''}} "${{updated.name}}" updated live on website!`, 'success');
-
-                // If published, offer instant storefront view
-                if (updated.status === 'published') {{
-                    setTimeout(() => {{
-                        if (confirm(`Cake is live! Would you like to view it on the public storefront now?`)) {{
-                            openWebsiteDestination(`http://localhost:3000/cakes/${{updated.slug}}`, updated.name);
-                        }}
-                    }}, 500);
-                }}
             }} catch (e) {{
                 alert("Update failed: " + e.message);
             }} finally {{

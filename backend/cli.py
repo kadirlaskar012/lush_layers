@@ -651,12 +651,12 @@ def action_interactive_add():
     ai_choice = input(Fore.YELLOW + "Enable Google Gemini AI sensory copywriting? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
     use_ai = ai_choice in ["y", "yes"]
     
-    # Background removal prompt
-    bg_choice = input(Fore.YELLOW + "Remove background & composite on studio white canvas? [Y/n]: " + Style.RESET_ALL).strip().lower()
-    remove_bg = bg_choice != "n"
+    # Background removal prompt (Unticked/No by default as requested)
+    bg_choice = input(Fore.YELLOW + "Remove background & composite on studio white canvas? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
+    remove_bg = bg_choice in ["y", "yes"]
     
-    # Category selection
-    cats = db.get_categories(active_only=True)
+    # Category selection (auto-synced from Admin Panel)
+    cats = db.get_categories(active_only=True, force_sync=True)
     print("\nSelect Category:")
     print("  0. Auto-detect via AI (or first category if AI disabled)")
     for idx, c in enumerate(cats, 1):
@@ -743,6 +743,9 @@ def action_interactive_bulk():
     
     ai_choice = input(Fore.YELLOW + "Run AI sensory copywriting for all images? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
     use_ai = ai_choice in ["y", "yes"]
+
+    bg_choice = input(Fore.YELLOW + "Remove background & composite on studio white canvas for all? [y/N] (Default: Unticked/No): " + Style.RESET_ALL).strip().lower()
+    remove_bg = bg_choice in ["y", "yes"]
     
     confirm = input(Fore.GREEN + f"Ready to process {len(image_files)} images? [Y/n]: " + Style.RESET_ALL).strip().lower()
     if confirm == "n":
@@ -759,7 +762,7 @@ def action_interactive_bulk():
                 image_path=img_file,
                 publish=publish_now,
                 use_ai=use_ai,
-                remove_bg=True,
+                remove_bg=remove_bg,
                 interactive_verbose=False
             )
             success(f" -> Added: '{res['name']}' ({res['status'].upper()})")
@@ -800,7 +803,7 @@ def action_list_cakes(status: Optional[str] = None, limit: int = 50):
 
 def action_list_categories():
     banner()
-    cats = db.get_categories(active_only=False)
+    cats = db.get_categories(active_only=False, force_sync=True)
     print(Fore.WHITE + Style.BRIGHT + f"\n{'ID':<38} {'SORT':<6} {'NAME':<28} {'SLUG':<26} {'ACTIVE'}")
     print("-" * 105 + Style.RESET_ALL)
     
@@ -883,7 +886,7 @@ def action_modify_cake(serial_query: Optional[str] = None):
     new_flavour = input(Fore.YELLOW + f"New Flavour [{cake.get('flavour')}]: " + Style.RESET_ALL).strip()
     
     # Category selection
-    cats = db.get_categories(active_only=True)
+    cats = db.get_categories(active_only=True, force_sync=True)
     print(Fore.YELLOW + f"\nCurrent Category: {cake.get('category_name') or 'None'}" + Style.RESET_ALL)
     print("  0. Keep current category")
     for idx, c in enumerate(cats, 1):
