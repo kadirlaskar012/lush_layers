@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { getAdminStats } from "../lib/api";
 import { AdminStats } from "../lib/types";
@@ -59,23 +60,29 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
     },
     {
       href: "/admin/cakes/duplicates",
-      label: "Duplicate Review",
+      label: "Duplicate Checks",
       icon: <Copy size={16} strokeWidth={1.8} />,
       count: stats?.duplicates,
-      highlight: (stats?.duplicates || 0) > 0,
+      highlight: stats?.duplicates ? true : false,
     },
     {
       href: "/admin/cakes/approved",
-      label: "Approved & Published",
+      label: "Approved & Live",
       icon: <Sparkles size={16} strokeWidth={1.8} />,
       count: approvedTotalCount,
     },
-    { href: "/admin/cakes/rejected", label: "Rejected / Archive", icon: <ArchiveX size={16} strokeWidth={1.8} />, count: stats?.rejected },
+    {
+      href: "/admin/cakes/rejected",
+      label: "Rejected & Archived",
+      icon: <ArchiveX size={16} strokeWidth={1.8} />,
+      count: stats?.rejected,
+    },
     {
       href: "/admin/reviews",
-      label: "Reviews",
+      label: "Reviews Moderation",
       icon: <Star size={16} strokeWidth={1.8} />,
       count: stats?.pending_reviews,
+      highlight: stats?.pending_reviews ? true : false,
     },
     { href: "/admin/categories", label: "Categories", icon: <Tag size={16} strokeWidth={1.8} /> },
     { href: "/admin/upload", label: "Bulk Upload", icon: <Zap size={16} strokeWidth={1.8} /> },
@@ -119,32 +126,65 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
             borderBottom: "1px solid var(--border-light)",
           }}
         >
-          <Link href="/admin" style={{ textDecoration: "none" }} onClick={onCloseMobile}>
-            <span
+          <Link
+            href="/admin"
+            style={{
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.6rem",
+            }}
+            onClick={onCloseMobile}
+          >
+            <div
               style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.15rem",
-                letterSpacing: "0.12em",
-                color: "var(--text-primary)",
-                textTransform: "uppercase",
-                display: "block",
-                fontWeight: 700,
-                lineHeight: 1.1,
+                position: "relative",
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(51, 31, 20, 0.16)",
+                border: "1.5px solid rgba(191, 154, 62, 0.45)",
+                flexShrink: 0,
+                background: "#2A1810",
               }}
             >
-              LUSH LAYERS
-            </span>
-            <span
-              style={{
-                fontSize: "0.68rem",
-                letterSpacing: "0.15em",
-                color: "var(--gold-dark)",
-                textTransform: "uppercase",
-                fontWeight: 600,
-              }}
-            >
-              Management Atelier
-            </span>
+              <Image
+                src="/logo.png"
+                alt="LUSH LAYERS"
+                width={36}
+                height={36}
+                style={{ width: "100%", height: "100%", objectFit: "contain", aspectRatio: "1 / 1" }}
+              />
+            </div>
+            <div>
+              <span
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "1.1rem",
+                  letterSpacing: "0.1em",
+                  color: "var(--text-primary)",
+                  textTransform: "uppercase",
+                  display: "block",
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                }}
+              >
+                LUSH LAYERS
+              </span>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  letterSpacing: "0.14em",
+                  color: "var(--gold-dark)",
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                  display: "block",
+                }}
+              >
+                Management Atelier
+              </span>
+            </div>
           </Link>
 
           {/* Close button for mobile drawer */}

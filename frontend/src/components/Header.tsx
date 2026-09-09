@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -52,40 +53,81 @@ export default function Header() {
             alignItems: "center",
             justifyContent: "space-between",
             height: "58px",
-            gap: "1rem",
+            gap: "0.75rem",
           }}
         >
-          {/* Brand Logo - Compact & Elegant */}
+          {/* Brand Logo - Official Circular Emblem + Editorial Typography */}
           <Link
             href="/"
-            style={{ textDecoration: "none", display: "flex", flexDirection: "column" }}
+            style={{
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.6rem",
+              flexShrink: 0,
+            }}
             id="brand-logo-link"
           >
-            <span
+            <div
               style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "clamp(1.05rem, 4vw, 1.25rem)",
-                letterSpacing: "0.1em",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                textTransform: "uppercase",
-                lineHeight: 1.05,
-                whiteSpace: "nowrap",
+                position: "relative",
+                width: "40px",
+                height: "40px",
+                flexShrink: 0,
+                borderRadius: "50%",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(51, 31, 20, 0.18)",
+                border: "1.5px solid rgba(191, 154, 62, 0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#2A1810",
               }}
             >
-              LUSH LAYERS
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-editorial)",
-                fontSize: "0.7rem",
-                letterSpacing: "0.2em",
-                color: "var(--gold)",
-                fontStyle: "italic",
-              }}
-            >
-              Made with Love
-            </span>
+              <Image
+                src="/logo.png"
+                alt="LUSH LAYERS Logo"
+                width={40}
+                height={40}
+                priority
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                  aspectRatio: "1 / 1",
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "clamp(1rem, 3.8vw, 1.22rem)",
+                  letterSpacing: "0.09em",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  textTransform: "uppercase",
+                  lineHeight: 1.05,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                LUSH LAYERS
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-editorial)",
+                  fontSize: "0.68rem",
+                  letterSpacing: "0.18em",
+                  color: "var(--gold)",
+                  fontStyle: "italic",
+                  lineHeight: 1,
+                  marginTop: "2px",
+                }}
+              >
+                Made with Love
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -301,6 +343,65 @@ export default function Header() {
           }}
           id="mobile-navigation-drawer"
         >
+          {/* Mobile Drawer Brand Header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              paddingBottom: "0.85rem",
+              marginBottom: "0.35rem",
+              borderBottom: "1px solid var(--border-light)",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                overflow: "hidden",
+                boxShadow: "0 2px 10px rgba(51, 31, 20, 0.16)",
+                border: "1.5px solid rgba(191, 154, 62, 0.45)",
+                flexShrink: 0,
+                background: "#2A1810",
+              }}
+            >
+              <Image
+                src="/logo.png"
+                alt="LUSH LAYERS"
+                width={44}
+                height={44}
+                style={{ width: "100%", height: "100%", objectFit: "contain", aspectRatio: "1 / 1" }}
+              />
+            </div>
+            <div>
+              <div
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "1.05rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  color: "var(--text-primary)",
+                  lineHeight: 1.1,
+                }}
+              >
+                LUSH LAYERS
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-editorial)",
+                  fontSize: "0.75rem",
+                  color: "var(--gold)",
+                  fontStyle: "italic",
+                  marginTop: "2px",
+                }}
+              >
+                Made with Love • Kolkata
+              </div>
+            </div>
+          </div>
+
           <Link
             href="/cakes"
             onClick={() => setIsMobileMenuOpen(false)}

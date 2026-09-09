@@ -32,6 +32,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lushlayers.com"),
   title: "LUSH LAYERS • Made with Love • PB Road, Kolkata-41, India",
   description:
     "Exquisite bespoke celebration and wedding cakes crafted with passion by Tina Baidya. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp at +91 8768388868.",
@@ -45,11 +46,26 @@ export const metadata: Metadata = {
     "Belgian chocolate cakes",
     "haute patisserie",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "LUSH LAYERS • Luxury Artisanal Cakes • By Tina Baidya",
     description: "Bespoke handcrafted cakes made with love by Tina Baidya. Order directly on WhatsApp: +91 8768388868.",
     siteName: "LUSH LAYERS",
     type: "website",
+    images: [
+      {
+        url: "/logo.png",
+        width: 414,
+        height: 414,
+        alt: "LUSH LAYERS Official Brand Logo",
+      },
+    ],
   },
 };
 

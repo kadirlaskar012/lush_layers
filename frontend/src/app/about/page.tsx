@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import PublicLayout from "../../components/PublicLayout";
 import { Cookie, Flower2, Sparkles, MapPin } from "lucide-react";
 import WhatsAppIcon from "../../components/WhatsAppIcon";
@@ -18,6 +19,29 @@ export default function AboutPage() {
         <div className="container-lux">
           {/* Header - Compact */}
           <div style={{ textAlign: "center", maxWidth: "680px", margin: "0 auto 2rem" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
+              <div
+                style={{
+                  position: "relative",
+                  width: "84px",
+                  height: "84px",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  boxShadow: "0 6px 20px rgba(51, 31, 20, 0.22)",
+                  border: "2px solid rgba(191, 154, 62, 0.5)",
+                  background: "#2A1810",
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="LUSH LAYERS Seal"
+                  width={84}
+                  height={84}
+                  priority
+                  style={{ width: "100%", height: "100%", objectFit: "contain", aspectRatio: "1 / 1" }}
+                />
+              </div>
+            </div>
             <span className="cake-category-badge">Our Story & Philosophy</span>
             <h1 style={{ fontSize: "2rem", lineHeight: 1.2, marginBottom: "0.5rem", color: "var(--text-primary)" }}>
               Handcrafted with Passion, <br />

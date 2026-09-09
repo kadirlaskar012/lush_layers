@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import AdminSidebar from "./AdminSidebar";
 import { Menu } from "lucide-react";
 
@@ -44,17 +45,39 @@ export default function AdminLayoutWrapper({ children }: { children: React.React
           <span>Admin Menu</span>
         </button>
 
-        <span
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "1rem",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            color: "var(--text-primary)",
-          }}
-        >
-          LUSH LAYERS
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div
+            style={{
+              position: "relative",
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              overflow: "hidden",
+              border: "1px solid rgba(191, 154, 62, 0.4)",
+              flexShrink: 0,
+              background: "#2A1810",
+            }}
+          >
+            <Image
+              src="/logo.png"
+              alt="LUSH LAYERS"
+              width={28}
+              height={28}
+              style={{ width: "100%", height: "100%", objectFit: "contain", aspectRatio: "1 / 1" }}
+            />
+          </div>
+          <span
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "var(--text-primary)",
+            }}
+          >
+            LUSH LAYERS
+          </span>
+        </div>
       </div>
 
       <AdminSidebar isMobileOpen={isMobileOpen} onCloseMobile={() => setIsMobileOpen(false)} />

@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 
@@ -29,32 +30,58 @@ export default function Footer() {
         >
           {/* Brand Col */}
           <div>
-            <span
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.35rem",
-                letterSpacing: "0.12em",
-                color: "var(--text-primary)",
-                textTransform: "uppercase",
-                display: "block",
-                fontWeight: 700,
-              }}
-            >
-              LUSH LAYERS
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-editorial)",
-                fontSize: "0.85rem",
-                letterSpacing: "0.15em",
-                color: "var(--gold)",
-                fontStyle: "italic",
-                display: "block",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Made with Love • By Tina Baidya
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
+              <div
+                style={{
+                  position: "relative",
+                  width: "50px",
+                  height: "50px",
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 12px rgba(51, 31, 20, 0.16)",
+                  border: "1.5px solid rgba(191, 154, 62, 0.45)",
+                  flexShrink: 0,
+                  background: "#2A1810",
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="LUSH LAYERS"
+                  width={50}
+                  height={50}
+                  style={{ width: "100%", height: "100%", objectFit: "contain", aspectRatio: "1 / 1" }}
+                />
+              </div>
+              <div>
+                <span
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontSize: "1.3rem",
+                    letterSpacing: "0.12em",
+                    color: "var(--text-primary)",
+                    textTransform: "uppercase",
+                    display: "block",
+                    fontWeight: 700,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  LUSH LAYERS
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-editorial)",
+                    fontSize: "0.82rem",
+                    letterSpacing: "0.15em",
+                    color: "var(--gold)",
+                    fontStyle: "italic",
+                    display: "block",
+                    marginTop: "2px",
+                  }}
+                >
+                  Made with Love • By Tina Baidya
+                </span>
+              </div>
+            </div>
             <p
               style={{
                 color: "var(--text-secondary)",
