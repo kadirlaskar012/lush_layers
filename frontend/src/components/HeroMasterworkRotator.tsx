@@ -192,13 +192,16 @@ export default function HeroMasterworkRotator({
 
         {/* Center Stage Cake Photo with Smooth Stacked Cross-Fade (Zero DOM Remounting, Zero Flash) */}
         <div
+          className="hero-rotator-stage"
           style={{
-            padding: "0.5rem 1rem",
+            padding: "0.25rem",
             textAlign: "center",
             position: "relative",
-            height: "270px",
             width: "100%",
+            aspectRatio: "1 / 1",
+            maxHeight: "410px",
             overflow: "hidden",
+            background: "radial-gradient(circle at 50% 50%, #FFFFFF 65%, rgba(248, 250, 247, 0.5) 100%)",
           }}
         >
           {validCakes.map((cake, idx) => {
@@ -226,14 +229,14 @@ export default function HeroMasterworkRotator({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={getOptimizedImageUrl(cake.image_url, { width: 540 })}
+                    src={getOptimizedImageUrl(cake.image_url, { width: 720 })}
                     alt={cake.name}
                     loading={idx === 0 ? "eager" : "lazy"}
                     decoding="async"
                     className="hero-rotator-main-img"
                     style={{
-                      maxWidth: "260px",
-                      maxHeight: "260px",
+                      maxWidth: "100%",
+                      maxHeight: "100%",
                       width: "100%",
                       height: "100%",
                       aspectRatio: "1/1",

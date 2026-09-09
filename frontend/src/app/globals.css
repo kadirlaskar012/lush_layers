@@ -676,6 +676,30 @@ button:hover .icon-hover-pulse {
   display: block;
 }
 
+/* Hero Masterwork Rotator Stage & High-Fidelity Image Scaling — Full Fit, Zero Clipping */
+.hero-rotator-stage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 50%, #FFFFFF 65%, rgba(248, 250, 247, 0.5) 100%);
+  contain: layout paint;
+}
+
+.hero-rotator-main-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  aspect-ratio: 1 / 1 !important;
+  display: block !important;
+  transform: translateZ(0);
+}
+
 .hero-preview-info {
   padding-top: 0.55rem;
   text-align: center;
