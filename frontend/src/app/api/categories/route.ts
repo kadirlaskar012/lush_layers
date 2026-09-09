@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbGetCategories, dbCreateCategory } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const category = await dbCreateCategory(body);
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/categories");
+      revalidatePath("/cakes");
+    } catch {}
     return NextResponse.json({ message: "Category created", category });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

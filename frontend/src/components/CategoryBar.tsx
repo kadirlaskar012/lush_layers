@@ -3,9 +3,10 @@
 import React, { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Cake, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Category } from "../lib/types";
 import { getCategoryIconMeta } from "../lib/categoryIcons";
+import CategoryCakeIcon from "./CategoryCakeIcon";
 
 interface CategoryBarProps {
   categories: Category[];
@@ -30,7 +31,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-bday",
       name: "Birthday Cakes",
       slug: "birthday-cakes",
-      icon: "PartyPopper",
+      icon: "BirthdayCandlesCake",
       color: "#FFF5F7",
       accent: "#E11D48",
     },
@@ -38,7 +39,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-tiered",
       name: "Wedding & Tiered Cakes",
       slug: "wedding-tiered-cakes",
-      icon: "Crown",
+      icon: "TieredWeddingRoyal",
       color: "#F9F9F9",
       accent: "#C89B3C",
     },
@@ -46,7 +47,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-romance",
       name: "Anniversary & Romance",
       slug: "anniversary-cakes",
-      icon: "Heart",
+      icon: "RedVelvetHeart",
       color: "#FFF9EE",
       accent: "#B88E3E",
     },
@@ -54,7 +55,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-bento",
       name: "Bento & Petite Cakes",
       slug: "bento-petite-cakes",
-      icon: "Shapes",
+      icon: "BentoPetiteCake",
       color: "#F4F6F8",
       accent: "#475569",
     },
@@ -62,7 +63,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-floral",
       name: "Botanical & Floral Cakes",
       slug: "botanical-floral-cakes",
-      icon: "Flower2",
+      icon: "BotanicalFloralCake",
       color: "#FFF0F3",
       accent: "#DB2777",
     },
@@ -70,7 +71,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-choc",
       name: "Pure Belgian Chocolate",
       slug: "belgian-chocolate-cakes",
-      icon: "Cookie",
+      icon: "ChocolateGanacheFudge",
       color: "#F6F1EA",
       accent: "#6B4423",
     },
@@ -78,7 +79,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
       id: "c-custom",
       name: "Custom & Theme Cakes",
       slug: "custom-theme-cakes",
-      icon: "Palette",
+      icon: "CelebrationSparklerCake",
       color: "#FDF2EC",
       accent: "#EA580C",
     },
@@ -118,10 +119,12 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
             style={{
               background: "#FAF6F0",
               borderColor: activeSlug === "" ? "var(--gold)" : "var(--border-subtle)",
-              color: "#B88E3E",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Cake size={24} strokeWidth={1.75} />
+            <CategoryCakeIcon name="AllCakesGrand" size={32} />
           </div>
           <span
             className="category-story-label"
@@ -137,9 +140,7 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
         {/* 2. Dynamic Categories with Configured Icons & Colors */}
         {activeCategories.map((cat) => {
           const meta = getCategoryIconMeta(cat.icon);
-          const IconComponent = meta.icon;
           const bgColor = cat.color || meta.color;
-          const accentColor = cat.accent || meta.accent;
           const isActive = activeSlug === cat.slug;
 
           return (
@@ -159,10 +160,12 @@ export default function CategoryBar({ categories, activeSlug, onSelectCategory }
                 style={{
                   background: bgColor,
                   borderColor: isActive ? "var(--gold)" : "var(--border-subtle)",
-                  color: accentColor,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <IconComponent size={24} strokeWidth={1.75} />
+                <CategoryCakeIcon name={cat.icon} size={32} />
               </div>
               <span
                 className="category-story-label"

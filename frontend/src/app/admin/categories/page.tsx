@@ -18,6 +18,7 @@ import {
   COLOR_PRESETS,
   getCategoryIconMeta,
 } from "../../../lib/categoryIcons";
+import CategoryCakeIcon from "../../../components/CategoryCakeIcon";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -155,9 +156,6 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const currentPreviewMeta = getCategoryIconMeta(formIcon);
-  const PreviewIcon = currentPreviewMeta.icon;
-
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
       {/* 1. Header Bar */}
@@ -184,7 +182,7 @@ export default function AdminCategoriesPage() {
             LUSH LAYERS Collections & Icons ({categories.length})
           </h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-            Configure showcase categories, assign modern Lucide visual icons, and tailor luxury pastel palettes.
+            Configure showcase categories, assign illustrated colourful cake icons, and tailor luxury pastel palettes.
           </p>
         </div>
 
@@ -290,20 +288,20 @@ export default function AdminCategoriesPage() {
                   >
                     <div
                       style={{
-                        width: "48px",
-                        height: "48px",
+                        width: "52px",
+                        height: "52px",
                         borderRadius: "50%",
                         background: bgColor,
-                        border: `1px solid var(--border-subtle)`,
+                        border: `1.5px solid var(--border-subtle)`,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: accentColor,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                        overflow: "hidden",
                       }}
                       title={`Icon: ${cat.icon || "Cake"}`}
                     >
-                      <IconComp size={24} strokeWidth={1.75} />
+                      <CategoryCakeIcon name={cat.icon} size={32} />
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
@@ -542,20 +540,20 @@ export default function AdminCategoriesPage() {
                 >
                   <div
                     style={{
-                      width: "52px",
-                      height: "52px",
+                      width: "56px",
+                      height: "56px",
                       borderRadius: "50%",
                       background: formColor,
-                      border: "1.5px solid var(--gold)",
+                      border: "2px solid var(--gold)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: formAccent,
-                      boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                       transition: "all 0.2s ease",
+                      overflow: "hidden",
                     }}
                   >
-                    <PreviewIcon size={26} strokeWidth={1.75} />
+                    <CategoryCakeIcon name={formIcon} size={36} />
                   </div>
                   <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)" }}>
                     {formName || "Category Name"}
@@ -563,7 +561,7 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
 
-              {/* SECTION: CHOOSE MODERN LUCIDE ICON */}
+              {/* SECTION: CHOOSE ARTISANAL CAKE ICON */}
               <div style={{ marginBottom: "1.25rem" }}>
                 <label
                   style={{
@@ -576,20 +574,22 @@ export default function AdminCategoriesPage() {
                     marginBottom: "0.45rem",
                   }}
                 >
-                  <SlidersHorizontal size={13} style={{ color: "var(--gold-dark)" }} />
-                  <span>Select Category Icon (16 Professional Lucide Icons)</span>
+                  <Sparkles size={13} style={{ color: "var(--gold-dark)" }} />
+                  <span>Select Artisanal Cake Icon (16 Illustrated Confections)</span>
                 </label>
 
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
-                    gap: "0.5rem",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(82px, 1fr))",
+                    gap: "0.55rem",
+                    maxHeight: "260px",
+                    overflowY: "auto",
+                    padding: "0.4rem 0.2rem",
                   }}
                   id="icon-picker-grid"
                 >
                   {Object.values(AVAILABLE_CATEGORY_ICONS).map((meta) => {
-                    const IconComp = meta.icon;
                     const isSelected = formIcon === meta.key;
 
                     return (
@@ -603,14 +603,15 @@ export default function AdminCategoriesPage() {
                             ? `2px solid var(--gold)`
                             : "1px solid var(--border-subtle)",
                           borderRadius: "var(--radius-sm)",
-                          padding: "0.5rem 0.35rem",
+                          padding: "0.6rem 0.35rem",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
-                          gap: "0.3rem",
+                          gap: "0.4rem",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
                           outline: "none",
+                          boxShadow: isSelected ? "0 4px 10px rgba(184, 142, 62, 0.22)" : "none",
                         }}
                         className="icon-hover-lift"
                         title={meta.label}
@@ -618,13 +619,14 @@ export default function AdminCategoriesPage() {
                       >
                         <div
                           style={{
-                            color: isSelected ? meta.accent : "var(--text-secondary)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            width: "38px",
+                            height: "38px",
                           }}
                         >
-                          <IconComp size={22} strokeWidth={isSelected ? 2 : 1.75} />
+                          <CategoryCakeIcon name={meta.key} size={32} />
                         </div>
                         <span
                           style={{
@@ -633,13 +635,11 @@ export default function AdminCategoriesPage() {
                             fontWeight: isSelected ? 700 : 500,
                             textAlign: "center",
                             lineHeight: 1.15,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
+                            whiteSpace: "normal",
                             width: "100%",
                           }}
                         >
-                          {meta.label.split(" ")[0]}
+                          {meta.label}
                         </span>
                       </button>
                     );

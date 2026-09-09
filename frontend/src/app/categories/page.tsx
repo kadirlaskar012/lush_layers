@@ -1,14 +1,16 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles, ArrowRight, Cake as CakeIcon, ShieldCheck } from "lucide-react";
+import { Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import PublicLayout from "../../components/PublicLayout";
 import WhatsAppIcon from "../../components/WhatsAppIcon";
 import { getCategories, getPublishedCakes } from "../../lib/serverData";
 import { getCategoryIconMeta } from "../../lib/categoryIcons";
 import { getOptimizedImageUrl } from "../../lib/imageHelper";
+import CategoryCakeIcon from "../../components/CategoryCakeIcon";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Artisanal Cake Collections • LUSH LAYERS",
@@ -31,7 +33,7 @@ export default async function CategoriesPage() {
       name: "Birthday Cakes",
       slug: "birthday-cakes",
       description: "Playful designs, comic buttercream, and milestone birthday centrepieces.",
-      icon: "PartyPopper",
+      icon: "BirthdayCandlesCake",
       color: "#FFF5F7",
       accent: "#E11D48",
     },
@@ -40,7 +42,7 @@ export default async function CategoriesPage() {
       name: "Wedding & Tiered Cakes",
       slug: "wedding-tiered-cakes",
       description: "Grand architectural multi-tier gateaux sculpted for weddings & gala receptions.",
-      icon: "Crown",
+      icon: "TieredWeddingRoyal",
       color: "#F9F9F9",
       accent: "#C89B3C",
     },
@@ -49,7 +51,7 @@ export default async function CategoriesPage() {
       name: "Anniversary & Romance",
       slug: "anniversary-cakes",
       description: "Romantic velvet textures, hand-piped rosettes, and heartfelt anniversary gateaux.",
-      icon: "Heart",
+      icon: "RedVelvetHeart",
       color: "#FFF9EE",
       accent: "#B88E3E",
     },
@@ -58,7 +60,7 @@ export default async function CategoriesPage() {
       name: "Bento & Petite Cakes",
       slug: "bento-petite-cakes",
       description: "Intimate lunchbox treats, minimalist Korean lettering, and cute personal sizes.",
-      icon: "Shapes",
+      icon: "BentoPetiteCake",
       color: "#F4F6F8",
       accent: "#475569",
     },
@@ -67,7 +69,7 @@ export default async function CategoriesPage() {
       name: "Botanical & Floral Cakes",
       slug: "botanical-floral-cakes",
       description: "Silk meringue buttercream flowers, pressed botanicals, and delicate garden motifs.",
-      icon: "Flower2",
+      icon: "BotanicalFloralCake",
       color: "#FFF0F3",
       accent: "#DB2777",
     },
@@ -76,7 +78,7 @@ export default async function CategoriesPage() {
       name: "Pure Belgian Chocolate",
       slug: "belgian-chocolate-cakes",
       description: "Rich dark ganaches, couverture truffles, and intense cocoa decadence.",
-      icon: "Cookie",
+      icon: "ChocolateGanacheFudge",
       color: "#F6F1EA",
       accent: "#6B4423",
     },
@@ -85,7 +87,7 @@ export default async function CategoriesPage() {
       name: "Custom & Theme Cakes",
       slug: "custom-theme-cakes",
       description: "Bespoke novelty sculptures, fondant artistry, and tailor-made milestone concepts.",
-      icon: "Palette",
+      icon: "CelebrationSparklerCake",
       color: "#FDF2EC",
       accent: "#EA580C",
     },
@@ -213,14 +215,14 @@ export default async function CategoriesPage() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            width: "72px",
-                            height: "72px",
+                            width: "80px",
+                            height: "80px",
                             borderRadius: "50%",
-                            background: "rgba(255, 255, 255, 0.8)",
-                            color: accentColor,
+                            background: "rgba(255, 255, 255, 0.92)",
+                            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
                           }}
                         >
-                          <IconComponent size={36} />
+                          <CategoryCakeIcon name={cat.icon} size={48} />
                         </div>
                       )}
 
@@ -238,20 +240,20 @@ export default async function CategoriesPage() {
                           position: "absolute",
                           top: "12px",
                           left: "12px",
-                          background: "rgba(255, 255, 255, 0.92)",
+                          background: "rgba(255, 255, 255, 0.95)",
                           backdropFilter: "blur(8px)",
-                          padding: "0.25rem 0.65rem",
+                          padding: "0.28rem 0.75rem",
                           borderRadius: "var(--radius-full)",
-                          fontSize: "0.72rem",
+                          fontSize: "0.75rem",
                           fontWeight: 700,
-                          color: "var(--gold-dark)",
+                          color: "var(--text-primary)",
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "0.35rem",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                          gap: "0.45rem",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
                         }}
                       >
-                        <IconComponent size={13} style={{ color: accentColor }} />
+                        <CategoryCakeIcon name={cat.icon} size={18} />
                         <span>{cat.name}</span>
                       </div>
 
@@ -274,17 +276,34 @@ export default async function CategoriesPage() {
 
                     {/* Card Body */}
                     <div style={{ padding: "1.25rem", flex: 1, display: "flex", flexDirection: "column" }}>
-                      <h2
-                        style={{
-                          fontFamily: "var(--font-heading)",
-                          fontSize: "1.25rem",
-                          color: "var(--text-primary)",
-                          marginBottom: "0.4rem",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {cat.name}
-                      </h2>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.4rem" }}>
+                        <div
+                          style={{
+                            width: "36px",
+                            height: "36px",
+                            borderRadius: "50%",
+                            background: bgColor,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                          }}
+                        >
+                          <CategoryCakeIcon name={cat.icon} size={24} />
+                        </div>
+                        <h2
+                          style={{
+                            fontFamily: "var(--font-heading)",
+                            fontSize: "1.25rem",
+                            color: "var(--text-primary)",
+                            fontWeight: 700,
+                            margin: 0,
+                          }}
+                        >
+                          {cat.name}
+                        </h2>
+                      </div>
                       <p
                         style={{
                           color: "var(--text-secondary)",

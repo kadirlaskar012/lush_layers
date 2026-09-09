@@ -15,7 +15,8 @@ import HeroMasterworkRotator from "../components/HeroMasterworkRotator";
 import { getPublishedCakes, getCategories, getActivePromotions } from "../lib/serverData";
 import { getOptimizedImageUrl } from "../lib/imageHelper";
 
-export const revalidate = 60; // ISR: 60 seconds revalidation
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const [cakes, categories, promotions] = await Promise.all([
