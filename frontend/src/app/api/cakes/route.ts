@@ -49,12 +49,28 @@ export async function GET(req: NextRequest) {
           const localRes = await fetch(localUrl, { cache: "no-store", signal: AbortSignal.timeout(1500) });
           if (localRes.ok) {
             const localCakes = await localRes.json();
-            const existingIds = new Set((cakes || []).map((c: any) => String(c.id)));
+            
+            // Query all cloud cakes to ensure we don't resurrect published/approved cakes as pending
+            const allCloudCakes = await dbGetAdminCakes({});
+            const cloudCakeMap = new Map((allCloudCakes || []).map((c: any) => [String(c.id), c]));
+            
             const merged = [...(cakes || [])];
+            const currentMergedIds = new Set(merged.map((c: any) => String(c.id)));
+
             for (const lc of localCakes) {
-              if (!existingIds.has(String(lc.id))) {
+              const cloudCake = cloudCakeMap.get(String(lc.id));
+              if (cloudCake) {
+                // If cake exists in cloud and its status is not pending, DO NOT show it as pending
+                if (status === "pending" && cloudCake.status !== "pending") {
+                  // Synchronize local SQLite in background
+                  fetch(`http://127.0.0.1:8000/api/cakes/${lc.id}/${cloudCake.status}`, { method: "POST" }).catch(() => {});
+                  continue;
+                }
+              }
+              // If not in cloud yet (fresh upload), or matches current query and not already present
+              if (!currentMergedIds.has(String(lc.id))) {
                 merged.push(lc);
-                existingIds.add(String(lc.id));
+                currentMergedIds.add(String(lc.id));
               }
             }
             return NextResponse.json(merged);
