@@ -190,44 +190,62 @@ export default function HeroMasterworkRotator({
           </div>
         </div>
 
-        {/* Center Stage Cake Photo with Smooth Transition & Floating Arrows */}
+        {/* Center Stage Cake Photo with Smooth Stacked Cross-Fade (Zero DOM Remounting, Zero Flash) */}
         <div
           style={{
-            padding: "0.6rem 1rem",
+            padding: "0.5rem 1rem",
             textAlign: "center",
             position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "260px",
+            height: "270px",
+            width: "100%",
+            overflow: "hidden",
           }}
         >
-          <Link
-            href={`/cakes/${activeCake.slug}`}
-            style={{ textDecoration: "none", display: "inline-block" }}
-            tabIndex={0}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              key={activeCake.id || currentIdx}
-              src={getOptimizedImageUrl(activeCake.image_url, { width: 540 })}
-              alt={activeCake.name}
-              loading="eager"
-              decoding="async"
-              className="hero-rotator-main-img"
-              style={{
-                maxWidth: "280px",
-                maxHeight: "280px",
-                width: "100%",
-                height: "auto",
-                aspectRatio: "1/1",
-                objectFit: "contain",
-                margin: "0 auto",
-                filter: "drop-shadow(0 14px 28px rgba(0, 0, 0, 0.12))",
-                transition: "transform 0.35s ease, opacity 0.35s ease",
-              }}
-            />
-          </Link>
+          {validCakes.map((cake, idx) => {
+            const isActive = idx === currentIdx;
+            return (
+              <div
+                key={cake.id || idx}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? "scale(1)" : "scale(0.95)",
+                  transition: "opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                  pointerEvents: isActive ? "auto" : "none",
+                  zIndex: isActive ? 1 : 0,
+                }}
+              >
+                <Link
+                  href={`/cakes/${cake.slug}`}
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}
+                  tabIndex={isActive ? 0 : -1}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getOptimizedImageUrl(cake.image_url, { width: 540 })}
+                    alt={cake.name}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="hero-rotator-main-img"
+                    style={{
+                      maxWidth: "260px",
+                      maxHeight: "260px",
+                      width: "100%",
+                      height: "100%",
+                      aspectRatio: "1/1",
+                      objectFit: "contain",
+                      margin: "0 auto",
+                      filter: "drop-shadow(0 14px 28px rgba(0, 0, 0, 0.12))",
+                    }}
+                  />
+                </Link>
+              </div>
+            );
+          })}
 
           {/* Left Arrow */}
           {totalCakes > 1 && (
@@ -294,7 +312,7 @@ export default function HeroMasterworkRotator({
           )}
         </div>
 
-        {/* Cake Metadata & Order Action Section */}
+        {/* Cake Metadata & Order Action Section - Guaranteed Constant Height */}
         <div
           style={{
             padding: "0.85rem 1.25rem 1.15rem",
@@ -352,11 +370,17 @@ export default function HeroMasterworkRotator({
             <h3
               style={{
                 margin: "0.15rem 0",
-                fontSize: "1.08rem",
+                fontSize: "1.05rem",
                 fontFamily: "Cinzel, serif",
                 fontWeight: 700,
                 color: "var(--text-primary)",
                 lineHeight: 1.3,
+                height: "2.6em",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
               {activeCake.name}
@@ -370,6 +394,10 @@ export default function HeroMasterworkRotator({
               fontSize: "0.82rem",
               color: "var(--gold-dark)",
               lineHeight: 1.4,
+              height: "1.4em",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {activeCake.flavour || "Bespoke Chef Confection"}

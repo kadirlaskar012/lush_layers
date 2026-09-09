@@ -142,15 +142,34 @@ export function AtelierFeaturedPoster({
         className="animated-poster-container"
         id="atelier-animated-poster"
         style={{
-          background: current.bgGradient,
-          transition: "background 0.5s ease",
+          position: "relative",
+          overflow: "hidden",
           padding: "1.5rem 1.75rem",
+          minHeight: "340px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
         }}
       >
-        {/* Specular Light Sheen sweep animation */}
-        <div className="poster-shimmer-sweep" />
+        {/* Smooth Background Gradient Cross-Fade Layers (Zero Flash) */}
+        {posters.map((p, idx) => (
+          <div
+            key={p.id || idx}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: p.bgGradient,
+              opacity: idx === activePosterIdx ? 1 : 0,
+              transition: "opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+              zIndex: 1,
+            }}
+          />
+        ))}
 
-        <div style={{ position: "relative", zIndex: 3 }}>
+        {/* Specular Light Sheen sweep animation */}
+        <div className="poster-shimmer-sweep" style={{ zIndex: 2 }} />
+
+        <div style={{ position: "relative", zIndex: 3, width: "100%" }}>
           {/* Top Poster Ribbon */}
           <div
             style={{
@@ -160,6 +179,7 @@ export function AtelierFeaturedPoster({
               flexWrap: "wrap",
               gap: "0.5rem",
               marginBottom: "1rem",
+              minHeight: "32px",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -214,13 +234,11 @@ export function AtelierFeaturedPoster({
             )}
           </div>
 
-          {/* Poster Typography & Artwork Layout */}
+          {/* Poster Typography & Artwork Layout - Locked Consistent 2-Column Grid */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: hasCustomPosterImage
-                ? "repeat(auto-fit, minmax(280px, 1fr))"
-                : "1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               gap: "1.5rem",
               alignItems: "center",
             }}
@@ -236,6 +254,10 @@ export function AtelierFeaturedPoster({
                   fontWeight: 700,
                   display: "block",
                   marginBottom: "0.35rem",
+                  height: "1.25em",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {current.edition}
@@ -243,69 +265,81 @@ export function AtelierFeaturedPoster({
 
               <h3
                 style={{
-                  fontSize: "clamp(1.28rem, 3.2vw, 1.95rem)",
-                  lineHeight: 1.18,
+                  fontSize: "clamp(1.22rem, 3vw, 1.85rem)",
+                  lineHeight: 1.2,
                   color: "var(--text-primary)",
                   fontWeight: 700,
-                  marginBottom: "0.5rem",
-                  transition: "color 0.3s ease",
+                  marginBottom: "0.45rem",
+                  height: "2.4em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 {current.title}
               </h3>
 
-              {current.tagline && (
-                <p
-                  style={{
-                    fontSize: "0.84rem",
-                    color: "var(--gold-dark)",
-                    fontStyle: "italic",
-                    fontWeight: 600,
-                    marginBottom: "0.6rem",
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {current.tagline}
-                </p>
-              )}
+              <p
+                style={{
+                  fontSize: "0.84rem",
+                  color: "var(--gold-dark)",
+                  fontStyle: "italic",
+                  fontWeight: 600,
+                  marginBottom: "0.5rem",
+                  lineHeight: 1.4,
+                  height: "1.4em",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {current.tagline || "Artisanal Celebration Masterpiece"}
+              </p>
 
-              {current.description && (
-                <p
-                  style={{
-                    fontSize: "0.82rem",
-                    color: "var(--text-secondary)",
-                    lineHeight: 1.55,
-                    marginBottom: "0.85rem",
-                    maxWidth: "600px",
-                  }}
-                >
-                  {current.description}
-                </p>
-              )}
+              <p
+                style={{
+                  fontSize: "0.82rem",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.55,
+                  marginBottom: "0.75rem",
+                  maxWidth: "600px",
+                  height: "3.2em",
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {current.description || "Freshly baked on booking using single-origin Belgian chocolate and heirloom ingredients."}
+              </p>
 
               {/* Complimentary Addon Perk Pill */}
-              {current.addon_perk && (
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.45rem",
-                    background: "#ECFDF5",
-                    border: "1px solid #A7F3D0",
-                    color: "#065F46",
-                    padding: "0.3rem 0.75rem",
-                    borderRadius: "6px",
-                    fontSize: "0.76rem",
-                    fontWeight: 600,
-                    marginBottom: "1.15rem",
-                  }}
-                >
-                  <Gift size={13} style={{ color: "#059669" }} />
-                  <span>
-                    Special Perk: {current.addon_perk} on orders above ₹{current.min_order_amount || 1000}!
-                  </span>
-                </div>
-              )}
+              <div style={{ height: "34px", marginBottom: "1rem", display: "flex", alignItems: "center" }}>
+                {current.addon_perk && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.45rem",
+                      background: "#ECFDF5",
+                      border: "1px solid #A7F3D0",
+                      color: "#065F46",
+                      padding: "0.28rem 0.75rem",
+                      borderRadius: "6px",
+                      fontSize: "0.76rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <Gift size={13} style={{ color: "#059669" }} />
+                    <span>
+                      Special Perk: {current.addon_perk} on orders above ₹{current.min_order_amount || 1000}!
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {/* Action Buttons */}
               <div
@@ -338,28 +372,33 @@ export function AtelierFeaturedPoster({
               </div>
             </div>
 
-            {/* Right Column: Custom Poster Image (if uploaded) */}
-            {hasCustomPosterImage && (
+            {/* Right Column: Custom Poster Image OR Luxury Golden Showcase Emblem (Always Present, Equal Height) */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <div
                 style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: "360px",
+                  height: "210px",
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "2px solid rgba(197, 152, 58, 0.4)",
+                  boxShadow: "0 10px 30px rgba(184, 142, 62, 0.15)",
+                  background: hasCustomPosterImage
+                    ? "#FFFFFF"
+                    : "linear-gradient(135deg, #2D1A10 0%, #1A0F0A 100%)",
                   display: "flex",
-                  justifyContent: "center",
                   alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    maxWidth: "380px",
-                    height: "220px",
-                    borderRadius: "14px",
-                    overflow: "hidden",
-                    border: "2px solid rgba(197, 152, 58, 0.4)",
-                    boxShadow: "0 10px 30px rgba(184, 142, 62, 0.15)",
-                    background: "#FFFFFF",
-                  }}
-                >
+                {hasCustomPosterImage ? (
                   <img
                     src={current.image_url}
                     alt={current.title}
@@ -367,33 +406,66 @@ export function AtelierFeaturedPoster({
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
-                      transition: "transform 0.5s ease",
                     }}
                   />
+                ) : (
                   <div
                     style={{
-                      position: "absolute",
-                      bottom: "8px",
-                      right: "10px",
-                      background: "rgba(0,0,0,0.72)",
-                      backdropFilter: "blur(6px)",
-                      color: "#F6E7B9",
-                      padding: "0.2rem 0.6rem",
-                      borderRadius: "6px",
-                      fontSize: "0.72rem",
-                      fontWeight: 600,
+                      textAlign: "center",
+                      padding: "1.5rem",
+                      color: "#FFFFFF",
                       display: "flex",
+                      flexDirection: "column",
                       alignItems: "center",
-                      gap: "0.3rem",
-                      border: "1px solid rgba(246, 231, 185, 0.2)",
+                      justifyContent: "center",
+                      gap: "0.4rem",
                     }}
                   >
-                    <Sparkles size={11} />
-                    <span>Lush Layers • Made With Love ❤️</span>
+                    <div
+                      style={{
+                        width: "56px",
+                        height: "56px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 6px 16px rgba(197, 152, 58, 0.4)",
+                      }}
+                    >
+                      <IconComponent size={26} color="#FFFFFF" />
+                    </div>
+                    <div style={{ fontFamily: "Cinzel, serif", fontSize: "1.05rem", fontWeight: 700, color: "#F6E7B9" }}>
+                      {current.discount_percent}% WELCOME OFFER
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.75)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                      USE CODE: <strong style={{ color: "#FFF" }}>{current.promo_code}</strong>
+                    </div>
                   </div>
+                )}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "8px",
+                    right: "10px",
+                    background: "rgba(0,0,0,0.72)",
+                    backdropFilter: "blur(6px)",
+                    color: "#F6E7B9",
+                    padding: "0.2rem 0.6rem",
+                    borderRadius: "6px",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    border: "1px solid rgba(246, 231, 185, 0.2)",
+                  }}
+                >
+                  <Sparkles size={11} />
+                  <span>Lush Layers • Made With Love ❤️</span>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
