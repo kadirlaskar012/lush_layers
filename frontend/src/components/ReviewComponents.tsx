@@ -128,7 +128,7 @@ export function ReviewForm() {
           Share Your Celebration Experience
         </h3>
         <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-          Every memory matters. Your reflection will be reviewed by our atelier prior to publication.
+          Every memory matters. Your reflection will be reviewed by our team prior to publication.
         </p>
       </div>
 

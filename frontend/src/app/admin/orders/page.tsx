@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import WhatsAppIcon from "../../../components/WhatsAppIcon";
+import { useBodyScrollLock } from "../../../lib/useBodyScrollLock";
 
 const STANDARD_SIZES = [
   { label: "0.5 kg (Small)", val: "0.5 kg" },
@@ -40,6 +41,7 @@ export default function AdminOrdersPage() {
 
   // Edit Modal State
   const [editingEnquiry, setEditingEnquiry] = useState<Enquiry | null>(null);
+  useBodyScrollLock(!!editingEnquiry);
   const [editForm, setEditForm] = useState<{
     selected_size: string;
     delivery_date: string;
@@ -844,9 +846,9 @@ export default function AdminOrdersPage() {
                 </select>
               </div>
 
-              {/* Kitchen / Atelier Notes */}
+              {/* Kitchen / Bakery Notes */}
               <div className="form-group" style={{ marginBottom: "1.25rem" }}>
-                <label className="form-label">Atelier Notes for Customer (shown on tracker):</label>
+                <label className="form-label">Bakery Notes for Customer (shown on tracker):</label>
                 <textarea
                   rows={2}
                   value={editForm.admin_notes}

@@ -14,6 +14,7 @@ import {
   reprocessCakeImage,
 } from "../../../../lib/api";
 import { Cake, Category } from "../../../../lib/types";
+import { useBodyScrollLock } from "../../../../lib/useBodyScrollLock";
 import {
   Sparkles,
   RotateCw,
@@ -33,6 +34,7 @@ export default function PendingCakesPage() {
   const [cakes, setCakes] = useState<Cake[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCakeId, setEditingCakeId] = useState<string | null>(null);
+  useBodyScrollLock(!!editingCakeId);
   const [editForm, setEditForm] = useState<Partial<Cake>>({});
   const [newSizeInput, setNewSizeInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -281,7 +283,7 @@ export default function PendingCakesPage() {
         }}
       >
         <div>
-          <span className="cake-category-badge">Human Review Atelier</span>
+          <span className="cake-category-badge">Human Review Queue</span>
           <h1 style={{ fontSize: "1.45rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.1rem 0" }}>
             Pending Approval Queue ({cakes.length})
           </h1>

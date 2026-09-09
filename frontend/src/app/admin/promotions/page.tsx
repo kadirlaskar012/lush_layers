@@ -26,12 +26,14 @@ import {
   deletePromotion,
 } from "@/lib/api";
 import { Promotion } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 export default function AdminPromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  useBodyScrollLock(isCreatingNew || !!editingPromo);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -295,7 +297,7 @@ export default function AdminPromotionsPage() {
               <Percent size={18} />
             </span>
             <h1 style={{ fontSize: "1.6rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-              Promotional Offers & Atelier Posters
+              Promotional Offers & Homepage Posters
             </h1>
           </div>
           <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", margin: 0 }}>
@@ -831,7 +833,7 @@ export default function AdminPromotionsPage() {
                     type="text"
                     value={formEdition}
                     onChange={(e) => setFormEdition(e.target.value)}
-                    placeholder="e.g. 2026 Curated Atelier Special"
+                    placeholder="e.g. 2026 Special Offer"
                     className="admin-form-input"
                   />
                 </div>

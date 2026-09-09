@@ -172,7 +172,7 @@ export default function AdminCategoriesPage() {
         }}
       >
         <div>
-          <span className="cake-category-badge">Category Taxonomy & Icon Atelier</span>
+          <span className="cake-category-badge">Category Taxonomy & Icon Studio</span>
           <h1
             style={{
               fontSize: "1.45rem",

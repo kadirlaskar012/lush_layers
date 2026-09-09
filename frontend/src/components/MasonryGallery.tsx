@@ -54,7 +54,7 @@ export default function MasonryGallery({
           {emptyMessage}
         </h3>
         <p style={{ color: "var(--text-muted)", fontSize: "0.88rem" }}>
-          Our pastry atelier is currently crafting bespoke creations. Please check other collections or enquire directly on WhatsApp.
+          Our pastry team is currently crafting bespoke creations. Please check other collections or enquire directly on WhatsApp.
         </p>
       </div>
     );

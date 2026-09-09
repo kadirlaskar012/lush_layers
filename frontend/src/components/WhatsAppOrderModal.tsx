@@ -17,6 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
+import { useBodyScrollLock } from "../lib/useBodyScrollLock";
 
 interface WhatsAppOrderModalProps {
   cake: Cake;
@@ -33,6 +34,7 @@ export default function WhatsAppOrderModal({
   initialSize,
   initialPromoCode,
 }: WhatsAppOrderModalProps) {
+  useBodyScrollLock(isOpen);
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [selectedSize, setSelectedSize] = useState<string>(

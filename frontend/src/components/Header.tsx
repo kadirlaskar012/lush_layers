@@ -125,7 +125,7 @@ export default function Header() {
                   marginTop: "2px",
                 }}
               >
-                Made with Love
+                Made With Love ❤️
               </span>
             </div>
           </Link>
@@ -397,7 +397,7 @@ export default function Header() {
                   marginTop: "2px",
                 }}
               >
-                Made with Love • Kolkata
+                Made With Love ❤️
               </div>
             </div>
           </div>

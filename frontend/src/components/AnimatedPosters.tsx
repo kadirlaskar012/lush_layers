@@ -111,7 +111,7 @@ export function AtelierFeaturedPoster({
         title: p.title,
         tagline: p.tagline || "",
         description: p.description || "",
-        edition: p.edition || "Atelier Special Edition",
+        edition: p.edition || "Limited Edition",
         promo_code: p.promo_code,
         discount_percent: p.discount_percent ?? 5,
         min_order_amount: p.min_order_amount ?? 1000,
@@ -389,7 +389,7 @@ export function AtelierFeaturedPoster({
                     }}
                   >
                     <Sparkles size={11} />
-                    <span>Lush Layers Atelier</span>
+                    <span>Lush Layers • Made With Love ❤️</span>
                   </div>
                 </div>
               </div>

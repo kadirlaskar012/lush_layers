@@ -184,7 +184,7 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
                   display: "block",
                 }}
               >
-                Management Atelier
+                Made With Love ❤️
               </span>
             </div>
           </Link>

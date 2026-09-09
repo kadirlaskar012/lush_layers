@@ -28,7 +28,7 @@ const STAGES = [
   {
     key: "New",
     title: "Enquiry Received",
-    subtitle: "Logged in atelier schedule",
+    subtitle: "Logged in baking schedule",
     icon: Clock,
   },
   {
@@ -147,7 +147,7 @@ function TrackingContent() {
       <div className="container-lux" style={{ maxWidth: "860px" }}>
         {/* Page Header */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <span className="cake-category-badge">Live Atelier Journey</span>
+          <span className="cake-category-badge">Live Order Journey</span>
           <h1 style={{ fontSize: "clamp(1.75rem, 4vw, 2.35rem)", color: "var(--text-primary)", fontWeight: 700, margin: "0.4rem 0 0.35rem" }}>
             Track Your Confection
           </h1>
@@ -600,7 +600,7 @@ function TrackingContent() {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <strong style={{ color: "var(--gold-dark)" }}>Note from Pastry Atelier:</strong>{" "}
+                  <strong style={{ color: "var(--gold-dark)" }}>Note from Bakery Team:</strong>{" "}
                   {enquiry.admin_notes}
                 </div>
               )}
@@ -675,14 +675,14 @@ function TrackingContent() {
               Track Your Bespoke Milestone Cake
             </h3>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.84rem", maxWidth: "440px", margin: "0 auto 1.25rem", lineHeight: 1.5 }}>
-              Enter your 4-digit enquiry number (e.g. <code>LL-7492</code>) received when placing an order with our atelier.
+              Enter your 4-digit enquiry number (e.g. <code>LL-7492</code>) received when placing an order with us.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
               <Link href="/cakes" className="btn-outline-gold" style={{ fontSize: "0.8rem", padding: "0.45rem 1rem" }}>
                 Browse Confections
               </Link>
               <Link href="/contact" className="btn-outline-gold" style={{ fontSize: "0.8rem", padding: "0.45rem 1rem" }}>
-                Atelier Contact
+                Contact Bakery
               </Link>
             </div>
           </div>
@@ -697,7 +697,7 @@ export default function TrackOrderPage() {
     <PublicLayout>
       <Suspense fallback={
         <div style={{ textAlign: "center", padding: "5rem 1rem", color: "var(--text-muted)" }}>
-          Loading order tracking atelier...
+          Loading order tracking...
         </div>
       }>
         <TrackingContent />

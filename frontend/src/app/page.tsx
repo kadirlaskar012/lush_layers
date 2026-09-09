@@ -62,13 +62,13 @@ export default async function HomePage() {
               <div style={{ display: "inline-flex", alignItems: "center", marginBottom: "0.25rem" }}>
                 <span className="hero-atelier-badge">
                   <Sparkles size={11} style={{ color: "var(--gold-dark)" }} />
-                  <span>LUSH LAYERS • PB Road, Kolkata-41, India</span>
+                  <span>Lush Layers • Made With Love ❤️</span>
                 </span>
               </div>
 
               <h1 className="hero-headline">
                 Couture Confections, <br style={{ display: "none" }} className="desktop-only-inline" />
-                <span className="text-gold-gradient">Made with Love</span>
+                <span className="text-gold-gradient">Made With Love ❤️</span>
               </h1>
 
               <p className="hero-description">
@@ -284,13 +284,13 @@ export default async function HomePage() {
                 Have an Upcoming Celebration?
               </h4>
               <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.85rem", lineHeight: 1.5 }}>
-                Chat directly with Founder & Chef Pâtissier <strong>Tina Baidya</strong>. Share your date, aesthetic, and guest count for bespoke atelier creations.
+                Chat directly with Founder & Chef Pâtissier <strong>Tina Baidya</strong>. Share your date, aesthetic, and guest count for bespoke creations.
               </p>
               <div style={{ fontSize: "0.78rem", color: "var(--gold-dark)", fontWeight: 600, marginBottom: "0.35rem" }}>
                 Direct WhatsApp: +91 8768388868
               </div>
               <div style={{ fontSize: "0.76rem", color: "var(--text-secondary)", marginBottom: "0.85rem" }}>
-                Atelier: PB Road, Kolkata-41, India
+                Lush Layers • Made With Love ❤️
               </div>
               <a
                 href={`https://wa.me/${bakeryWhatsApp.replace(/[^0-9]/g, "")}?text=Hello%20Tina%20Baidya%2C%20I%20would%20like%20to%20consult%20about%20a%20bespoke%20cake%20for%20my%20event.`}

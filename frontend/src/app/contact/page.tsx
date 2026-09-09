@@ -4,8 +4,8 @@ import ContactForm from "../../components/ContactForm";
 import WhatsAppIcon from "../../components/WhatsAppIcon";
 
 export const metadata = {
-  title: "Contact & Atelier Consultations • LUSH LAYERS",
-  description: "Connect directly with our master bakers on WhatsApp or visit LUSH LAYERS studio at PB Road, Kolkata-41, India.",
+  title: "Contact • Lush Layers",
+  description: "Connect directly with our master bakers on WhatsApp or reach out to Lush Layers.",
 };
 
 export default function ContactPage() {
@@ -19,7 +19,7 @@ export default function ContactPage() {
           <div style={{ textAlign: "center", maxWidth: "650px", margin: "0 auto 2rem" }}>
             <span className="cake-category-badge">Personal Dialogue</span>
             <h1 style={{ fontSize: "1.85rem", color: "var(--text-primary)", marginBottom: "0.4rem" }}>
-              Connect with Our Atelier
+              Connect with Us
             </h1>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.88rem" }}>
               Whether envisioning a grand tiered wedding celebration or an intimate birthday surprise, we welcome your enquiry.
@@ -50,7 +50,7 @@ export default function ContactPage() {
             >
               <div>
                 <h3 style={{ fontSize: "1.2rem", color: "var(--text-primary)", marginBottom: "1rem" }}>
-                  Studio Atelier & Founder
+                  Studio & Founder
                 </h3>
 
                 <div style={{ marginBottom: "1.25rem" }}>
@@ -68,7 +68,7 @@ export default function ContactPage() {
                   </div>
                   <p style={{ color: "var(--text-primary)", fontSize: "0.86rem", lineHeight: "1.5" }}>
                     PB Road, Kolkata-41, India<br />
-                    LUSH LAYERS Confectionery Atelier
+                    LUSH LAYERS Confections
                   </p>
                 </div>
 

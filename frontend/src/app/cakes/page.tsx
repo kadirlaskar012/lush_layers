@@ -57,7 +57,7 @@ export default async function CakesPage({ searchParams }: CakesPageProps) {
             <div style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto 1.5rem" }}>
               <span className="cake-category-badge">Visual Inspiration</span>
               <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.3rem" }}>
-                Editorial Atelier Wall
+                Editorial Gallery Wall
               </h2>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
                 A visual showcase of bespoke artisan finishes, botanical motifs, and bespoke luxury cakes.

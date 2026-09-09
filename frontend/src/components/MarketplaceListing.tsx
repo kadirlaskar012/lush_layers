@@ -5,6 +5,7 @@ import { Search, SlidersHorizontal, X, Sparkles, Cake as CakeIcon, RotateCcw } f
 import { Cake, Category } from "../lib/types";
 import CakeCard from "./CakeCard";
 import CategoryBar from "./CategoryBar";
+import { useBodyScrollLock } from "../lib/useBodyScrollLock";
 
 interface MarketplaceListingProps {
   initialCakes: Cake[];
@@ -32,6 +33,7 @@ export default function MarketplaceListing({
   const [selectedFlavour, setSelectedFlavour] = useState(initialFlavour);
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "az">("popular");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  useBodyScrollLock(isMobileFilterOpen);
 
   // Extract unique flavours from cakes for the flavour filter dropdown
   const uniqueFlavours = useMemo(() => {

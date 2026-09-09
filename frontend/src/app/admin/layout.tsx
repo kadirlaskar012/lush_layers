@@ -2,7 +2,7 @@ import React from "react";
 import AdminLayoutWrapper from "../../components/AdminLayoutWrapper";
 
 export const metadata = {
-  title: "Admin Studio & Workflow Atelier • LUSH LAYERS",
+  title: "Admin Studio • Lush Layers",
   description: "Management portal for cake approval, bulk image ingestion, and catalog publishing.",
 };
 

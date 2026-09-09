@@ -78,7 +78,7 @@ export default function Footer() {
                     marginTop: "2px",
                   }}
                 >
-                  Made with Love • By Tina Baidya
+                  Made With Love ❤️
                 </span>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function Footer() {
                 marginBottom: "0.85rem",
               }}
             >
-              LUSH LAYERS is an artisanal confectionery atelier founded by cake artist Tina Baidya. Dedicated to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
+              LUSH LAYERS is an artisanal bakery founded by cake artist Tina Baidya. Dedicated to bespoke culinary artistry, single-origin Belgian chocolate, and unforgettable celebrations.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.75rem" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
@@ -226,7 +226,7 @@ export default function Footer() {
           }}
         >
           <div style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
-            © {currentYear} LUSH LAYERS • Made with Love • PB Road, Kolkata-41, India
+            © {currentYear} Lush Layers • Made With Love ❤️
           </div>
           <div style={{ display: "flex", gap: "1rem", fontSize: "0.76rem" }}>
             <Link href="/cakes" style={{ color: "var(--text-muted)", textDecoration: "none" }}>

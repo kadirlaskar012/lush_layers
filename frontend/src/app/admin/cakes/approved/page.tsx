@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAdminCakes, getCategories, publishCake, unpublishCake, rejectCake, updateCakeDetails } from "../../../../lib/api";
 import { Cake, Category } from "../../../../lib/types";
+import { useBodyScrollLock } from "../../../../lib/useBodyScrollLock";
 import { RotateCw, ArrowUpRight, CheckCircle2, Sparkles, Undo2, Send, ArchiveX, Edit3, X, Plus } from "lucide-react";
 
 export default function ApprovedCakesPage() {
@@ -16,6 +17,7 @@ export default function ApprovedCakesPage() {
 
   // Edit Modal State
   const [editingCake, setEditingCake] = useState<Cake | null>(null);
+  useBodyScrollLock(!!editingCake);
   const [editForm, setEditForm] = useState<Partial<Cake>>({});
   const [newSizeInput, setNewSizeInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -185,7 +187,7 @@ export default function ApprovedCakesPage() {
                 border: "1px solid var(--border-subtle)",
               }}
             >
-              Curated Atelier
+              Curated Catalog
             </span>
             <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
               • Live & Staged Collections
@@ -631,7 +633,7 @@ export default function ApprovedCakesPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", borderBottom: "1px solid var(--border-light)", paddingBottom: "0.75rem" }}>
               <div>
                 <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--gold-dark)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Admin Atelier Management
+                  Admin Confection Management
                 </span>
                 <h3 style={{ fontSize: "1.15rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.15rem 0 0" }}>
                   Edit Confection Details

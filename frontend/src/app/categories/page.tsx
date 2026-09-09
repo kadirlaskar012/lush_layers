@@ -337,7 +337,7 @@ export default async function CategoriesPage() {
             }}
           >
             <div style={{ maxWidth: "550px" }}>
-              <span className="cake-category-badge">Bespoke Atelier</span>
+              <span className="cake-category-badge">Bespoke Confections</span>
               <h3
                 style={{
                   fontFamily: "var(--font-heading)",

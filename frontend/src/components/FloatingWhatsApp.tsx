@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, Send, CheckCircle2, Copy, Check, Cake, MapPin, User, Phone, Sparkles, MessageCircle } from "lucide-react";
 import WhatsAppIcon from "./WhatsAppIcon";
 import { createEnquiry, getCategories } from "../lib/api";
+import { useBodyScrollLock } from "../lib/useBodyScrollLock";
 
 const FALLBACK_CATEGORIES = [
   "Birthday Cakes",
@@ -28,6 +29,7 @@ const FLAVOUR_CHIPS = [
 
 export default function FloatingWhatsApp() {
   const [isOpen, setIsOpen] = useState(false);
+  useBodyScrollLock(isOpen);
   const [categories, setCategories] = useState<string[]>(FALLBACK_CATEGORIES);
 
   // Form State
@@ -145,7 +147,7 @@ export default function FloatingWhatsApp() {
         phone: phone.trim(),
         cake_name: `${category} (Bespoke Floating Enquiry)`,
         flavour: flavour.trim(),
-        selected_size: "Custom / Atelier Consultation",
+        selected_size: "Custom Consultation",
         custom_message: `Delivery Address: ${address.trim()}${notes.trim() ? ` | Notes: ${notes.trim()}` : ""}`,
       });
       if (created?.enquiry_number) {
@@ -221,30 +223,47 @@ export default function FloatingWhatsApp() {
 
       {/* Floating Modal / Panel */}
       {isOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="floating-whatsapp-title"
-          ref={panelRef}
-          style={{
-            position: "fixed",
-            bottom: "86px",
-            right: "24px",
-            width: "390px",
-            maxWidth: "calc(100vw - 32px)",
-            maxHeight: "calc(100vh - 110px)",
-            background: "var(--bg-surface)",
-            border: "1px solid var(--gold-border)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "0 20px 50px rgba(26, 46, 34, 0.22), 0 6px 18px rgba(0, 0, 0, 0.08)",
-            zIndex: 9998,
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            animation: "fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-          }}
-          id="floating-whatsapp-modal"
-        >
+        <>
+          {/* Background backdrop to block background scroll & clicks */}
+          <div
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(20, 26, 22, 0.45)",
+              backdropFilter: "blur(2px)",
+              WebkitBackdropFilter: "blur(2px)",
+              zIndex: 9995,
+              overscrollBehavior: "contain",
+              touchAction: "none",
+            }}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="floating-whatsapp-title"
+            ref={panelRef}
+            style={{
+              position: "fixed",
+              bottom: "86px",
+              right: "24px",
+              width: "390px",
+              maxWidth: "calc(100vw - 32px)",
+              maxHeight: "calc(100vh - 110px)",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--gold-border)",
+              borderRadius: "var(--radius-lg)",
+              boxShadow: "0 20px 50px rgba(26, 46, 34, 0.22), 0 6px 18px rgba(0, 0, 0, 0.08)",
+              zIndex: 9998,
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              display: "flex",
+              flexDirection: "column",
+              animation: "fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+            id="floating-whatsapp-modal"
+          >
           {/* Header Banner */}
           <div
             style={{
@@ -285,7 +304,7 @@ export default function FloatingWhatsApp() {
                   color: "var(--gold-dark)",
                 }}
               >
-                Bespoke Cake Consultation • Kolkata
+                Made With Love ❤️
               </p>
             </div>
 
@@ -754,6 +773,7 @@ export default function FloatingWhatsApp() {
             )}
           </div>
         </div>
+        </>
       )}
     </>
   );

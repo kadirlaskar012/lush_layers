@@ -74,7 +74,7 @@ export default function RejectedCakesPage() {
         }}
       >
         <div>
-          <span className="cake-category-badge">Archival Atelier</span>
+          <span className="cake-category-badge">Archival Vault</span>
           <h1 style={{ fontSize: "1.45rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.1rem 0" }}>
             Rejected Cakes Archive ({cakes.length})
           </h1>

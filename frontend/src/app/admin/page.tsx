@@ -78,7 +78,7 @@ export default function AdminOverviewPage() {
         }}
       >
         <div>
-          <span className="cake-category-badge">Executive Atelier</span>
+          <span className="cake-category-badge">Executive Studio</span>
           <h1 style={{ fontSize: "1.4rem", color: "var(--text-primary)", fontWeight: 700, margin: "0.1rem 0" }}>
             Management Overview
           </h1>

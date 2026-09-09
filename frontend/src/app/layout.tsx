@@ -33,7 +33,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lushlayers.com"),
-  title: "LUSH LAYERS • Made with Love • PB Road, Kolkata-41, India",
+  title: {
+    default: "Lush Layers • Made With Love ❤️",
+    template: "%s | Lush Layers",
+  },
   description:
     "Exquisite bespoke celebration and wedding cakes crafted with passion by Tina Baidya. Single-origin Belgian chocolate, delicate botanical infusions, and heirloom tiered confections. Order seamlessly via WhatsApp at +91 8768388868.",
   keywords: [
@@ -54,9 +57,9 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "LUSH LAYERS • Luxury Artisanal Cakes • By Tina Baidya",
+    title: "Lush Layers • Made With Love ❤️",
     description: "Bespoke handcrafted cakes made with love by Tina Baidya. Order directly on WhatsApp: +91 8768388868.",
-    siteName: "LUSH LAYERS",
+    siteName: "Lush Layers",
     type: "website",
     images: [
       {
