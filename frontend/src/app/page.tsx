@@ -39,6 +39,8 @@ export default async function HomePage() {
     ? inspirationCakes
     : Array.from(new Map([...inspirationCakes, ...(cakes || [])].map((c) => [c.id, c])).values()).slice(0, 8);
 
+  const seasonalCakes = cakes?.filter((c) => Boolean(c.is_seasonal)) || [];
+
   const heroCake = finalHeroCakes && finalHeroCakes.length > 0 ? finalHeroCakes[0] : (cakes && cakes.length > 0 ? cakes[0] : null);
 
   return (
@@ -174,28 +176,31 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 6. DUAL EDITORIAL SHOWCASE POSTERS */}
-      <section
-        style={{
-          padding: "1.75rem 0 1.25rem",
-          background: "linear-gradient(180deg, #F6F1E6 0%, #ECE3D1 100%)",
-          borderBottom: "1px solid #DCD0BC",
-        }}
-      >
-        <div className="container-lux">
-          <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 0.75rem" }}>
-            <span className="cake-category-badge">Seasonal Creations</span>
-            <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
-              Curated Celebration Themes
-            </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-              Signature motifs and flavour compositions available for private reservation.
-            </p>
-          </div>
+      {/* 6. DUAL EDITORIAL SHOWCASE POSTERS (Only displayed when admin has assigned seasonal cakes) */}
+      {seasonalCakes && seasonalCakes.length > 0 && (
+        <section
+          style={{
+            padding: "1.75rem 0 1.25rem",
+            background: "linear-gradient(180deg, #F6F1E6 0%, #ECE3D1 100%)",
+            borderBottom: "1px solid #DCD0BC",
+          }}
+          id="seasonal-creations"
+        >
+          <div className="container-lux">
+            <div style={{ textAlign: "center", maxWidth: "620px", margin: "0 auto 0.75rem" }}>
+              <span className="cake-category-badge">Seasonal Creations</span>
+              <h2 style={{ fontSize: "1.45rem", color: "var(--text-primary)", marginBottom: "0.25rem" }}>
+                Curated Celebration Themes
+              </h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+                Signature motifs and flavour compositions available for private reservation.
+              </p>
+            </div>
 
-          <DualEditorialPosters />
-        </div>
-      </section>
+            <DualEditorialPosters cakes={seasonalCakes} />
+          </div>
+        </section>
+      )}
 
       {/* 7. EDITORIAL MASONRY DISCOVERY SECTION */}
       {cakes && cakes.length > 0 && (

@@ -213,7 +213,7 @@ export async function getAdminCakes(
 
 export async function updateCakeCuration(
   cakeId: string,
-  curation: { is_hero?: boolean; is_trending?: boolean; is_inspiration?: boolean }
+  curation: { is_hero?: boolean; is_trending?: boolean; is_inspiration?: boolean; is_seasonal?: boolean }
 ): Promise<Cake> {
   const res = await fetch(getApiUrlString(`/api/cakes/${cakeId}/curation`), {
     method: "PATCH",

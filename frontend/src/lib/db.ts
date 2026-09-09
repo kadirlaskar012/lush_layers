@@ -51,6 +51,7 @@ function mapCake(row: any): Cake {
     is_hero: Boolean(row.is_hero),
     is_trending: Boolean(row.is_trending),
     is_inspiration: Boolean(row.is_inspiration),
+    is_seasonal: Boolean(row.is_seasonal),
     file_hash: row.file_hash || undefined,
     phash: row.phash || undefined,
     is_duplicate: Boolean(row.is_duplicate),
@@ -150,6 +151,8 @@ export async function dbGetPublishedCakes(params?: {
     query += ` AND c.is_trending = true`;
   } else if (params?.placement === "inspiration") {
     query += ` AND c.is_inspiration = true`;
+  } else if (params?.placement === "seasonal") {
+    query += ` AND c.is_seasonal = true`;
   }
 
   query += ` ORDER BY c.created_at DESC`;
@@ -215,6 +218,7 @@ export async function dbGetAdminCakes(params?: {
     if (params.placement === "hero") query += ` AND c.is_hero = true`;
     if (params.placement === "trending") query += ` AND c.is_trending = true`;
     if (params.placement === "inspiration") query += ` AND c.is_inspiration = true`;
+    if (params.placement === "seasonal") query += ` AND c.is_seasonal = true`;
   }
 
   if (params?.sortBy === "name_asc") {
@@ -231,7 +235,7 @@ export async function dbGetAdminCakes(params?: {
 
 export async function dbUpdateCakeCuration(
   cakeId: string,
-  curation: { is_hero?: boolean; is_trending?: boolean; is_inspiration?: boolean }
+  curation: { is_hero?: boolean; is_trending?: boolean; is_inspiration?: boolean; is_seasonal?: boolean }
 ): Promise<Cake> {
   const p = getPool();
   const sets: string[] = ["updated_at = NOW()"];
@@ -248,6 +252,10 @@ export async function dbUpdateCakeCuration(
   if (curation.is_inspiration !== undefined) {
     values.push(curation.is_inspiration);
     sets.push(`is_inspiration = $${values.length}`);
+  }
+  if (curation.is_seasonal !== undefined) {
+    values.push(curation.is_seasonal);
+    sets.push(`is_seasonal = $${values.length}`);
   }
 
   const query = `
@@ -277,6 +285,7 @@ export async function dbUpdateCakeDetails(cakeId: string, updates: Partial<Cake>
     "is_hero",
     "is_trending",
     "is_inspiration",
+    "is_seasonal",
   ];
 
   for (const field of allowedFields) {

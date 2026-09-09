@@ -302,12 +302,19 @@ export default function WhatsAppOrderModal({ cake, isOpen, onClose, initialSize 
                   flexShrink: 0,
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cake.image_url}
-                  alt={cake.name}
-                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                />
+                {cake.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={cake.image_url}
+                    alt={cake.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: "1.25rem" }}>🎂</span>
+                )}
               </div>
               <div style={{ minWidth: 0 }}>
                 <h4 style={{ fontSize: "0.92rem", color: "var(--text-primary)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

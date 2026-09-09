@@ -33,6 +33,12 @@ class Database:
                 dbname=settings.SUPABASE_DB,
                 connect_timeout=4
             )
+            conn.autocommit = True
+            cur = conn.cursor()
+            try:
+                cur.execute("ALTER TABLE cakes ADD COLUMN IF NOT EXISTS is_seasonal BOOLEAN DEFAULT FALSE;")
+            except Exception:
+                pass
             conn.close()
             self.postgres_connected = True
             print("[DB] Verified Supabase PostgreSQL connection via pooler.")
@@ -98,23 +104,12 @@ class Database:
                 color TEXT DEFAULT '#FAF6F0',
                 accent TEXT DEFAULT '#B88E3E',
                 active INTEGER DEFAULT 1 NOT NULL,
-                sort_order INTEGER DEFAULT 0,
+                sort_order INTEGER DEFAULT 0 NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
 
-        for col_name, col_type in [
-            ("icon", "TEXT DEFAULT 'Cake'"),
-            ("color", "TEXT DEFAULT '#FAF6F0'"),
-            ("accent", "TEXT DEFAULT '#B88E3E'")
-        ]:
-            try:
-                cursor.execute(f"ALTER TABLE categories ADD COLUMN {col_name} {col_type}")
-            except Exception:
-                pass
-
-        # Cakes (Zero price column, mandatory image_url)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS cakes (
                 id TEXT PRIMARY KEY,
@@ -123,26 +118,26 @@ class Database:
                 flavour TEXT NOT NULL,
                 category_id TEXT,
                 description TEXT,
-                available_sizes TEXT NOT NULL DEFAULT '["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]',
+                available_sizes TEXT NOT NULL,
                 image_url TEXT NOT NULL,
                 cloudinary_public_id TEXT,
-                status TEXT NOT NULL DEFAULT 'pending',
-                ai_metadata TEXT DEFAULT '{}',
+                status TEXT DEFAULT 'pending' NOT NULL,
+                ai_metadata TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 published_at TEXT,
-                FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+                FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
             )
         """)
 
-        # Ensure display_id column exists
+        # Migration: add display_id if missing
         try:
             cursor.execute("ALTER TABLE cakes ADD COLUMN display_id TEXT")
         except Exception:
             pass
 
-        # Backfill display_id for existing cakes if any are null or empty
-        cursor.execute("SELECT id FROM cakes WHERE display_id IS NULL OR display_id = '' ORDER BY created_at ASC")
+        # Backfill display_id if null
+        cursor.execute("SELECT id FROM cakes WHERE display_id IS NULL ORDER BY created_at ASC")
         unassigned = cursor.fetchall()
         if unassigned:
             cursor.execute("SELECT MAX(CAST(display_id AS INTEGER)) FROM cakes WHERE display_id GLOB '[0-9][0-9][0-9][0-9]'")
@@ -153,8 +148,8 @@ class Database:
                 cursor.execute("UPDATE cakes SET display_id = ? WHERE id = ?", (str(current_id), row["id"]))
             conn.commit()
 
-        # Ensure curation placement columns exist (hero carousel, trending spotlight, inspiration wall)
-        for col_name in ("is_hero", "is_trending", "is_inspiration"):
+        # Ensure curation placement columns exist (hero carousel, trending spotlight, inspiration wall, seasonal creations)
+        for col_name in ("is_hero", "is_trending", "is_inspiration", "is_seasonal"):
             try:
                 cursor.execute(f"ALTER TABLE cakes ADD COLUMN {col_name} INTEGER DEFAULT 0")
             except Exception:
@@ -427,8 +422,10 @@ class Database:
                 query += " AND c.is_trending = 1"
             elif placement == "inspiration":
                 query += " AND c.is_inspiration = 1"
+            elif placement == "seasonal":
+                query += " AND c.is_seasonal = 1"
             elif placement == "none":
-                query += " AND (c.is_hero = 0 OR c.is_hero IS NULL) AND (c.is_trending = 0 OR c.is_trending IS NULL) AND (c.is_inspiration = 0 OR c.is_inspiration IS NULL)"
+                query += " AND (c.is_hero = 0 OR c.is_hero IS NULL) AND (c.is_trending = 0 OR c.is_trending IS NULL) AND (c.is_inspiration = 0 OR c.is_inspiration IS NULL) AND (c.is_seasonal = 0 OR c.is_seasonal IS NULL)"
         if search:
             clean_search = search.strip().lstrip("#")
             query += " AND (c.display_id = ? OR LOWER(c.name) LIKE LOWER(?) OR LOWER(c.flavour) LIKE LOWER(?) OR LOWER(c.description) LIKE LOWER(?))"
@@ -466,6 +463,7 @@ class Database:
             d["is_hero"] = bool(d.get("is_hero"))
             d["is_trending"] = bool(d.get("is_trending"))
             d["is_inspiration"] = bool(d.get("is_inspiration"))
+            d["is_seasonal"] = bool(d.get("is_seasonal"))
             rows.append(d)
         conn.close()
         return rows
@@ -487,6 +485,7 @@ class Database:
         d["is_hero"] = bool(d.get("is_hero"))
         d["is_trending"] = bool(d.get("is_trending"))
         d["is_inspiration"] = bool(d.get("is_inspiration"))
+        d["is_seasonal"] = bool(d.get("is_seasonal"))
         d["is_duplicate"] = bool(d.get("is_duplicate"))
         d["duplicate_score"] = float(d.get("duplicate_score", 0.0) or 0.0)
         return d
@@ -622,6 +621,7 @@ class Database:
         is_hero = 1 if cake_data.get("is_hero") else 0
         is_trending = 1 if cake_data.get("is_trending") else 0
         is_inspiration = 1 if cake_data.get("is_inspiration") else 0
+        is_seasonal = 1 if cake_data.get("is_seasonal") else 0
 
         status = cake_data.get("status", "pending")
         raw_hash = cake_data.get("raw_hash")
@@ -639,10 +639,10 @@ class Database:
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
                 ai_metadata, created_at, updated_at, published_at, display_id,
-                is_hero, is_trending, is_inspiration,
+                is_hero, is_trending, is_inspiration, is_seasonal,
                 raw_hash, file_hash, phash, color_hist, is_duplicate, duplicate_of_id, duplicate_of_display_id,
                 duplicate_score, duplicate_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             cake_id,
             cake_data.get("name", "Untitled Confection"),
@@ -662,6 +662,7 @@ class Database:
             is_hero,
             is_trending,
             is_inspiration,
+            is_seasonal,
             raw_hash,
             file_hash,
             phash,
@@ -680,11 +681,13 @@ class Database:
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
-                ai_metadata, created_at, updated_at, published_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ai_metadata, created_at, updated_at, published_at,
+                is_hero, is_trending, is_inspiration, is_seasonal
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (slug) DO UPDATE SET
                 name = EXCLUDED.name,
                 image_url = EXCLUDED.image_url,
+                is_seasonal = EXCLUDED.is_seasonal,
                 updated_at = EXCLUDED.updated_at;
         """, (
             cake_id,
@@ -700,7 +703,11 @@ class Database:
             ai_meta_json,
             now,
             now,
-            None
+            None,
+            is_hero,
+            is_trending,
+            is_inspiration,
+            is_seasonal
         ))
 
         return self.get_cake_by_id(cake_id)
@@ -722,7 +729,7 @@ class Database:
             ):
                 fields.append(f"{k} = ?")
                 params.append(v)
-            elif k in ("is_hero", "is_trending", "is_inspiration", "is_duplicate"):
+            elif k in ("is_hero", "is_trending", "is_inspiration", "is_seasonal", "is_duplicate"):
                 fields.append(f"{k} = ?")
                 params.append(1 if v else 0)
             elif k in ("duplicate_score",):
@@ -758,9 +765,9 @@ class Database:
                 if k in ("name", "slug", "flavour", "category_id", "description", "image_url", "cloudinary_public_id", "status", "display_id"):
                     pg_fields.append(f"{k} = %s")
                     pg_params.append(v)
-                elif k in ("is_hero", "is_trending", "is_inspiration"):
+                elif k in ("is_hero", "is_trending", "is_inspiration", "is_seasonal"):
                     pg_fields.append(f"{k} = %s")
-                    pg_params.append(1 if v else 0)
+                    pg_params.append(bool(v))
                 elif k == "available_sizes":
                     pg_fields.append("available_sizes = %s")
                     pg_params.append(json.dumps(v) if not isinstance(v, str) else v)
@@ -775,8 +782,8 @@ class Database:
                 pg_params.append(now)
                 pg_params.append(cake_id)
                 self._sync_to_postgres(f"UPDATE cakes SET {', '.join(pg_fields)} WHERE id = %s", tuple(pg_params))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DB] Postgres replication failed in update_cake: {e}")
 
         return self.get_cake_by_id(cake_id)
 
@@ -1044,7 +1051,7 @@ class Database:
         return self.update_cake(cake_id, updates)
 
     def toggle_cake_placement(self, cake_id: str, field: str, value: Optional[bool] = None) -> Optional[Dict[str, Any]]:
-        if field not in ("is_hero", "is_trending", "is_inspiration"):
+        if field not in ("is_hero", "is_trending", "is_inspiration", "is_seasonal"):
             raise ValueError(f"Invalid placement field: {field}")
         cake = self.get_cake_by_id(cake_id)
         if not cake:

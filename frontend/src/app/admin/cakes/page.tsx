@@ -80,8 +80,10 @@ export default function AdminCakesManagementPage() {
       result = result.filter((c) => Boolean(c.is_trending));
     } else if (placementFilter === "inspiration") {
       result = result.filter((c) => Boolean(c.is_inspiration));
+    } else if (placementFilter === "seasonal") {
+      result = result.filter((c) => Boolean(c.is_seasonal));
     } else if (placementFilter === "none") {
-      result = result.filter((c) => !c.is_hero && !c.is_trending && !c.is_inspiration);
+      result = result.filter((c) => !c.is_hero && !c.is_trending && !c.is_inspiration && !c.is_seasonal);
     }
 
     if (searchQuery.trim()) {
@@ -134,7 +136,7 @@ export default function AdminCakesManagementPage() {
 
   const handleTogglePlacement = async (
     cakeId: string,
-    field: "is_hero" | "is_trending" | "is_inspiration"
+    field: "is_hero" | "is_trending" | "is_inspiration" | "is_seasonal"
   ) => {
     const currentCake = cakes.find((c) => c.id === cakeId);
     if (!currentCake) return;
@@ -153,7 +155,9 @@ export default function AdminCakesManagementPage() {
           ? "Mobile Hero Carousel"
           : field === "is_trending"
           ? "Trending & Spotlight"
-          : "Haute Inspiration Wall";
+          : field === "is_inspiration"
+          ? "Haute Inspiration Wall"
+          : "Seasonal Creations & Themes";
       setFeedback(`${newVal ? "✓ Added to" : "✕ Removed from"} ${label}!`);
       setTimeout(() => setFeedback(null), 2500);
     } catch (err: any) {
@@ -236,6 +240,7 @@ export default function AdminCakesManagementPage() {
       is_hero: Boolean(cake.is_hero),
       is_trending: Boolean(cake.is_trending),
       is_inspiration: Boolean(cake.is_inspiration),
+      is_seasonal: Boolean(cake.is_seasonal),
     });
     setNewSizeInput("");
   };
@@ -464,6 +469,7 @@ export default function AdminCakesManagementPage() {
               <option value="hero">🌟 Hero Carousel Only</option>
               <option value="trending">🔥 Trending & Spotlight Only</option>
               <option value="inspiration">🎨 Inspiration Wall Only</option>
+              <option value="seasonal">🍂 Seasonal Themes Only</option>
               <option value="none">Standard (None)</option>
             </select>
           </div>
@@ -707,6 +713,27 @@ export default function AdminCakesManagementPage() {
                           }}
                         >
                           <span>{cake.is_inspiration ? "✓ 🎨 Wall" : "— 🎨 Wall"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePlacement(cake.id, "is_seasonal")}
+                          title={cake.is_seasonal ? "Currently in Seasonal Creations (Click to remove)" : "Click to add to Seasonal Creations"}
+                          style={{
+                            fontSize: "0.68rem",
+                            padding: "0.18rem 0.45rem",
+                            borderRadius: "var(--radius-full)",
+                            border: cake.is_seasonal ? "1px solid #059669" : "1px dashed var(--border-subtle)",
+                            background: cake.is_seasonal ? "#D1FAE5" : "transparent",
+                            color: cake.is_seasonal ? "#065F46" : "var(--text-muted)",
+                            cursor: "pointer",
+                            fontWeight: cake.is_seasonal ? 600 : 400,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.2rem",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span>{cake.is_seasonal ? "✓ 🍂 Seasonal" : "— 🍂 Seasonal"}</span>
                         </button>
                       </div>
                     </td>
@@ -952,6 +979,23 @@ export default function AdminCakesManagementPage() {
                       }}
                     >
                       {cake.is_inspiration ? "✓ 🎨 Wall" : "— 🎨 Wall"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlacement(cake.id, "is_seasonal")}
+                      title={cake.is_seasonal ? "Currently in Seasonal Creations (Click to remove)" : "Click to add to Seasonal Creations"}
+                      style={{
+                        fontSize: "0.64rem",
+                        padding: "0.12rem 0.38rem",
+                        borderRadius: "var(--radius-full)",
+                        border: cake.is_seasonal ? "1px solid #059669" : "1px dashed var(--border-subtle)",
+                        background: cake.is_seasonal ? "#D1FAE5" : "transparent",
+                        color: cake.is_seasonal ? "#065F46" : "var(--text-muted)",
+                        cursor: "pointer",
+                        fontWeight: cake.is_seasonal ? 600 : 400,
+                      }}
+                    >
+                      {cake.is_seasonal ? "✓ 🍂 Seasonal" : "— 🍂 Seasonal"}
                     </button>
                   </div>
                 </div>
@@ -1270,6 +1314,15 @@ export default function AdminCakesManagementPage() {
                     style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
                   />
                   <span>🎨 <strong>The Haute Inspiration Wall</strong> (Artistic inspiration grid)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontSize: "0.78rem", cursor: "pointer", color: "var(--text-primary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editForm.is_seasonal)}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, is_seasonal: e.target.checked }))}
+                    style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
+                  />
+                  <span>🍂 <strong>Seasonal Creations &amp; Themes</strong> (Curated celebration themes on home page)</span>
                 </label>
               </div>
             </div>

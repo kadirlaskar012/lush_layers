@@ -336,11 +336,13 @@ class CakeUpdateRequest(BaseModel):
     is_hero: Optional[bool] = None
     is_trending: Optional[bool] = None
     is_inspiration: Optional[bool] = None
+    is_seasonal: Optional[bool] = None
 
 class CakeCurationRequest(BaseModel):
     is_hero: Optional[bool] = None
     is_trending: Optional[bool] = None
     is_inspiration: Optional[bool] = None
+    is_seasonal: Optional[bool] = None
 
 @app.get("/api/cakes")
 async def list_cakes(

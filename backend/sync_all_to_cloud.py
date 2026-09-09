@@ -94,9 +94,9 @@ def sync():
             INSERT INTO cakes (
                 id, name, slug, flavour, category_id, description,
                 available_sizes, image_url, cloudinary_public_id, status,
-                ai_metadata, is_hero, is_trending, is_inspiration, display_id,
+                ai_metadata, is_hero, is_trending, is_inspiration, is_seasonal, display_id,
                 created_at, updated_at, published_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (slug) DO UPDATE SET
                 image_url = EXCLUDED.image_url,
                 cloudinary_public_id = EXCLUDED.cloudinary_public_id,
@@ -104,6 +104,7 @@ def sync():
                 is_hero = EXCLUDED.is_hero,
                 is_trending = EXCLUDED.is_trending,
                 is_inspiration = EXCLUDED.is_inspiration,
+                is_seasonal = EXCLUDED.is_seasonal,
                 display_id = EXCLUDED.display_id,
                 updated_at = EXCLUDED.updated_at,
                 published_at = EXCLUDED.published_at;
@@ -122,6 +123,7 @@ def sync():
             bool(c.get("is_hero")),
             bool(c.get("is_trending")),
             bool(c.get("is_inspiration")),
+            bool(c.get("is_seasonal")),
             c.get("display_id"),
             c["created_at"],
             c["updated_at"],

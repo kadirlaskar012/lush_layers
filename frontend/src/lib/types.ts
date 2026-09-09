@@ -33,6 +33,7 @@ export interface Cake {
   is_hero?: boolean;
   is_trending?: boolean;
   is_inspiration?: boolean;
+  is_seasonal?: boolean;
   file_hash?: string;
   phash?: string;
   is_duplicate?: boolean;

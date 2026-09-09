@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Sparkles, Crown, Award, ArrowRight } from "lucide-react";
 import WhatsAppOrderModal from "./WhatsAppOrderModal";
+import { Cake } from "../lib/types";
 
 interface AnimatedPostersProps {
   whatsappNumber?: string;
@@ -261,112 +262,143 @@ export function AtelierFeaturedPoster({ whatsappNumber = "918768388868" }: Anima
   );
 }
 
-export function DualEditorialPosters() {
-  const [selectedPosterCake, setSelectedPosterCake] = useState<{ name: string; flavour: string } | null>(null);
+export function DualEditorialPosters({ cakes = [] }: { cakes?: Cake[] }) {
+  const [selectedCake, setSelectedCake] = useState<Cake | null>(null);
+
+  if (!cakes || cakes.length === 0) return null;
 
   return (
     <>
       <div className="dual-posters-grid" id="editorial-dual-posters">
-        {/* Poster 1: Summer Botanicals */}
-        <div className="editorial-poster-card">
-          <div className="poster-shimmer-sweep" style={{ animationDelay: "2.5s" }} />
-          <div>
-            <div className="poster-floating-tag" style={{ marginBottom: "0.75rem" }}>
-              <Sparkles size={11} style={{ color: "var(--gold)" }} />
-              <span>Editorial Spotlight</span>
+        {cakes.map((cake, idx) => {
+          const Icon = idx % 2 === 0 ? Sparkles : Crown;
+          const animDelay = `${(idx + 1) * 2}s`;
+          return (
+            <div key={cake.id} className="editorial-poster-card">
+              <div className="poster-shimmer-sweep" style={{ animationDelay: animDelay }} />
+
+              <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginBottom: "0.85rem" }}>
+                {cake.image_url ? (
+                  <div
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      minWidth: "80px",
+                      borderRadius: "var(--radius-sm)",
+                      overflow: "hidden",
+                      border: "1px solid rgba(197, 152, 58, 0.35)",
+                      boxShadow: "var(--shadow-xs)",
+                      background: "var(--bg-cream)",
+                      position: "relative",
+                    }}
+                  >
+                    <img
+                      src={cake.image_url}
+                      alt={cake.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                      loading="lazy"
+                    />
+                  </div>
+                ) : null}
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="poster-floating-tag" style={{ marginBottom: "0.4rem", display: "inline-flex" }}>
+                    <Icon size={11} style={{ color: "var(--gold)" }} />
+                    <span>{cake.category_name || "Seasonal Creation"}</span>
+                  </div>
+                  <h4
+                    style={{
+                      fontFamily: "var(--font-heading)",
+                      fontSize: "1.15rem",
+                      color: "var(--text-primary)",
+                      lineHeight: 1.25,
+                      marginBottom: "0.25rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={cake.name}
+                  >
+                    {cake.name}
+                  </h4>
+                  {cake.flavour && (
+                    <p
+                      style={{
+                        fontSize: "0.76rem",
+                        color: "var(--gold-dark)",
+                        fontStyle: "italic",
+                        fontWeight: 500,
+                        lineHeight: 1.3,
+                        marginBottom: "0.25rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={cake.flavour}
+                    >
+                      {cake.flavour}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {cake.description && (
+                <p
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.5,
+                    marginBottom: "1rem",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {cake.description}
+                </p>
+              )}
+
+              <div style={{ marginTop: "auto", display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCake(cake)}
+                  className="btn-order-now"
+                  style={{ flex: 1, height: "36px", fontSize: "0.82rem" }}
+                >
+                  <span>Order Now</span>
+                </button>
+                <Link
+                  href={`/cakes/${cake.slug}`}
+                  className="btn-outline-gold"
+                  style={{
+                    padding: "0 0.85rem",
+                    height: "36px",
+                    fontSize: "0.78rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textDecoration: "none",
+                  }}
+                >
+                  Details
+                </Link>
+              </div>
             </div>
-            <h4
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.25rem",
-                color: "var(--text-primary)",
-                lineHeight: 1.2,
-                marginBottom: "0.45rem",
-              }}
-            >
-              Summer Citrus & Velvet Petals
-            </h4>
-            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: "1rem" }}>
-              Single-origin Bourbon vanilla sponge soaked in light organic blossom syrup, layered with tart Meyer lemon curd and Swiss meringue.
-            </p>
-          </div>
-
-          <div style={{ marginTop: "auto" }}>
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedPosterCake({
-                  name: "Summer Citrus & Velvet Petals",
-                  flavour: "Meyer Lemon Curd & Bourbon Vanilla",
-                })
-              }
-              className="btn-order-now"
-              style={{ width: "100%", height: "36px", fontSize: "0.82rem" }}
-            >
-              <span>Order Now</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Poster 2: Noir Belgian Couverture */}
-        <div className="editorial-poster-card">
-          <div className="poster-shimmer-sweep" style={{ animationDelay: "4.5s" }} />
-          <div>
-            <div className="poster-floating-tag" style={{ marginBottom: "0.75rem" }}>
-              <Crown size={11} style={{ color: "var(--gold)" }} />
-              <span>Grand Celebration Tiers</span>
-            </div>
-            <h4
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "1.25rem",
-                color: "var(--text-primary)",
-                lineHeight: 1.2,
-                marginBottom: "0.45rem",
-              }}
-            >
-              The Noir Belgian Ganache Masterwork
-            </h4>
-            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: "1rem" }}>
-              Architecturally dowelled multi-tier wedding and anniversary confections finished with hand-painted 24K gold foil and sculpted sugar florals.
-            </p>
-          </div>
-
-          <div style={{ marginTop: "auto" }}>
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedPosterCake({
-                  name: "The Noir Belgian Ganache Masterwork",
-                  flavour: "70% Callebaut Dark Ganache & Espresso Praline",
-                })
-              }
-              className="btn-order-now"
-              style={{ width: "100%", height: "36px", fontSize: "0.82rem" }}
-            >
-              <span>Order Now</span>
-            </button>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {selectedPosterCake && (
+      {selectedCake && (
         <WhatsAppOrderModal
-          cake={{
-            id: "editorial-poster",
-            name: selectedPosterCake.name,
-            slug: "editorial-poster-order",
-            description: "Custom confectionery designed by Chef Tina Baidya.",
-            flavour: selectedPosterCake.flavour,
-            image_url: "",
-            available_sizes: ["0.5 kg (Small)", "1.0 kg (Medium)", "1.5 kg (Tiered)", "2.0 kg (Celebration)"],
-            category_name: "Editorial Confection",
-            status: "published",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }}
-          isOpen={true}
-          onClose={() => setSelectedPosterCake(null)}
+          cake={selectedCake}
+          isOpen={Boolean(selectedCake)}
+          onClose={() => setSelectedCake(null)}
         />
       )}
     </>
