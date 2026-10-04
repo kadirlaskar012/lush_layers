@@ -397,7 +397,15 @@ export default function AdminCakesManagementPage() {
           </h1>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <Link
+            href="/admin/cakes/new"
+            className="btn-gold"
+            style={{ padding: "0.45rem 0.95rem", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+          >
+            <Plus size={14} />
+            <span>+ Add Cake</span>
+          </Link>
           <Link
             href="/admin/cakes/pending"
             className="btn-outline-gold"
@@ -408,11 +416,11 @@ export default function AdminCakesManagementPage() {
           </Link>
           <Link
             href="/admin/upload"
-            className="btn-gold"
-            style={{ padding: "0.45rem 0.95rem", fontSize: "0.78rem" }}
+            className="btn-outline-gold"
+            style={{ padding: "0.45rem 0.85rem", fontSize: "0.78rem" }}
           >
             <Zap size={13} />
-            <span>+ Ingest Photos</span>
+            <span>Bulk Upload</span>
           </Link>
         </div>
       </div>

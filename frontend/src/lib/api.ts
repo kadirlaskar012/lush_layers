@@ -237,6 +237,20 @@ export async function updateCakeCuration(
   return data.cake;
 }
 
+export async function createCake(payload: FormData | Partial<Cake>): Promise<Cake> {
+  const isFormData = typeof FormData !== "undefined" && payload instanceof FormData;
+  const res = await fetch(getApiUrlString("/api/cakes"), {
+    method: "POST",
+    headers: isFormData ? undefined : { "Content-Type": "application/json" },
+    body: isFormData ? payload : JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || err.detail || err.message || "Failed to create cake");
+  }
+  return await res.json();
+}
+
 export async function updateCakeDetails(cakeId: string, updates: Partial<Cake>): Promise<Cake> {
   const res = await fetch(getApiUrlString(`/api/cakes/${cakeId}`), {
     method: "PUT",

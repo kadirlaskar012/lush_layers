@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminStats, getAdminCakes, getEnquiries } from "../../lib/api";
 import { AdminStats, Cake, Enquiry } from "../../lib/types";
-import { ClipboardList, Clock, Zap, Cake as CakeIcon, ArrowUpRight } from "lucide-react";
+import { ClipboardList, Clock, Zap, Cake as CakeIcon, ArrowUpRight, Plus } from "lucide-react";
 
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -88,15 +88,19 @@ export default function AdminOverviewPage() {
         </div>
 
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Link href="/admin/orders" className="btn-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+          <Link href="/admin/cakes/new" className="btn-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.35rem", display: "inline-flex", alignItems: "center" }}>
+            <Plus size={14} />
+            <span>+ Add Cake</span>
+          </Link>
+          <Link href="/admin/orders" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem", display: "inline-flex", alignItems: "center" }}>
             <ClipboardList size={14} />
             <span>Orders / Enquiries</span>
           </Link>
-          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+          <Link href="/admin/cakes/pending" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem", display: "inline-flex", alignItems: "center" }}>
             <Clock size={14} />
-            <span>Pending Approval ({stats?.pending || 0})</span>
+            <span>Pending ({stats?.pending || 0})</span>
           </Link>
-          <Link href="/admin/upload" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem" }}>
+          <Link href="/admin/upload" className="btn-outline-gold icon-hover-lift" style={{ padding: "0.42rem 0.85rem", fontSize: "0.78rem", gap: "0.4rem", display: "inline-flex", alignItems: "center" }}>
             <Zap size={14} />
             <span>Bulk Upload</span>
           </Link>

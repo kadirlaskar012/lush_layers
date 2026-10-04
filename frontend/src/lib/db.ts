@@ -346,6 +346,78 @@ export async function dbUpdateCakeDetails(cakeId: string, updates: Partial<Cake>
   return mapCake(res.rows[0]);
 }
 
+export async function dbCreateCake(cakeData: Partial<Cake>): Promise<Cake> {
+  const p = getPool();
+  const cakeId = cakeData.id || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `cake-${Date.now()}`);
+  const now = new Date().toISOString();
+
+  // Determine 4-digit display_id
+  let displayId = cakeData.display_id;
+  if (!displayId) {
+    try {
+      const maxRes = await p.query(`SELECT MAX(CAST(display_id AS INTEGER)) as max_id FROM cakes WHERE display_id ~ '^[0-9]{4}$'`);
+      const currentMax = maxRes.rows[0]?.max_id ? Number(maxRes.rows[0].max_id) : 1000;
+      displayId = String(currentMax + 1);
+    } catch {
+      displayId = "1001";
+    }
+  }
+
+  // Base slug
+  let slug = cakeData.slug;
+  if (!slug && cakeData.name) {
+    const base = cakeData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    slug = `${base}-${cakeId.slice(0, 6)}`;
+  } else if (!slug) {
+    slug = `confection-${cakeId.slice(0, 8)}`;
+  }
+
+  const sizes = JSON.stringify(cakeData.available_sizes || ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]);
+  const aiMeta = JSON.stringify(cakeData.ai_metadata || { source: "admin_quick_add" });
+  const status = cakeData.status || "approved";
+  const publishedAt = status === "published" ? now : null;
+
+  const query = `
+    INSERT INTO cakes (
+      id, display_id, name, slug, flavour, category_id, description,
+      available_sizes, image_url, cloudinary_public_id, status,
+      is_hero, is_trending, is_inspiration, is_seasonal,
+      ai_metadata, created_at, updated_at, published_at
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7,
+      $8, $9, $10, $11,
+      $12, $13, $14, $15,
+      $16, $17, $18, $19
+    )
+    RETURNING *
+  `;
+
+  const values = [
+    cakeId,
+    displayId,
+    cakeData.name || "Untitled Confection",
+    slug,
+    cakeData.flavour || "Vanilla Bean",
+    cakeData.category_id || null,
+    cakeData.description || "",
+    sizes,
+    cakeData.image_url || "",
+    cakeData.cloudinary_public_id || null,
+    status,
+    Boolean(cakeData.is_hero),
+    Boolean(cakeData.is_trending),
+    Boolean(cakeData.is_inspiration),
+    Boolean(cakeData.is_seasonal),
+    aiMeta,
+    now,
+    now,
+    publishedAt,
+  ];
+
+  const res = await p.query(query, values);
+  return mapCake(res.rows[0]);
+}
+
 export async function dbUpdateCakeStatus(cakeId: string, status: string): Promise<Cake> {
   const p = getPool();
   let query = `

@@ -20,6 +20,7 @@ import {
   Zap,
   X,
   ArrowUpRight,
+  PlusCircle,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -52,6 +53,11 @@ export default function AdminSidebar({ isMobileOpen = false, onCloseMobile }: Ad
       highlight: true,
     },
     { href: "/admin/cakes", label: "All Cakes", icon: <Cake size={16} strokeWidth={1.8} /> },
+    {
+      href: "/admin/cakes/new",
+      label: "+ Add Cake",
+      icon: <PlusCircle size={16} strokeWidth={1.8} />,
+    },
     {
       href: "/admin/cakes/pending",
       label: "Pending Approval",

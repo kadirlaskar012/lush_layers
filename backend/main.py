@@ -19,8 +19,9 @@ if sys.platform == "win32":
         pass
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
+from PIL import Image, ImageOps
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, HTMLResponse, Response
@@ -403,6 +404,194 @@ async def list_cakes(
         placement=placement,
         limit=limit
     )
+
+@app.post("/api/cakes", status_code=201)
+async def create_cake_endpoint(request: Request, background_tasks: BackgroundTasks):
+    """
+    Directly creates a cake in the catalog.
+    Supports either:
+    1. multipart/form-data with an uploaded image file (or image_url)
+    2. application/json with cake fields and image_url
+    """
+    import json
+    content_type = request.headers.get("content-type", "")
+    
+    file_upload: Optional[UploadFile] = None
+    name: str = ""
+    flavour: str = "Vanilla Bean"
+    category_id: Optional[str] = None
+    description: str = ""
+    available_sizes: List[str] = ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"]
+    image_url: Optional[str] = None
+    status: str = "approved"
+    is_hero: bool = False
+    is_trending: bool = False
+    is_inspiration: bool = False
+    is_seasonal: bool = False
+    white_background: bool = True
+    
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        name = str(form.get("name") or "").strip()
+        flavour = str(form.get("flavour") or "Vanilla Bean").strip()
+        raw_cat = form.get("category_id")
+        if raw_cat:
+            category_id = str(raw_cat).strip() or None
+        description = str(form.get("description") or "").strip()
+        
+        raw_sizes = form.get("available_sizes")
+        if raw_sizes:
+            if isinstance(raw_sizes, str):
+                try:
+                    available_sizes = json.loads(raw_sizes)
+                except Exception:
+                    available_sizes = [s.strip() for s in raw_sizes.split(",") if s.strip()]
+        
+        status = str(form.get("status") or "approved").strip().lower()
+        if status not in ("pending", "approved", "published", "duplicate", "rejected"):
+            status = "approved"
+            
+        is_hero = str(form.get("is_hero") or "").lower() in ("true", "1", "yes")
+        is_trending = str(form.get("is_trending") or "").lower() in ("true", "1", "yes")
+        is_inspiration = str(form.get("is_inspiration") or "").lower() in ("true", "1", "yes")
+        is_seasonal = str(form.get("is_seasonal") or "").lower() in ("true", "1", "yes")
+        white_background = str(form.get("white_background") or "true").lower() in ("true", "1", "yes")
+        
+        raw_file = form.get("file")
+        if isinstance(raw_file, UploadFile) and raw_file.filename:
+            file_upload = raw_file
+            
+        raw_img_url = form.get("image_url")
+        if raw_img_url and str(raw_img_url).strip():
+            image_url = str(raw_img_url).strip()
+    else:
+        body = await request.json()
+        name = str(body.get("name") or "").strip()
+        flavour = str(body.get("flavour") or "Vanilla Bean").strip()
+        raw_cat = body.get("category_id")
+        if raw_cat:
+            category_id = str(raw_cat).strip() or None
+        description = str(body.get("description") or "").strip()
+        if body.get("available_sizes"):
+            available_sizes = body["available_sizes"]
+        image_url = body.get("image_url")
+        status = str(body.get("status") or "approved").strip().lower()
+        if status not in ("pending", "approved", "published", "duplicate", "rejected"):
+            status = "approved"
+        is_hero = bool(body.get("is_hero"))
+        is_trending = bool(body.get("is_trending"))
+        is_inspiration = bool(body.get("is_inspiration"))
+        is_seasonal = bool(body.get("is_seasonal"))
+        white_background = bool(body.get("white_background", True))
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Cake name is required.")
+        
+    if not file_upload and not image_url:
+        raise HTTPException(status_code=400, detail="A cake image is mandatory. Please upload a photo or provide an image URL.")
+
+    cake_id = str(uuid.uuid4())
+    job_base = f"cake_{cake_id[:8]}"
+    final_image_url = image_url
+    cloudinary_id = None
+    raw_hash = None
+    file_hash = None
+    phash = None
+    color_hist = None
+
+    if file_upload:
+        # Save uploaded file
+        ext = Path(file_upload.filename).suffix.lower()
+        if ext not in settings.ALLOWED_EXTENSIONS:
+            raise HTTPException(status_code=400, detail=f"Unsupported format '{ext}'. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}")
+        
+        upload_dest = settings.UPLOAD_DIR / f"{uuid.uuid4().hex[:8]}_{file_upload.filename}"
+        with open(upload_dest, "wb") as buffer:
+            shutil.copyfileobj(file_upload.file, buffer)
+            
+        raw_hash = processor.compute_sha256(upload_dest)
+        
+        # Process image to studio WebP
+        with Image.open(upload_dest) as img:
+            img = ImageOps.exif_transpose(img)
+            if white_background:
+                cutout = processor.remove_background(img)
+                master_rgb = processor.composite_on_white_studio(cutout, canvas_size=1200)
+            else:
+                img_rgba = img.convert("RGBA")
+                cw, ch = img_rgba.size
+                target_size = int(1200 * 0.90)
+                scale = min(target_size / cw, target_size / ch)
+                new_w, new_h = int(cw * scale), int(ch * scale)
+                resized = img_rgba.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                canvas = Image.new("RGBA", (1200, 1200), (255, 255, 255, 255))
+                pos_x = (1200 - new_w) // 2
+                pos_y = (1200 - new_h) // 2
+                canvas.paste(resized, (pos_x, pos_y), resized)
+                master_rgb = canvas.convert("RGB")
+                
+            thumb_rgb = master_rgb.resize((600, 600), Image.Resampling.LANCZOS)
+            
+            master_path = settings.PROCESSED_DIR / f"{job_base}.webp"
+            thumb_path = settings.THUMBNAIL_DIR / f"{job_base}_thumb.webp"
+            master_rgb.save(master_path, format="WEBP", quality=88, method=6)
+            thumb_rgb.save(thumb_path, format="WEBP", quality=80, method=6)
+            
+            # Compute fingerprints
+            fingerprints = processor.compute_compound_fingerprints(master_path)
+            file_hash = fingerprints.get("sha256") or raw_hash
+            phash = fingerprints.get("phash")
+            color_hist = fingerprints.get("color_hist")
+            
+            # Upload to Cloudinary if available
+            cloud_res = storage.upload_image(master_path, public_id_base=job_base)
+            final_image_url = cloud_res["image_url"]
+            cloudinary_id = cloud_res.get("cloudinary_public_id")
+
+    # Resolve default category if not provided
+    if not category_id:
+        cats = db.get_categories(active_only=True)
+        if cats:
+            category_id = cats[0]["id"]
+
+    cake_record = {
+        "id": cake_id,
+        "name": name,
+        "flavour": flavour,
+        "category_id": category_id,
+        "description": description,
+        "available_sizes": available_sizes,
+        "image_url": final_image_url,
+        "cloudinary_public_id": cloudinary_id,
+        "status": status,
+        "is_hero": is_hero,
+        "is_trending": is_trending,
+        "is_inspiration": is_inspiration,
+        "is_seasonal": is_seasonal,
+        "raw_hash": raw_hash,
+        "file_hash": file_hash,
+        "phash": phash,
+        "color_hist": color_hist,
+        "is_duplicate": 0,
+        "ai_metadata": {
+            "ai_status": "manual",
+            "source": "admin_quick_add",
+            "created_via": "Admin Studio Quick Add Form",
+        }
+    }
+
+    created = db.create_cake(cake_record)
+
+    # If status is published, publish it in DB and trigger ISR revalidation
+    if status == "published":
+        db.publish_cake(cake_id)
+        created["status"] = "published"
+        background_tasks.add_task(
+            trigger_frontend_revalidation,
+            ["/", "/cakes", f"/cakes/{created.get('slug', '')}", "/categories"]
+        )
+
+    return created
 
 @app.get("/api/cakes/pending")
 async def list_pending_cakes():

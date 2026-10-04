@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { dbGetAdminCakes, dbGetPublishedCakes } from "@/lib/db";
+import { dbGetAdminCakes, dbGetPublishedCakes, dbCreateCake } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -106,3 +106,96 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message || "Failed to fetch cakes" }, { status: 500 });
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const backendBase = process.env.BACKEND_URL || (process.env.NODE_ENV !== "production" ? "http://127.0.0.1:8000" : null);
+    const contentType = req.headers.get("content-type") || "";
+
+    if (backendBase) {
+      try {
+        let backendRes: Response;
+        if (contentType.includes("multipart/form-data")) {
+          const formData = await req.formData();
+          backendRes = await fetch(`${backendBase}/api/cakes`, {
+            method: "POST",
+            body: formData,
+          });
+        } else {
+          const jsonBody = await req.json();
+          backendRes = await fetch(`${backendBase}/api/cakes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonBody),
+          });
+        }
+
+        if (backendRes.ok) {
+          const data = await backendRes.json();
+          return NextResponse.json(data, { status: 201 });
+        } else {
+          const errData = await backendRes.json().catch(() => ({}));
+          return NextResponse.json(
+            { error: errData.detail || errData.message || "Backend cake creation failed" },
+            { status: backendRes.status }
+          );
+        }
+      } catch (backendErr: any) {
+        console.warn("Backend forward failed, falling back to direct db:", backendErr.message || backendErr);
+      }
+    }
+
+    // Standalone DB Fallback
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const name = String(formData.get("name") || "").trim();
+      const flavour = String(formData.get("flavour") || "Vanilla Bean").trim();
+      const category_id = formData.get("category_id") ? String(formData.get("category_id")) : undefined;
+      const description = String(formData.get("description") || "").trim();
+      const image_url = formData.get("image_url") ? String(formData.get("image_url")) : "";
+      const status = String(formData.get("status") || "approved");
+      const is_hero = String(formData.get("is_hero") || "").toLowerCase() === "true";
+      const is_trending = String(formData.get("is_trending") || "").toLowerCase() === "true";
+      const is_inspiration = String(formData.get("is_inspiration") || "").toLowerCase() === "true";
+      const is_seasonal = String(formData.get("is_seasonal") || "").toLowerCase() === "true";
+
+      let available_sizes = ["0.5 kg (Small)", "1.0 kg (Medium)", "2.0 kg (Large)"];
+      const rawSizes = formData.get("available_sizes");
+      if (rawSizes) {
+        try {
+          available_sizes = JSON.parse(String(rawSizes));
+        } catch {
+          available_sizes = String(rawSizes).split(",").map((s) => s.trim()).filter(Boolean);
+        }
+      }
+
+      if (!name) return NextResponse.json({ error: "Cake name is required" }, { status: 400 });
+      if (!image_url) return NextResponse.json({ error: "Image is required" }, { status: 400 });
+
+      const newCake = await dbCreateCake({
+        name,
+        flavour,
+        category_id,
+        description,
+        image_url,
+        status: status as any,
+        available_sizes,
+        is_hero,
+        is_trending,
+        is_inspiration,
+        is_seasonal,
+      });
+      return NextResponse.json(newCake, { status: 201 });
+    } else {
+      const body = await req.json();
+      if (!body.name) return NextResponse.json({ error: "Cake name is required" }, { status: 400 });
+      if (!body.image_url) return NextResponse.json({ error: "Image is required" }, { status: 400 });
+      const newCake = await dbCreateCake(body);
+      return NextResponse.json(newCake, { status: 201 });
+    }
+  } catch (err: any) {
+    console.error("API POST /api/cakes error:", err);
+    return NextResponse.json({ error: err.message || "Failed to create cake" }, { status: 500 });
+  }
+}
+
